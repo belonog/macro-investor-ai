@@ -1,0 +1,26 @@
+{
+  "TLT": {
+    "shares": 100,
+    "avg_cost": 90.00,
+    "stop": 88.00,
+    "thesis": "Long-duration Treasury play"
+  },
+  "GLD": {
+    "shares": 50,
+    "avg_cost": 200.00,
+    "stop": 195.00,
+    "thesis": "Stagflation hedge"
+  },
+  "SHY": {
+    "shares": 200,
+    "avg_cost": 82.00,
+    "stop": 81.50,
+    "thesis": "Short-term treasury cash proxy"
+  },
+  "CASH": {
+    "shares": 0,
+    "avg_cost": 1.00,
+    "stop": 0.00,
+    "thesis": "Cash balance"
+  }
+}
