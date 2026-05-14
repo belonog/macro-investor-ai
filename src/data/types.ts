@@ -21,3 +21,13 @@ export const AlertSchema = z.object({
 });
 
 export type Alert = z.infer<typeof AlertSchema>;
+
+export const DataPointSchema = z.object({
+  date: z.string(), // YYYY-MM-DD
+  value: z.number(),
+});
+
+export type DataPoint = z.infer<typeof DataPointSchema>;
+
+export const MacroSnapshotSchema = z.record(z.string(), z.array(DataPointSchema));
+export type MacroSnapshot = z.infer<typeof MacroSnapshotSchema>;

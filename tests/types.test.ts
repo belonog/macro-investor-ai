@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PositionSnapshotSchema, AlertSchema } from '../src/data/types.js';
+import { PositionSnapshotSchema, AlertSchema, DataPointSchema, MacroSnapshotSchema } from '../src/data/types.js';
 
 describe('PositionSnapshotSchema', () => {
   it('should validate a correct position snapshot', () => {
@@ -68,6 +68,50 @@ describe('AlertSchema', () => {
       message: 'Test'
     };
     const result = AlertSchema.safeParse(invalidAlert);
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('DataPointSchema', () => {
+  it('should validate a correct data point', () => {
+    const validDataPoint = {
+      date: '2023-01-01',
+      value: 100.5
+    };
+    const result = DataPointSchema.safeParse(validDataPoint);
+    expect(result.success).toBe(true);
+  });
+
+  it('should reject a data point with invalid date', () => {
+    const invalidDataPoint = {
+      date: 123,
+      value: 100.5
+    };
+    const result = DataPointSchema.safeParse(invalidDataPoint);
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('MacroSnapshotSchema', () => {
+  it('should validate a correct macro snapshot', () => {
+    const validSnapshot = {
+      'CPI': [
+        { date: '2023-01-01', value: 100.5 },
+        { date: '2023-02-01', value: 101.2 }
+      ],
+      'GDP': [
+        { date: '2023-01-01', value: 25000 }
+      ]
+    };
+    const result = MacroSnapshotSchema.safeParse(validSnapshot);
+    expect(result.success).toBe(true);
+  });
+
+  it('should reject a macro snapshot with wrong structure', () => {
+    const invalidSnapshot = {
+      'CPI': { date: '2023-01-01', value: 100.5 } // Should be an array
+    };
+    const result = MacroSnapshotSchema.safeParse(invalidSnapshot);
     expect(result.success).toBe(false);
   });
 });
