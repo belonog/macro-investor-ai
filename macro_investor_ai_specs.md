@@ -51,7 +51,7 @@ it introduces noise into a framework designed to operate on a 3–12 month horiz
 
 ```
 PRIMARY
-  1. Regime Detection Engine     — score current quadrant, detect transitions
+  1. Regime Detection Agent     — score current quadrant, detect transitions
   2. Portfolio Rebalancing Agent — translate regime signal into position actions
 
 SECONDARY
@@ -263,15 +263,15 @@ async function getLatestValues(): Promise<Record<string, number>>
 async function fetchPortfolioSnapshot(): Promise<PositionSnapshot[]>
 ```
 
-**Output:** `data/cache/positionsSnapshot.json` includes `fetchedAt` for freshness verification.
+**Output:** `src/data/cache/positionsSnapshot.json` includes `fetchedAt` for freshness verification.
 
 ---
 
-### 6.3 Agent: Regime Detection ★
+### 6.3 Agent: Regime Detection Agent ★
 
 **File:** `src/agents/regimeAgent.ts`
 **Trigger:** Weekly + after major macro releases.
-**Output cached to:** `data/cache/regimeLatest.json` + `logs/regime_history.db`
+**Output cached to:** `src/data/cache/regimeLatest.json` + `logs/regime_history.db`
 
 **System prompt** (`src/prompts/regime_system.txt`):
 *Classification of macro environment into Goldilocks, Inflationary Boom, Stagflation, or Deflationary Recession.*
