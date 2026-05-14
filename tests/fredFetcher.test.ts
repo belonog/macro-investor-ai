@@ -48,7 +48,7 @@ describe('fredFetcher', () => {
       });
 
       const result = await fetchAll(1);
-      expect(Object.keys(result)).toEqual(expect.arrayContaining(TARGET_SERIES));
+      expect(Object.keys(result)).toEqual(expect.arrayContaining(Object.keys(TARGET_SERIES)));
       expect(result['CPIAUCSL']).toEqual([{ date: '2023-01-01', value: 100.0 }]);
     });
 

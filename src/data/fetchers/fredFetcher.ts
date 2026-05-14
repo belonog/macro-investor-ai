@@ -5,12 +5,27 @@ import { DataPoint, DataPointSchema, MacroSnapshot, MacroCacheSchema } from '../
 
 const FRED_BASE_URL = 'https://api.stlouisfed.org/fred';
 
-export const TARGET_SERIES = [
-  'CPIAUCSL', 'PCEPI', 'PPIACO', 'T5YIE', 'T5YIFR', // Inflation
-  'GDPC1', 'RSAFS', 'PAYEMS',                      // Growth
-  'FEDFUNDS', 'DGS2', 'DGS10', 'DGS30', 'T10Y2Y',  // Rates & Yield Curve
-  'DTWEXBGS', 'M2SL'                               // Dollar & Liquidity
-];
+export const TARGET_SERIES: Record<string, string> = {
+  // Inflation
+  'CPIAUCSL': 'Consumer Price Index (CPI)',
+  'PCEPI': 'Personal Consumption Expenditures (PCE)',
+  'PPIACO': 'Producer Price Index (PPI)',
+  'T5YIE': '5-Year Breakeven Inflation Rate',
+  'T5YIFR': '5-Year, 5-Year Forward Inflation Expectation Rate',
+  // Growth
+  'GDPC1': 'Real Gross Domestic Product (GDP)',
+  'RSAFS': 'Retail Sales',
+  'PAYEMS': 'Nonfarm Payrolls (NFP)',
+  // Rates & Yield Curve
+  'FEDFUNDS': 'Effective Federal Funds Rate',
+  'DGS2': '2-Year Treasury Yield',
+  'DGS10': '10-Year Treasury Yield',
+  'DGS30': '30-Year Treasury Yield',
+  'T10Y2Y': '10-Year to 2-Year Treasury Spread (Yield Curve)',
+  // Dollar & Liquidity
+  'DTWEXBGS': 'Trade Weighted U.S. Dollar Index (DXY Proxy)',
+  'M2SL': 'M2 Money Supply'
+};
 
 /**
  * Fetches a series from FRED and returns it as an array of DataPoints.
@@ -62,13 +77,14 @@ export async function fetchSeries(seriesId: string, limit: number = 12): Promise
  */
 export async function fetchAll(periods: number = 12): Promise<MacroSnapshot> {
   const snapshot: MacroSnapshot = {};
+  const seriesIds = Object.keys(TARGET_SERIES);
   
-  const promises = TARGET_SERIES.map(async (seriesId) => {
+  const promises = seriesIds.map(async (seriesId) => {
     try {
       const data = await fetchSeries(seriesId, periods);
       snapshot[seriesId] = data;
     } catch (error) {
-      console.error(`Failed to fetch ${seriesId}:`, error);
+      console.error(`Failed to fetch ${seriesId} (${TARGET_SERIES[seriesId]}):`, error);
       snapshot[seriesId] = []; // Ensure the key exists even on failure
     }
   });
