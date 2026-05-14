@@ -78,21 +78,21 @@ SECONDARY
 ┌──────────────────────────────────────────────────────────────────────────┐
 │                            DATA LAYER                                    │
 │                                                                          │
-│  ┌─── TYPESCRIPT ──────────────────────────┐  ┌─── TYPESCRIPT ───────┐  │
-│  │  FRED API │ BLS │ EIA │ Polygon.io       │  │  IBKR Flex Reports   │  │
-│  │  (axios, zod)                           │  │  (axios, xml parser) │  │
-│  └────────────────────┬────────────────────┘  └──────────┬───────────┘  │
-│                       │ macro indicators (daily)         │ EOD snapshot  │
-└───────────────────────┼──────────────────────────────────┼──────────────┘
-                        │                                  │
-                        └──────────────┬───────────────────┘
+│  ┌─── TYPESCRIPT ──────────────────────────────────────────┐  ┌──────────┐
+│  │  FRED API │ BLS │ EIA │ Polygon.io                       │  │   IBKR   │
+│  │  (axios, zod)                                           │  │   Flex   │
+│  └────────────────────┬────────────────────────────────────┘  └────┬─────┘
+│                       │ macro indicators (daily)                   │
+└───────────────────────┼────────────────────────────────────────────┼─────┘
+                        │                                            │
+                        └──────────────┬─────────────────────────────┘
                                        │ unified JSON cache
                      ┌─────────────────▼───────────────────┐
-                     │       REGIME ENGINE (TypeScript)     │  ★ PRIMARY
+                     │   REGIME DETECTION AGENT (TS)       │  ★ PRIMARY
                      │  macro data → quadrant score +       │
                      │  confidence + transition signals     │
                      └─────────────────┬───────────────────┘
-                                       │ regime_latest.json
+                                       │ regimeLatest.json
                      ┌─────────────────▼───────────────────┐
                      │   REBALANCING AGENT (TypeScript)     │  ★ PRIMARY
                      │  regime + portfolio snapshot →       │
@@ -167,6 +167,8 @@ macro-investor-ai/
 │   ├── data/
 │   │   ├── fetchers/
 │   │   │   ├── fredFetcher.ts             # FRED macro indicator series
+│   │   │   ├── blsFetcher.ts              # BLS inflation/labor data
+│   │   │   ├── eiaFetcher.ts              # EIA energy data
 │   │   │   ├── polygonFetcher.ts          # EOD prices + earnings calendar
 │   │   │   └── ibkrFetcher.ts             # IBKR Flex Web Service fetcher
 │   │   ├── cache/
@@ -235,7 +237,19 @@ async function fetchAll(): Promise<Record<string, DataPoint[]>>
 async function getLatestValues(): Promise<Record<string, number>>
 ```
 
-**Caching:** Write to `data/cache/macroSnapshot.json` with per-series timestamps.
+**Caching:** Write to `src/data/cache/macroSnapshot.json` with per-series timestamps.
+
+#### `src/data/fetchers/blsFetcher.ts`
+
+**Responsibility:** Fetch inflation (CPI) and labor (NFP) data from BLS.
+
+#### `src/data/fetchers/eiaFetcher.ts`
+
+**Responsibility:** Fetch energy price and inventory data from EIA.
+
+#### `src/data/fetchers/polygonFetcher.ts`
+
+**Responsibility:** Fetch EOD price data and earnings calendars.
 
 ---
 
