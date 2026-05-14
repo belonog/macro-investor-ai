@@ -1,7 +1,14 @@
 import axios from 'axios';
-import { DataPoint, DataPointSchema } from '../types.js';
+import fs from 'fs/promises';
+import path from 'path';
+import { DataPoint, DataPointSchema, MacroSnapshot } from '../types.js';
 
 const FRED_BASE_URL = 'https://api.stlouisfed.org/fred';
+
+export const TARGET_SERIES = [
+  'T10Y2Y', 'ICSA', 'HOUST', 'AMDMNO', 'NFCI', // Leading
+  'INDPRO', 'PAYEMS', 'PCEPILFE'              // Confirmation
+];
 
 /**
  * Fetches a series from FRED and returns it as an array of DataPoints.
@@ -44,4 +51,73 @@ export async function fetchSeries(seriesId: string, limit: number = 12): Promise
 
   // Return in chronological order
   return points.reverse();
+}
+
+/**
+ * Fetches all target series concurrently.
+ * @param periods Number of observations to fetch for each series
+ * @returns Promise<MacroSnapshot>
+ */
+export async function fetchAll(periods: number = 12): Promise<MacroSnapshot> {
+  const snapshot: MacroSnapshot = {};
+  
+  const promises = TARGET_SERIES.map(async (seriesId) => {
+    try {
+      const data = await fetchSeries(seriesId, periods);
+      snapshot[seriesId] = data;
+    } catch (error) {
+      console.error(`Failed to fetch ${seriesId}:`, error);
+      snapshot[seriesId] = []; // Ensure the key exists even on failure
+    }
+  });
+
+  await Promise.all(promises);
+  return snapshot;
+}
+
+const CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'macroSnapshot.json');
+
+/**
+ * Fetches all target series and updates the local JSON cache.
+ * @param periods Number of observations to fetch
+ * @returns Promise<MacroSnapshot>
+ */
+export async function updateMacroCache(periods: number = 12): Promise<MacroSnapshot> {
+  const snapshot = await fetchAll(periods);
+  
+  // Ensure directory exists
+  await fs.mkdir(path.dirname(CACHE_PATH), { recursive: true });
+  
+  const cacheData = {
+    fetchedAt: new Date().toISOString(),
+    data: snapshot
+  };
+  
+  await fs.writeFile(CACHE_PATH, JSON.stringify(cacheData, null, 2));
+  return snapshot;
+}
+
+/**
+ * Returns the latest single value for each series in the target basket.
+ * Attempts to read from cache first, falls back to fetching.
+ * @returns Promise<Record<string, number>>
+ */
+export async function getLatestValues(): Promise<Record<string, number>> {
+  let snapshot: MacroSnapshot;
+  try {
+    const rawCache = await fs.readFile(CACHE_PATH, 'utf-8');
+    const cacheData = JSON.parse(rawCache);
+    snapshot = cacheData.data;
+  } catch (e) {
+    // If no cache, fetch it
+    snapshot = await updateMacroCache(1);
+  }
+
+  const latest: Record<string, number> = {};
+  for (const [series, points] of Object.entries(snapshot)) {
+    if (points.length > 0) {
+      latest[series] = points[points.length - 1].value;
+    }
+  }
+  return latest;
 }
