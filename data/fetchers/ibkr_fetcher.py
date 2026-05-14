@@ -1,4 +1,6 @@
 import logging
+import os
+from datetime import datetime, timezone
 from typing import List, Optional
 from ib_insync import IB, Contract, PortfolioItem, Ticker
 from pydantic import BaseModel
@@ -12,6 +14,8 @@ class PositionSnapshot(BaseModel):
     market_price: float
     market_value: float
     unrealized_pnl: float
+    unrealized_pnl_pct: float
+    fetched_at: datetime
 
 class IBKRFetcher:
     def __init__(self, host: str = '127.0.0.1', port: int = 7497, client_id: int = 1):
