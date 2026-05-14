@@ -1,20 +1,13 @@
-# Regime Agent Implementation Progress
+# Macro Investor AI Implementation Progress
 
-## Task 1: Define Regime Schemas
-- [x] Step 1: Add Regime Quadrants and Snapshot Schemas to `src/data/types.ts`
-- [x] Step 2: Add tests for new schemas in `tests/types.test.ts`
-- [x] Step 3: Run tests and commit (`feat: add RegimeSnapshot schema and quadrants`)
+## Phase 1: Core Regime Scoring
+- [x] Task 1: `fredFetcher.ts` - Macro indicator ingestion
+    - [x] Step 1.1: Define Data Schemas
+    - [x] Step 1.2: Implement FRED API Client
+    - [x] Step 1.3: Implement Bulk Fetching and Caching
+- [x] Task 2: `regimeAgent.ts` - Regime detection logic
 
-## Task 2: Setup SQLite Persistence
-- [x] Step 1: Create Database Wrapper in `src/agents/db.ts`
-- [x] Step 2: Write tests for database logging in `tests/db.test.ts`
-- [x] Step 3: Run tests and commit (`feat: implement sqlite persistence for regime history`)
+## Phase 2: Portfolio Rebalancing
+- [ ] Task 1: `rebalancingAgent.ts` - Translation of regime to actions
 
-## Task 3: Create System Prompt
-- [ ] Step 1: Write the prompt text in `src/prompts/regime_system.txt`
-- [ ] Step 2: Commit (`docs: add regime agent system prompt`)
-
-## Task 4: Implement Regime Agent
-- [ ] Step 1: Implement the evaluateRegime function in `src/agents/regimeAgent.ts`
-- [ ] Step 2: Add mocked tests in `tests/regimeAgent.test.ts`
-- [ ] Step 3: Run tests and commit (`feat: implement regime agent with Gemini integration`)
+...

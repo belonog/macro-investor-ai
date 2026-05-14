@@ -1,6 +1,7 @@
 {
   "name": "macro-investor-ai",
   "version": "1.0.0",
+  "type": "module",
   "description": "",
   "main": "index.js",
   "scripts": {

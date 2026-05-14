@@ -6,8 +6,10 @@ import { DataPoint, DataPointSchema, MacroSnapshot, MacroCacheSchema } from '../
 const FRED_BASE_URL = 'https://api.stlouisfed.org/fred';
 
 export const TARGET_SERIES = [
-  'T10Y2Y', 'ICSA', 'HOUST', 'AMDMNO', 'NFCI', // Leading
-  'INDPRO', 'PAYEMS', 'PCEPILFE'              // Confirmation
+  'CPIAUCSL', 'PCEPI', 'PPIACO', 'T5YIE', 'T5YIFR', // Inflation
+  'GDPC1', 'RSAFS', 'PAYEMS',                      // Growth
+  'FEDFUNDS', 'DGS2', 'DGS10', 'DGS30', 'T10Y2Y',  // Rates & Yield Curve
+  'DTWEXBGS', 'M2SL'                               // Dollar & Liquidity
 ];
 
 /**

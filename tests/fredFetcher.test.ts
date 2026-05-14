@@ -24,7 +24,7 @@ describe('fredFetcher', () => {
       }
     });
 
-    const result = await fetchSeries('INDPRO', 12);
+    const result = await fetchSeries('CPIAUCSL', 12);
     expect(result).toHaveLength(1);
     expect(result[0]).toEqual({ date: '2023-01-01', value: 100.5 });
   });
@@ -33,7 +33,7 @@ describe('fredFetcher', () => {
     const originalApiKey = process.env.FRED_API_KEY;
     delete process.env.FRED_API_KEY;
     
-    await expect(fetchSeries('INDPRO')).rejects.toThrow('FRED_API_KEY is not set');
+    await expect(fetchSeries('CPIAUCSL')).rejects.toThrow('FRED_API_KEY is not set');
     
     process.env.FRED_API_KEY = originalApiKey;
   });
@@ -49,7 +49,7 @@ describe('fredFetcher', () => {
 
       const result = await fetchAll(1);
       expect(Object.keys(result)).toEqual(expect.arrayContaining(TARGET_SERIES));
-      expect(result['INDPRO']).toEqual([{ date: '2023-01-01', value: 100.0 }]);
+      expect(result['CPIAUCSL']).toEqual([{ date: '2023-01-01', value: 100.0 }]);
     });
 
     it('should handle failures for individual series', async () => {
@@ -67,7 +67,7 @@ describe('fredFetcher', () => {
 
       const result = await fetchAll(1);
       expect(result['T10Y2Y']).toEqual([]);
-      expect(result['INDPRO']).toEqual([{ date: '2023-01-01', value: 100.0 }]);
+      expect(result['CPIAUCSL']).toEqual([{ date: '2023-01-01', value: 100.0 }]);
     });
   });
 
@@ -84,9 +84,9 @@ describe('fredFetcher', () => {
       expect(fs.mkdir).toHaveBeenCalled();
       expect(fs.writeFile).toHaveBeenCalledWith(
         expect.stringContaining('macroSnapshot.json'),
-        expect.stringContaining('"INDPRO":')
+        expect.stringContaining('"CPIAUCSL":')
       );
-      expect(result['INDPRO']).toEqual([{ date: '2023-01-01', value: 100.0 }]);
+      expect(result['CPIAUCSL']).toEqual([{ date: '2023-01-01', value: 100.0 }]);
     });
   });
 
@@ -95,7 +95,7 @@ describe('fredFetcher', () => {
       const mockCache = {
         fetchedAt: new Date().toISOString(),
         data: {
-          'INDPRO': [{ date: '2023-01-01', value: 105.0 }],
+          'CPIAUCSL': [{ date: '2023-01-01', value: 105.0 }],
           'PAYEMS': [{ date: '2023-01-01', value: 150000.0 }]
         }
       };
@@ -103,7 +103,7 @@ describe('fredFetcher', () => {
 
       const latest = await getLatestValues();
       expect(latest).toEqual({
-        'INDPRO': 105.0,
+        'CPIAUCSL': 105.0,
         'PAYEMS': 150000.0
       });
     });
@@ -118,7 +118,7 @@ describe('fredFetcher', () => {
       });
 
       const latest = await getLatestValues();
-      expect(latest['INDPRO']).toBe(110.0);
+      expect(latest['CPIAUCSL']).toBe(110.0);
       expect(fs.writeFile).toHaveBeenCalled();
     });
   });
