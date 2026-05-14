@@ -59,19 +59,30 @@ class IBKRFetcher:
         # Create a mapping for quick lookup
         ticker_map = {ticker.contract.conId: ticker for ticker in tickers}
 
+        fetched_at = datetime.now(timezone.utc)
         snapshots = []
         for item in portfolio_items:
             # Use ticker market price if available, otherwise fallback to portfolio item market price
             ticker = ticker_map.get(item.contract.conId)
             market_price = ticker.marketPrice() if ticker and ticker.marketPrice() > 0 else item.marketPrice
 
+            # Manual recalculations using fresh market price
+            market_value = item.position * market_price
+            unrealized_pnl = (market_price - item.averageCost) * item.position
+            
+            unrealized_pnl_pct = 0.0
+            if item.averageCost != 0:
+                unrealized_pnl_pct = ((market_price / item.averageCost) - 1) * 100
+
             snapshot = PositionSnapshot(
                 symbol=item.contract.symbol,
                 quantity=item.position,
                 avg_cost=item.averageCost,
                 market_price=market_price,
-                market_value=item.marketValue,
-                unrealized_pnl=item.unrealizedPNL
+                market_value=market_value,
+                unrealized_pnl=unrealized_pnl,
+                unrealized_pnl_pct=unrealized_pnl_pct,
+                fetched_at=fetched_at
             )
             snapshots.append(snapshot)
 
