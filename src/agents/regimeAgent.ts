@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'regimeLatest.json');
+const WEIGHTS_PATH = path.join(process.cwd(), 'config', 'regime_weights.json');
 const PROMPT_PATH = path.join(process.cwd(), 'src', 'prompts', 'regime_system.txt');
 
 /**
@@ -27,17 +28,35 @@ export async function evaluateRegime(macroData: Record<string, number>): Promise
 
     const systemPrompt = fs.readFileSync(PROMPT_PATH, 'utf8');
 
+    // Load weights
+    const weights = fs.existsSync(WEIGHTS_PATH)
+      ? JSON.parse(fs.readFileSync(WEIGHTS_PATH, 'utf8'))
+      : {};
+
+    // Load prior assessment
+    const priorAssessment = fs.existsSync(CACHE_PATH)
+      ? JSON.parse(fs.readFileSync(CACHE_PATH, 'utf8'))
+      : null;
+
     const ai = new GoogleGenAI({
       apiKey: process.env.GEMINI_API_KEY,
     });
 
+    const promptContext = {
+      macro_indicators: macroData,
+      regime_weights: weights,
+      prior_assessment: priorAssessment,
+    };
+
+    const modelName = process.env.REGIME_AGENT_MODEL || 'gemini-3-flash-preview';
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
-      contents: `${systemPrompt}\n\nData to analyze:\n${JSON.stringify(macroData, null, 2)}`,
+      model: modelName,
+      contents: `${systemPrompt}\n\nContext:\n${JSON.stringify(promptContext, null, 2)}`,
       config: {
         responseMimeType: 'application/json',
       }
     });
+
 
     if (!response.text) {
       throw new Error('Empty response from Gemini API');
@@ -45,7 +64,7 @@ export async function evaluateRegime(macroData: Record<string, number>): Promise
 
     const rawJson = JSON.parse(response.text);
     const evaluatedAt = new Date().toISOString();
-    
+
     const validated = RegimeSnapshotSchema.parse({
       ...rawJson,
       evaluatedAt,

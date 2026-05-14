@@ -2,25 +2,36 @@
   "TLT": {
     "shares": 100,
     "avg_cost": 90.00,
+    "position_type": "macro_core",
+    "thesis": "Long-duration Treasury recession play. Fed forced to cut as growth collapses.",
+    "regime_match": ["Deflationary Recession"],
     "stop": 88.00,
-    "thesis": "Long-duration Treasury play"
+    "hard_stop": 85.00,
+    "thesis_invalidation": "30-year yield breaks above 5.10% on sustained basis; stagflation regime confirmed with no recession signal",
+    "threshold_monitor": {
+      "indicator": "yield_30y",
+      "warn_at": 4.50,
+      "hard_exit_at": 5.10
+    }
   },
   "GLD": {
     "shares": 50,
     "avg_cost": 200.00,
+    "position_type": "macro_hedge",
+    "thesis": "Stagflation hedge; gold performs well when real rates are negative and growth is low.",
+    "regime_match": ["Stagflation"],
     "stop": 195.00,
-    "thesis": "Stagflation hedge"
+    "hard_stop": 190.00,
+    "thesis_invalidation": "Real rates turn strongly positive; growth accelerates with low inflation."
   },
   "SHY": {
     "shares": 200,
     "avg_cost": 82.00,
+    "position_type": "macro_hedge",
+    "thesis": "Short-term treasury cash proxy; low duration risk.",
+    "regime_match": ["Deflationary Recession", "Stagflation", "Goldilocks"],
     "stop": 81.50,
-    "thesis": "Short-term treasury cash proxy"
-  },
-  "CASH": {
-    "shares": 0,
-    "avg_cost": 1.00,
-    "stop": 0.00,
-    "thesis": "Cash balance"
+    "hard_stop": 81.00,
+    "thesis_invalidation": "Fed aggressively hikes rates beyond expectations."
   }
 }

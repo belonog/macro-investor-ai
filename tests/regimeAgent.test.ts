@@ -39,18 +39,32 @@ describe('regimeAgent', () => {
 
   it('should evaluate regime using Gemini API', async () => {
     const mockMacroData = { inflation: 2.5, growth: 1.5 };
-    const mockPrompt = 'Mock Prompt Content';
     
-    // Mock fs.readFileSync for the system prompt
-    vi.mocked(fs.readFileSync).mockReturnValue(mockPrompt);
+    // Mock fs.readFileSync
+    vi.mocked(fs.readFileSync).mockImplementation((path) => {
+      if (typeof path === 'string') {
+        if (path.includes('regime_system.txt')) return 'Mock Prompt';
+        if (path.includes('regime_weights.json')) return JSON.stringify({ weights: {} });
+        if (path.includes('regimeLatest.json')) return JSON.stringify({ prior: {} });
+      }
+      return '';
+    });
     
     // Mock GoogleGenAI response
     mockGenerateContent.mockResolvedValue({
       text: JSON.stringify({
         quadrant: 'Goldilocks',
         confidence: 85,
+        inflation_score: 0.3,
+        growth_score: 0.7,
+        regime_drift_vs_prior: 'Stable',
         keyDrivers: ['Driver 1', 'Driver 2'],
-        transitionSignal: 'None'
+        confirming_indicators: ['Confirming 1'],
+        contradicting_indicators: ['Contradicting 1'],
+        central_thesis_conflict: 'No conflict',
+        fastest_path_to_being_wrong: 'Growth slowing faster than expected',
+        watch_next: ['Release 1'],
+        transition_signal: 'None'
       })
     });
 
@@ -58,7 +72,9 @@ describe('regimeAgent', () => {
 
     expect(result.quadrant).toBe('Goldilocks');
     expect(result.confidence).toBe(85);
-    expect(result.keyDrivers).toEqual(['Driver 1', 'Driver 2']);
+    expect(result.inflation_score).toBe(0.3);
+    expect(result.growth_score).toBe(0.7);
+    expect(result.regime_drift_vs_prior).toBe('Stable');
     expect(result.evaluatedAt).toBeDefined();
     
     expect(fs.readFileSync).toHaveBeenCalled();
@@ -67,15 +83,30 @@ describe('regimeAgent', () => {
 
   it('should persist to DB and cache to JSON', async () => {
     const mockMacroData = { inflation: 2.5, growth: 1.5 };
-    vi.mocked(fs.readFileSync).mockReturnValue('Mock Prompt');
-    vi.mocked(fs.existsSync).mockReturnValue(true);
     
+    vi.mocked(fs.readFileSync).mockImplementation((path) => {
+        if (typeof path === 'string') {
+          if (path.includes('regime_system.txt')) return 'Mock Prompt';
+          if (path.includes('regime_weights.json')) return JSON.stringify({});
+          if (path.includes('regimeLatest.json')) return JSON.stringify({});
+        }
+        return '';
+      });
+
     mockGenerateContent.mockResolvedValue({
       text: JSON.stringify({
         quadrant: 'Goldilocks',
         confidence: 85,
+        inflation_score: 0.3,
+        growth_score: 0.7,
+        regime_drift_vs_prior: 'Stable',
         keyDrivers: ['Driver 1'],
-        transitionSignal: 'None'
+        confirming_indicators: [],
+        contradicting_indicators: [],
+        central_thesis_conflict: 'None',
+        fastest_path_to_being_wrong: 'None',
+        watch_next: [],
+        transition_signal: 'None'
       })
     });
 
@@ -109,5 +140,35 @@ describe('regimeAgent', () => {
     });
     
     await expect(evaluateRegime({})).rejects.toThrow('System prompt file not found');
+  });
+
+  it('should use model name from REGIME_AGENT_MODEL env var', async () => {
+    const customModel = 'gemini-1.5-pro';
+    process.env.REGIME_AGENT_MODEL = customModel;
+    
+    vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({}));
+    mockGenerateContent.mockResolvedValue({ text: JSON.stringify({
+      quadrant: 'Goldilocks',
+      confidence: 85,
+      inflation_score: 0.3,
+      growth_score: 0.7,
+      regime_drift_vs_prior: 'Stable',
+      keyDrivers: [],
+      confirming_indicators: [],
+      contradicting_indicators: [],
+      central_thesis_conflict: '',
+      fastest_path_to_being_wrong: '',
+      watch_next: [],
+      transition_signal: ''
+    }) });
+
+    await evaluateRegime({});
+
+    const { GoogleGenAI } = await import('@google/genai');
+    expect(mockGenerateContent).toHaveBeenCalledWith(expect.objectContaining({
+      model: customModel
+    }));
+
+    delete process.env.REGIME_AGENT_MODEL;
   });
 });

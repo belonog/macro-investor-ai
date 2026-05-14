@@ -3,7 +3,7 @@
 > **Purpose:** AI-powered macro regime detection and portfolio rebalancing engine for a
 > retail investor operating a growth/inflation framework.
 > **Target runtime:** Local machine + cloud APIs
-> **Primary AI:** Gemini API (gemini-2.0-flash)
+> **Primary AI:** Gemini API (gemini-3-flash-preview)
 > **Brokerage:** Interactive Brokers (Flex Reports — read-only, no TWS, no gateway)
 
 ---
@@ -69,6 +69,17 @@ SECONDARY
 4. **Position time horizon determines monitoring frequency** — macro core positions reviewed weekly; speculative positions checked daily at EOD
 5. **AI augments judgment, never replaces it** — all rebalancing suggestions require human confirmation before execution
 6. **Reproducible state** — every agent run is logged with inputs, outputs, and timestamps
+
+### Position Type Classification
+
+Monitoring cadence and agent behavior are determined by `position_type` in `positions.json`:
+
+| Type | Examples | Monitoring Cadence |
+|---|---|---|
+| `macro_core` | TLT, VGLT, SCHP, BRK-B | Regime-event-driven; weekly review |
+| `macro_hedge` | ILF, SGOV | Weekly review; EOD if near stop |
+| `speculative` | DUST, BTU, SM Energy | Daily EOD; hard deadline tracking |
+| `equity_single` | ADBE, IBKR | EOD; earnings-event-driven |
 
 ---
 
@@ -206,20 +217,22 @@ macro-investor-ai/
 
 ---
 
-## 5. Environment & Configuration
+### 5. Environment & Configuration
 
 ### `.env.example`
 
 ```dotenv
 GEMINI_API_KEY=your_key_here
+
+# Agent Models
+REGIME_AGENT_MODEL=gemini-3-flash-preview
+REBALANCING_AGENT_MODEL=gemini-3-flash-preview
+COHERENCE_AGENT_MODEL=gemini-3-flash-preview
+INTERPRETER_AGENT_MODEL=gemini-3-flash-preview
+
 FRED_API_KEY=your_key_here
-POLYGON_API_KEY=your_key_here
-TELEGRAM_BOT_TOKEN=your_bot_token
-TELEGRAM_CHAT_ID=your_chat_id
-IBKR_FLEX_TOKEN=your_flex_token
-IBKR_FLEX_REPORT_ID=your_report_id
-EIA_API_KEY=your_key_here
 ```
+
 
 ---
 
@@ -273,8 +286,32 @@ async function fetchPortfolioSnapshot(): Promise<PositionSnapshot[]>
 **Trigger:** Weekly + after major macro releases.
 **Output cached to:** `src/data/cache/regimeLatest.json` + `logs/regime_history.db`
 
+**Output:**
+```json
+{
+  "quadrant":                    "Stagflation" | "Goldilocks" | "Inflationary Boom" | "Deflationary Recession",
+  "confidence":                  0.0-100,
+  "inflation_score":             0.0-1.0,
+  "growth_score":                0.0-1.0,
+  "regime_drift_vs_prior":       "Stable" | "Weakening" | "Transitioning" | "Shifted",
+  "transition_signal":           "Warning of an impending shift, if any",
+  "keyDrivers":                  ["Bullet points explaining classification"],
+  "confirming_indicators":       ["List of confirming data points"],
+  "contradicting_indicators":    ["List of contradicting data points"],
+  "central_thesis_conflict":     "stagflation vs. deflation tension assessment",
+  "fastest_path_to_being_wrong": "mandatory; single most plausible invalidation within 60 days",
+  "watch_next":                  ["top 3 upcoming releases"],
+  "evaluatedAt":                 "ISO timestamp"
+}
+```
+
 **System prompt** (`src/prompts/regime_system.txt`):
 *Classification of macro environment into Goldilocks, Inflationary Boom, Stagflation, or Deflationary Recession.*
+
+**Key Constraints:**
+- **Drift Detection:** Compare against `prior_assessment` to determine if the regime is stable or shifting.
+- **Mandatory Invalidation:** Must identify the "fastest path to being wrong".
+- **Central Thesis Conflict:** Must address the tension between stagflation (bearish nominal Treasuries) and deflationary recession (bullish nominal Treasuries).
 
 ---
 
@@ -283,9 +320,41 @@ async function fetchPortfolioSnapshot(): Promise<PositionSnapshot[]>
 **File:** `src/agents/rebalancingAgent.ts`
 **Trigger:** Automatically after regime shift or on-demand via CLI.
 
-```bash
-npx tsx src/agents/rebalancingAgent.ts --full-report
+**Output:**
+```json
+{
+  "alignment_score":             0.0-1.0,
+  "alignment_grade":             "A" | "B" | "C" | "D",
+  "position_assessments": [
+    {
+      "symbol":           "string",
+      "position_type":    "string",
+      "regime_fit":       "Strong" | "Moderate" | "Weak" | "Misaligned",
+      "thesis_intact":    true | false,
+      "suggested_action": "Hold" | "Add" | "Trim" | "Exit" | "Watch",
+      "action_rationale": "string",
+      "urgency":          "None" | "This Week" | "Immediate",
+      "conflict_flag":    "string | null"
+    }
+  ],
+  "priority_actions":                  ["top 3 ranked by urgency"],
+  "regime_transition_implication":     "what to pre-position for if regime is drifting",
+  "thesis_conflict_resolution":        "explicit recommendation on stagflation vs. deflation",
+  "rebalancing_rationale":             "overall narrative",
+  "fastest_path_to_being_wrong":       "mandatory; rebalancing invalidation scenario",
+  "evaluatedAt":                       "ISO timestamp"
+}
 ```
+
+**System prompt** (`src/prompts/rebalancing_system.txt`):
+*Translate regime assessment into concrete, prioritized portfolio actions.*
+
+**Key Constraints:**
+- **Thesis Alignment:** Every "Exit" or "Trim" must reference the original thesis invalidation condition.
+- **Position Standards:**
+    - `macro_core`: Only action if regime shifted OR thesis-invalidation approaching.
+    - `macro_hedge`: Hold unless regime contradicts.
+    - `speculative`: Assess against hard deadline and current thesis validity.
 
 ---
 
@@ -307,45 +376,58 @@ npx tsx src/agents/rebalancingAgent.ts --full-report
 **File:** `src/monitor/eodMonitor.ts`
 **Trigger:** Daily 4:15 PM ET.
 
+**Logic:**
+1. **Stop Proximity:** Warn if within 3% of hard stop.
+2. **Thesis Thresholds:** Monitor `macro_core` against underlying drivers (e.g., TLT against 30yr yield).
+3. **Deadlines:** Warn if `speculative` deadline is within 5 days.
+
 ---
 
-### 6.8 Orchestrators
+## 7. Configuration Files
 
-#### `src/scheduler.ts`
+### `config/regime_weights.json`
+```json
+{
+  "inflation_indicators": {
+    "cpi_yoy": 0.25, "pce_yoy": 0.20, "breakeven_5y5y": 0.20,
+    "ppi_yoy": 0.15, "oil_price_3m_change": 0.10, "fertilizer_index_3m_change": 0.10
+  },
+  "growth_indicators": {
+    "ism_manufacturing": 0.30, "ism_services": 0.20, "real_gdp_qoq": 0.25,
+    "nfp_3m_avg": 0.15, "retail_sales_yoy": 0.10
+  },
+  "regime_thresholds": {
+    "inflation_high": 0.60, "inflation_low": 0.40,
+    "growth_high": 0.55, "growth_low": 0.45
+  }
+}
+```
 
-```typescript
-import cron from 'node-cron';
-import { regimeCycle } from './flows/regimeCycle';
-import { eodCheck } from './flows/eodCheck';
-
-// Regime cycle: Sunday 9 AM
-cron.schedule('0 9 * * 0', () => regimeCycle.run());
-
-// EOD monitor: Weekdays 4:15 PM
-cron.schedule('15 16 * * 1-5', () => eodCheck.run());
+### `config/positions.json`
+```json
+{
+  "SYMBOL": {
+    "shares": 100,
+    "avg_cost": 50.00,
+    "position_type": "macro_core | macro_hedge | speculative | equity_single",
+    "thesis": "string",
+    "regime_match": ["Goldilocks", "..."],
+    "stop": 45.00,
+    "hard_stop": 40.00,
+    "deadline": "YYYY-MM-DD",
+    "thesis_invalidation": "condition description",
+    "threshold_monitor": {
+      "indicator": "yield_30y | breakeven_5y5y",
+      "warn_at": 4.50,
+      "hard_exit_at": 5.10
+    }
+  }
+}
 ```
 
 ---
 
-### 6.9 Alert Delivery
-
-**File:** `src/alerts/telegramBot.ts`
-Uses `telegraf` for interactive alerts and reports.
-
----
-
-### 6.10 Decision Log
-
-**Persistence:** `better-sqlite3`
-**Databases:**
-- `logs/agent_runs.db`: All AI I/O.
-- `logs/regime_history.db`: Time series of quadrant scores.
-- `logs/alerts_sent.db`: Telegram history.
-- `logs/decision_log.db`: Manual trade entries.
-
----
-
-## 7. Scheduled Flows
+## 8. Scheduled Flows
 
 *Flows are implemented as TypeScript functions in `src/flows/` and triggered by `src/scheduler.ts`.*
 

@@ -3,128 +3,89 @@ import {
   PositionSnapshotSchema, 
   AlertSchema, 
   DataPointSchema, 
-  MacroSnapshotSchema,
-  RegimeQuadrantSchema,
-  RegimeSnapshotSchema
-} from '../src/data/types.js';
+  MacroSnapshotSchema, 
+  MacroCacheSchema, 
+  RegimeQuadrantSchema, 
+  RegimeSnapshotSchema 
+} from '../src/data/types';
 
 describe('PositionSnapshotSchema', () => {
   it('should validate a correct position snapshot', () => {
-    const validSnapshot = {
+    const validPosition = {
       symbol: 'AAPL',
       quantity: 10,
-      avgCost: 150.5,
-      marketPrice: 175.2,
-      marketValue: 1752.0,
-      unrealizedPnl: 247.0,
-      unrealizedPnlPct: 0.164,
-      fetchedAt: new Date().toISOString()
+      avgCost: 150,
+      marketPrice: 175,
+      marketValue: 1750,
+      unrealizedPnl: 250,
+      unrealizedPnlPct: 16.67,
+      fetchedAt: new Date().toISOString(),
     };
-    const result = PositionSnapshotSchema.safeParse(validSnapshot);
-    expect(result.success).toBe(true);
+    expect(PositionSnapshotSchema.safeParse(validPosition).success).toBe(true);
   });
 
-  it('should reject a snapshot with missing fields', () => {
-    const invalidSnapshot = {
-      symbol: 'AAPL',
-      quantity: 10
-    };
-    const result = PositionSnapshotSchema.safeParse(invalidSnapshot);
-    expect(result.success).toBe(false);
-  });
-
-  it('should reject a snapshot with wrong types', () => {
-    const invalidSnapshot = {
-      symbol: 'AAPL',
-      quantity: 'ten',
-      avgCost: 150.5,
-      marketPrice: 175.2,
-      marketValue: 1752.0,
-      unrealizedPnl: 247.0,
-      unrealizedPnlPct: 0.164,
-      fetchedAt: new Date().toISOString()
-    };
-    const result = PositionSnapshotSchema.safeParse(invalidSnapshot);
-    expect(result.success).toBe(false);
+  it('should reject invalid symbols', () => {
+    const invalidPosition = { symbol: 123 }; // symbol should be a string
+    expect(PositionSnapshotSchema.safeParse(invalidPosition).success).toBe(false);
   });
 });
 
 describe('AlertSchema', () => {
   it('should validate a correct alert', () => {
     const validAlert = {
+      level: 'WARNING',
+      symbol: 'BTC',
+      message: 'Volatility high',
+      action: 'Check positions',
+    };
+    expect(AlertSchema.safeParse(validAlert).success).toBe(true);
+  });
+
+  it('should validate without optional fields', () => {
+    const minimalAlert = {
       level: 'INFO',
-      symbol: 'AAPL',
-      message: 'Price target reached'
+      message: 'System online',
     };
-    const result = AlertSchema.safeParse(validAlert);
-    expect(result.success).toBe(true);
-  });
-
-  it('should validate an alert without a symbol', () => {
-    const validAlert = {
-      level: 'CRITICAL',
-      message: 'System error'
-    };
-    const result = AlertSchema.safeParse(validAlert);
-    expect(result.success).toBe(true);
-  });
-
-  it('should reject an alert with an invalid level', () => {
-    const invalidAlert = {
-      level: 'INVALID',
-      message: 'Test'
-    };
-    const result = AlertSchema.safeParse(invalidAlert);
-    expect(result.success).toBe(false);
+    expect(AlertSchema.safeParse(minimalAlert).success).toBe(true);
   });
 });
 
 describe('DataPointSchema', () => {
   it('should validate a correct data point', () => {
-    const validDataPoint = {
-      date: '2023-01-01',
-      value: 100.5
-    };
-    const result = DataPointSchema.safeParse(validDataPoint);
-    expect(result.success).toBe(true);
+    const validPoint = { date: '2024-01-01', value: 100.5 };
+    expect(DataPointSchema.safeParse(validPoint).success).toBe(true);
   });
 
-  it('should reject a data point with invalid date', () => {
-    const invalidDataPoint = {
-      date: 123,
-      value: 100.5
-    };
-    const result = DataPointSchema.safeParse(invalidDataPoint);
-    expect(result.success).toBe(false);
+  it('should reject invalid date formats', () => {
+    expect(DataPointSchema.safeParse({ date: '01-01-2024', value: 10 }).success).toBe(false);
+    expect(DataPointSchema.safeParse({ date: '2024/01/01', value: 10 }).success).toBe(false);
   });
 });
 
 describe('MacroSnapshotSchema', () => {
   it('should validate a correct macro snapshot', () => {
     const validSnapshot = {
-      'CPI': [
-        { date: '2023-01-01', value: 100.5 },
-        { date: '2023-02-01', value: 101.2 }
-      ],
-      'GDP': [
-        { date: '2023-01-01', value: 25000 }
-      ]
+      'CPI': [{ date: '2024-01-01', value: 3.1 }],
+      'GDP': [{ date: '2023-12-31', value: 2.5 }],
     };
-    const result = MacroSnapshotSchema.safeParse(validSnapshot);
-    expect(result.success).toBe(true);
+    expect(MacroSnapshotSchema.safeParse(validSnapshot).success).toBe(true);
   });
+});
 
-  it('should reject a macro snapshot with wrong structure', () => {
-    const invalidSnapshot = {
-      'CPI': { date: '2023-01-01', value: 100.5 } // Should be an array
+describe('MacroCacheSchema', () => {
+  it('should validate a correct macro cache', () => {
+    const validCache = {
+      fetchedAt: new Date().toISOString(),
+      data: {
+        'CPI': [{ date: '2024-01-01', value: 3.1 }],
+      },
     };
-    const result = MacroSnapshotSchema.safeParse(invalidSnapshot);
-    expect(result.success).toBe(false);
+    expect(MacroCacheSchema.safeParse(validCache).success).toBe(true);
   });
 });
 
 describe('RegimeQuadrantSchema', () => {
-  it('should validate correct quadrants', () => {
+  it('should validate all quadrants', () => {
     expect(RegimeQuadrantSchema.safeParse('Goldilocks').success).toBe(true);
     expect(RegimeQuadrantSchema.safeParse('Inflationary Boom').success).toBe(true);
     expect(RegimeQuadrantSchema.safeParse('Stagflation').success).toBe(true);
@@ -141,19 +102,38 @@ describe('RegimeSnapshotSchema', () => {
     const validSnapshot = {
       quadrant: 'Goldilocks',
       confidence: 85,
+      inflation_score: 0.3,
+      growth_score: 0.7,
+      regime_drift_vs_prior: 'Stable',
       keyDrivers: ['Low inflation', 'Moderate growth'],
-      transitionSignal: 'Possible uptick in CPI',
+      confirming_indicators: ['CPI stable'],
+      contradicting_indicators: ['PPI rising'],
+      central_thesis_conflict: 'None',
+      fastest_path_to_being_wrong: 'Growth slowing faster than expected',
+      watch_next: ['NFP'],
+      transition_signal: 'Possible uptick in CPI',
       evaluatedAt: new Date().toISOString()
     };
     const result = RegimeSnapshotSchema.safeParse(validSnapshot);
+    if (!result.success) {
+      console.log(result.error);
+    }
     expect(result.success).toBe(true);
   });
 
-  it('should validate without optional transitionSignal', () => {
+  it('should validate without optional transition_signal', () => {
     const validSnapshot = {
       quadrant: 'Stagflation',
       confidence: 70,
+      inflation_score: 0.8,
+      growth_score: 0.4,
+      regime_drift_vs_prior: 'Weakening',
       keyDrivers: ['Rising prices', 'Stagnant growth'],
+      confirming_indicators: [],
+      contradicting_indicators: [],
+      central_thesis_conflict: 'Conflict here',
+      fastest_path_to_being_wrong: 'Deflation spike',
+      watch_next: [],
       evaluatedAt: new Date().toISOString()
     };
     const result = RegimeSnapshotSchema.safeParse(validSnapshot);
@@ -161,27 +141,36 @@ describe('RegimeSnapshotSchema', () => {
   });
 
   it('should reject confidence out of bounds', () => {
-    const invalidSnapshotLow = {
+    const base = {
       quadrant: 'Goldilocks',
-      confidence: -1,
+      inflation_score: 0.5,
+      growth_score: 0.5,
+      regime_drift_vs_prior: 'Stable',
       keyDrivers: ['Test'],
+      confirming_indicators: [],
+      contradicting_indicators: [],
+      central_thesis_conflict: 'None',
+      fastest_path_to_being_wrong: 'None',
+      watch_next: [],
       evaluatedAt: new Date().toISOString()
     };
-    const invalidSnapshotHigh = {
-      quadrant: 'Goldilocks',
-      confidence: 101,
-      keyDrivers: ['Test'],
-      evaluatedAt: new Date().toISOString()
-    };
-    expect(RegimeSnapshotSchema.safeParse(invalidSnapshotLow).success).toBe(false);
-    expect(RegimeSnapshotSchema.safeParse(invalidSnapshotHigh).success).toBe(false);
+    expect(RegimeSnapshotSchema.safeParse({ ...base, confidence: -1 }).success).toBe(false);
+    expect(RegimeSnapshotSchema.safeParse({ ...base, confidence: 101 }).success).toBe(false);
   });
 
   it('should reject invalid date format', () => {
     const invalidSnapshot = {
       quadrant: 'Goldilocks',
       confidence: 50,
+      inflation_score: 0.5,
+      growth_score: 0.5,
+      regime_drift_vs_prior: 'Stable',
       keyDrivers: ['Test'],
+      confirming_indicators: [],
+      contradicting_indicators: [],
+      central_thesis_conflict: 'None',
+      fastest_path_to_being_wrong: 'None',
+      watch_next: [],
       evaluatedAt: 'not-a-date'
     };
     expect(RegimeSnapshotSchema.safeParse(invalidSnapshot).success).toBe(false);

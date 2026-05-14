@@ -47,6 +47,15 @@ class DatabaseManager {
         data_inputs TEXT NOT NULL,
         raw_response TEXT NOT NULL
       );
+
+      CREATE TABLE IF NOT EXISTS rebalancing_decisions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT NOT NULL,
+        alignment_score REAL NOT NULL,
+        alignment_grade TEXT NOT NULL,
+        position_assessments TEXT NOT NULL,
+        raw_response TEXT NOT NULL
+      );
     `);
   }
 
@@ -62,6 +71,21 @@ class DatabaseManager {
       evaluation.confidence,
       JSON.stringify(evaluation.data_inputs),
       JSON.stringify(evaluation.raw_response)
+    );
+  }
+
+  public logRebalancingDecision(decision: any) {
+    const stmt = this.db.prepare(`
+      INSERT INTO rebalancing_decisions (timestamp, alignment_score, alignment_grade, position_assessments, raw_response)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+
+    stmt.run(
+      decision.timestamp,
+      decision.alignment_score,
+      decision.alignment_grade,
+      JSON.stringify(decision.position_assessments),
+      JSON.stringify(decision.raw_response)
     );
   }
 

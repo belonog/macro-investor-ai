@@ -20,22 +20,35 @@ async function main() {
     console.log('Current Indicators:', JSON.stringify(latestValues, null, 2));
 
     // 3. Evaluate Regime via Gemini
-    console.log('\n🧠 Step 3: Evaluating Macro Regime via Gemini 2.0 Flash...');
+    console.log('\n🧠 Step 3: Evaluating Macro Regime via Gemini 3.0 Flash...');
     const regime = await evaluateRegime(latestValues);
     
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log(`CURRENT REGIME: ${regime.quadrant}`);
     console.log(`CONFIDENCE:     ${regime.confidence}%`);
-    console.log(`EVALUATED AT:   ${regime.evaluatedAt}`);
+    console.log(`DRIFT:          ${regime.regime_drift_vs_prior}`);
+    console.log(`INFLATION SCORE: ${(regime.inflation_score * 100).toFixed(1)}%`);
+    console.log(`GROWTH SCORE:    ${(regime.growth_score * 100).toFixed(1)}%`);
+    console.log(`EVALUATED AT:    ${regime.evaluatedAt}`);
+    
     console.log('\nKEY DRIVERS:');
     regime.keyDrivers.forEach(driver => console.log(`• ${driver}`));
     
-    if (regime.transitionSignal) {
-      console.log(`\n⚠️ TRANSITION SIGNAL: ${regime.transitionSignal}`);
+    console.log('\nCENTRAL THESIS CONFLICT:');
+    console.log(regime.central_thesis_conflict);
+
+    console.log('\nFASTEST PATH TO BEING WRONG:');
+    console.log(`⚠️ ${regime.fastest_path_to_being_wrong}`);
+
+    if (regime.transition_signal) {
+      console.log(`\n🚨 TRANSITION SIGNAL: ${regime.transition_signal}`);
     }
+
+    console.log('\nWATCH NEXT:');
+    regime.watch_next.forEach(event => console.log(`👀 ${event}`));
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     
-    console.log('\n✅ Logged to SQLite (logs/regime_history.db)');
+    console.log('\n✅ Logged to SQLite (logs/macro_investor.db)');
     
   } catch (error) {
     console.error('\n❌ Error during execution:');
