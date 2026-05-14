@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { PositionSnapshotSchema, AlertSchema, DataPointSchema, MacroSnapshotSchema } from '../src/data/types.js';
+import { 
+  PositionSnapshotSchema, 
+  AlertSchema, 
+  DataPointSchema, 
+  MacroSnapshotSchema,
+  RegimeQuadrantSchema,
+  RegimeSnapshotSchema
+} from '../src/data/types.js';
 
 describe('PositionSnapshotSchema', () => {
   it('should validate a correct position snapshot', () => {
@@ -113,5 +120,70 @@ describe('MacroSnapshotSchema', () => {
     };
     const result = MacroSnapshotSchema.safeParse(invalidSnapshot);
     expect(result.success).toBe(false);
+  });
+});
+
+describe('RegimeQuadrantSchema', () => {
+  it('should validate correct quadrants', () => {
+    expect(RegimeQuadrantSchema.safeParse('Goldilocks').success).toBe(true);
+    expect(RegimeQuadrantSchema.safeParse('Inflationary Boom').success).toBe(true);
+    expect(RegimeQuadrantSchema.safeParse('Stagflation').success).toBe(true);
+    expect(RegimeQuadrantSchema.safeParse('Deflationary Recession').success).toBe(true);
+  });
+
+  it('should reject invalid quadrants', () => {
+    expect(RegimeQuadrantSchema.safeParse('Utopia').success).toBe(false);
+  });
+});
+
+describe('RegimeSnapshotSchema', () => {
+  it('should validate a correct regime snapshot', () => {
+    const validSnapshot = {
+      quadrant: 'Goldilocks',
+      confidence: 85,
+      keyDrivers: ['Low inflation', 'Moderate growth'],
+      transitionSignal: 'Possible uptick in CPI',
+      evaluatedAt: new Date().toISOString()
+    };
+    const result = RegimeSnapshotSchema.safeParse(validSnapshot);
+    expect(result.success).toBe(true);
+  });
+
+  it('should validate without optional transitionSignal', () => {
+    const validSnapshot = {
+      quadrant: 'Stagflation',
+      confidence: 70,
+      keyDrivers: ['Rising prices', 'Stagnant growth'],
+      evaluatedAt: new Date().toISOString()
+    };
+    const result = RegimeSnapshotSchema.safeParse(validSnapshot);
+    expect(result.success).toBe(true);
+  });
+
+  it('should reject confidence out of bounds', () => {
+    const invalidSnapshotLow = {
+      quadrant: 'Goldilocks',
+      confidence: -1,
+      keyDrivers: ['Test'],
+      evaluatedAt: new Date().toISOString()
+    };
+    const invalidSnapshotHigh = {
+      quadrant: 'Goldilocks',
+      confidence: 101,
+      keyDrivers: ['Test'],
+      evaluatedAt: new Date().toISOString()
+    };
+    expect(RegimeSnapshotSchema.safeParse(invalidSnapshotLow).success).toBe(false);
+    expect(RegimeSnapshotSchema.safeParse(invalidSnapshotHigh).success).toBe(false);
+  });
+
+  it('should reject invalid date format', () => {
+    const invalidSnapshot = {
+      quadrant: 'Goldilocks',
+      confidence: 50,
+      keyDrivers: ['Test'],
+      evaluatedAt: 'not-a-date'
+    };
+    expect(RegimeSnapshotSchema.safeParse(invalidSnapshot).success).toBe(false);
   });
 });
