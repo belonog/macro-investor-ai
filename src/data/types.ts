@@ -23,7 +23,7 @@ export const AlertSchema = z.object({
 export type Alert = z.infer<typeof AlertSchema>;
 
 export const DataPointSchema = z.object({
-  date: z.string(), // YYYY-MM-DD
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD
   value: z.number(),
 });
 
