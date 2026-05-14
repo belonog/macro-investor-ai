@@ -93,6 +93,7 @@ describe('fredFetcher', () => {
   describe('getLatestValues', () => {
     it('should return latest values from cache if available', async () => {
       const mockCache = {
+        fetchedAt: new Date().toISOString(),
         data: {
           'INDPRO': [{ date: '2023-01-01', value: 105.0 }],
           'PAYEMS': [{ date: '2023-01-01', value: 150000.0 }]

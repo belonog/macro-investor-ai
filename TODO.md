@@ -1,22 +1,20 @@
-# Macro Investor AI Implementation Progress
+# Regime Agent Implementation Progress
 
-## Phase 1: Core Regime Scoring
-- [ ] Task 1: `fredFetcher.ts` - Macro indicator ingestion
-    - [x] Step 1.1: Define Data Schemas
-    - [x] Step 1.2: Implement FRED API Client
-    - [ ] Step 1.3: Implement Bulk Fetching and Caching
-- [ ] Task 2: `regimeAgent.ts` - Regime detection logic
+## Task 1: Define Regime Schemas
+- [x] Step 1: Add Regime Quadrants and Snapshot Schemas to `src/data/types.ts`
+- [x] Step 2: Add tests for new schemas in `tests/types.test.ts`
+- [x] Step 3: Run tests and commit (`feat: add RegimeSnapshot schema and quadrants`)
 
-## Phase 2: Portfolio Rebalancing
-- [ ] Task 1: `rebalancingAgent.ts` - Translation of regime to actions
+## Task 2: Setup SQLite Persistence
+- [x] Step 1: Create Database Wrapper in `src/agents/db.ts`
+- [x] Step 2: Write tests for database logging in `tests/db.test.ts`
+- [x] Step 3: Run tests and commit (`feat: implement sqlite persistence for regime history`)
 
-## Phase 3: Portfolio Integration
-- [x] Task 1: `ibkrFetcher.ts` - IBKR Flex Report integration (Implemented in `src/data/fetchers/ibkrFetcher.ts`)
+## Task 3: Create System Prompt
+- [ ] Step 1: Write the prompt text in `src/prompts/regime_system.txt`
+- [ ] Step 2: Commit (`docs: add regime agent system prompt`)
 
-## Phase 4: Risk Monitoring
-- [ ] Task 1: `eodMonitor.ts` - EOD threshold checks
-
-## Documentation & Infrastructure
-- [x] Project Specs v2.0 (TypeScript Monolith)
-- [x] Zod Schema Definitions
-- [x] Align directory structure with Spec v2.0
+## Task 4: Implement Regime Agent
+- [ ] Step 1: Implement the evaluateRegime function in `src/agents/regimeAgent.ts`
+- [ ] Step 2: Add mocked tests in `tests/regimeAgent.test.ts`
+- [ ] Step 3: Run tests and commit (`feat: implement regime agent with Gemini integration`)

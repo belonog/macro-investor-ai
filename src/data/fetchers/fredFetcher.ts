@@ -1,7 +1,7 @@
 import axios from 'axios';
 import fs from 'fs/promises';
 import path from 'path';
-import { DataPoint, DataPointSchema, MacroSnapshot } from '../types.js';
+import { DataPoint, DataPointSchema, MacroSnapshot, MacroCacheSchema } from '../types.js';
 
 const FRED_BASE_URL = 'https://api.stlouisfed.org/fred';
 
@@ -106,10 +106,15 @@ export async function getLatestValues(): Promise<Record<string, number>> {
   let snapshot: MacroSnapshot;
   try {
     const rawCache = await fs.readFile(CACHE_PATH, 'utf-8');
-    const cacheData = JSON.parse(rawCache);
-    snapshot = cacheData.data;
+    const parsed = MacroCacheSchema.safeParse(JSON.parse(rawCache));
+    if (!parsed.success) {
+      console.warn('Invalid macro cache format. Re-fetching...');
+      snapshot = await updateMacroCache(1);
+    } else {
+      snapshot = parsed.data.data;
+    }
   } catch (e) {
-    // If no cache, fetch it
+    // If no cache or parse error, fetch it
     snapshot = await updateMacroCache(1);
   }
 
