@@ -1,8 +1,9 @@
+import asyncio
 import logging
 import os
 from datetime import datetime, timezone
 from typing import List, Optional
-from ib_insync import IB, Contract, PortfolioItem, Ticker
+from ib_insync import IB, PortfolioItem, Ticker
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -24,15 +25,31 @@ class IBKRFetcher:
         self.client_id = int(client_id or os.getenv('IBKR_CLIENT_ID', 1))
         self.ib = IB()
 
-    async def connect(self):
-        """Connect to IBKR TWS/Gateway."""
-        try:
-            if not self.ib.isConnected():
-                await self.ib.connectAsync(self.host, self.port, clientId=self.client_id)
-                logger.info(f"Connected to IBKR at {self.host}:{self.port}")
-        except Exception as e:
-            logger.error(f"Failed to connect to IBKR: {e}")
-            raise
+    async def connect(self, max_retries: int = 3, initial_delay: float = 1.0, sync_portfolio: bool = False, sync_timeout: float = 10.0):
+        """Connect to IBKR TWS/Gateway with retries."""
+        for attempt in range(max_retries):
+            try:
+                if not self.ib.isConnected():
+                    await self.ib.connectAsync(self.host, self.port, clientId=self.client_id)
+                    logger.info(f"Connected to IBKR at {self.host}:{self.port}")
+                
+                if self.ib.isConnected():
+                    if sync_portfolio:
+                        logger.info("Synchronizing portfolio data...")
+                        start_time = asyncio.get_event_loop().time()
+                        while not self.ib.portfolio() and (asyncio.get_event_loop().time() - start_time) < sync_timeout:
+                            await asyncio.sleep(0.1)
+                        if not self.ib.portfolio():
+                            logger.warning("Portfolio synchronization timed out or portfolio is empty.")
+                        else:
+                            logger.info("Portfolio synchronized.")
+                    return
+            except Exception as e:
+                delay = initial_delay * (2 ** attempt)
+                logger.error(f"Attempt {attempt + 1}/{max_retries} failed: {e}. Retrying in {delay}s...")
+                if attempt == max_retries - 1:
+                    raise
+                await asyncio.sleep(delay)
 
     def disconnect(self):
         """Disconnect from IBKR."""
@@ -45,9 +62,10 @@ class IBKRFetcher:
         Fetch current portfolio positions and their live market prices.
         """
         if not self.ib.isConnected():
-            await self.connect()
+            await self.connect(sync_portfolio=True)
 
         portfolio_items: List[PortfolioItem] = self.ib.portfolio()
+        await self.ib.sleep(0)  # Yield to event loop
         if not portfolio_items:
             logger.warning("No portfolio items found.")
             return []

@@ -12,26 +12,68 @@ def mock_ib():
         mock_instance.disconnect = MagicMock()
         mock_instance.portfolio = MagicMock()
         mock_instance.reqTickersAsync = AsyncMock()
+        mock_instance.sleep = AsyncMock()
         yield mock_instance
 
 @pytest.mark.asyncio
 async def test_ibkr_fetcher_connect_env_vars(mock_ib):
+    mock_ib.isConnected.return_value = True # Simulate already connected or success
     with patch.dict('os.environ', {
         'IBKR_HOST': '10.0.0.1',
         'IBKR_PORT': '4002',
         'IBKR_CLIENT_ID': '20'
     }):
         fetcher = IBKRFetcher()
+        mock_ib.isConnected.side_effect = [False, True]
         await fetcher.connect()
         
         mock_ib.connectAsync.assert_called_once_with('10.0.0.1', 4002, clientId=20)
 
 @pytest.mark.asyncio
 async def test_ibkr_fetcher_connect(mock_ib):
+    mock_ib.isConnected.side_effect = [False, True]
     fetcher = IBKRFetcher(host='localhost', port=4001, client_id=10)
     await fetcher.connect()
     
     mock_ib.connectAsync.assert_called_once_with('localhost', 4001, clientId=10)
+
+@pytest.mark.asyncio
+async def test_ibkr_fetcher_connect_retries(mock_ib):
+    # Fail twice, succeed on third
+    mock_ib.connectAsync.side_effect = [
+        ConnectionError("Failed"),
+        ConnectionError("Failed"),
+        None
+    ]
+    # isConnected will be called multiple times: 
+    # 1. first attempt (False)
+    # 2. log success (True) - but wait, the implementation calls isConnected before connectAsync
+    # Let's align with implementation:
+    # Attempt 1: isConnected (False) -> connectAsync (Fail)
+    # Attempt 2: isConnected (False) -> connectAsync (Fail)
+    # Attempt 3: isConnected (False) -> connectAsync (Success)
+    mock_ib.isConnected.side_effect = [False, False, False, True]
+
+    fetcher = IBKRFetcher(host='localhost', port=4001, client_id=10)
+    # Mocking sleep to speed up test
+    with patch('asyncio.sleep', new_callable=AsyncMock):
+        await fetcher.connect()
+
+    assert mock_ib.connectAsync.call_count == 3
+
+@pytest.mark.asyncio
+async def test_ibkr_fetcher_connect_sync_wait(mock_ib):
+    mock_ib.isConnected.side_effect = [False, True, True, True, True, True]
+    # Simulate empty portfolio initially, then populated
+    portfolio_mock = MagicMock(spec=PortfolioItem)
+    mock_ib.portfolio.side_effect = [[], [], [portfolio_mock], [portfolio_mock], [portfolio_mock]]
+    
+    fetcher = IBKRFetcher()
+    with patch('asyncio.sleep', new_callable=AsyncMock) as mock_sleep:
+        await fetcher.connect(sync_portfolio=True, sync_timeout=5)
+        
+    assert mock_ib.portfolio.call_count >= 3
+    assert mock_sleep.call_count >= 2
 
 @pytest.mark.asyncio
 async def test_get_portfolio_snapshot(mock_ib):

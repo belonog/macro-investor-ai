@@ -41,3 +41,25 @@ def test_check_stops_no_breach():
     config = {"MSFT": {"stop": 250}}
     alerts = check_stops(snapshot, config)
     assert len(alerts) == 0
+
+def test_check_stops_missing_config():
+    snapshot = [PositionSnapshot(
+        symbol="GOOGL", quantity=10, avg_cost=100, 
+        market_price=90, market_value=900, 
+        unrealized_pnl=-100, unrealized_pnl_pct=-10.0,
+        fetched_at=datetime.now()
+    )]
+    config = {} # Empty config
+    alerts = check_stops(snapshot, config)
+    assert len(alerts) == 0
+
+def test_check_stops_missing_stop_key():
+    snapshot = [PositionSnapshot(
+        symbol="AMZN", quantity=10, avg_cost=100, 
+        market_price=90, market_value=900, 
+        unrealized_pnl=-100, unrealized_pnl_pct=-10.0,
+        fetched_at=datetime.now()
+    )]
+    config = {"AMZN": {"target": 150}} # Missing "stop"
+    alerts = check_stops(snapshot, config)
+    assert len(alerts) == 0
