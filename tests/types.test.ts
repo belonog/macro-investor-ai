@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PositionSnapshotSchema, AlertSchema } from '../src/types/index.js';
+import { PositionSnapshotSchema, AlertSchema } from '../src/data/types.js';
 
 describe('PositionSnapshotSchema', () => {
   it('should validate a correct position snapshot', () => {

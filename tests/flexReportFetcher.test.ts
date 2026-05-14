@@ -1,5 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { parseFlexXml } from '../src/ibkr/flexReportFetcher.js';
+import { describe, it, expect, vi } from 'vitest';
+import { parseFlexXml, fetchPortfolioSnapshot } from '../src/data/fetchers/ibkrFetcher.js';
+import axios from 'axios';
+
+vi.mock('axios');
 
 describe('parseFlexXml', () => {
   it('should parse valid Flex XML into PositionSnapshot array', () => {
@@ -25,5 +28,35 @@ describe('parseFlexXml', () => {
     });
     expect(result[0].unrealizedPnlPct).toBeCloseTo(-2.2222, 4);
     expect(result[0].fetchedAt).toBeDefined();
+  });
+});
+
+describe('fetchPortfolioSnapshot', () => {
+  it('should fetch and parse portfolio snapshot', async () => {
+    const mockedAxios = vi.mocked(axios);
+    
+    // Mock SendRequest
+    mockedAxios.get.mockResolvedValueOnce({
+      data: '<FlexStatus><Status>Success</Status><ReferenceCode>12345</ReferenceCode></FlexStatus>'
+    });
+
+    // Mock GetStatement
+    mockedAxios.get.mockResolvedValueOnce({
+      data: `
+<FlexQueryResponse>
+  <FlexStatements>
+    <FlexStatement>
+      <OpenPositions>
+        <OpenPosition symbol="TLT" position="100" fifoPnlUnrealized="-200" markPrice="88" costBasisPrice="90" positionValue="8800" />
+      </OpenPositions>
+    </FlexStatement>
+  </FlexStatements>
+</FlexQueryResponse>`
+    });
+
+    const result = await fetchPortfolioSnapshot('token', 'queryId');
+    expect(result).toHaveLength(1);
+    expect(result[0].symbol).toBe('TLT');
+    expect(mockedAxios.get).toHaveBeenCalledTimes(2);
   });
 });
