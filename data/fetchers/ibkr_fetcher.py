@@ -18,10 +18,10 @@ class PositionSnapshot(BaseModel):
     fetched_at: datetime
 
 class IBKRFetcher:
-    def __init__(self, host: str = '127.0.0.1', port: int = 7497, client_id: int = 1):
-        self.host = host
-        self.port = port
-        self.client_id = client_id
+    def __init__(self, host: Optional[str] = None, port: Optional[int] = None, client_id: Optional[int] = None):
+        self.host = host or os.getenv('IBKR_HOST', '127.0.0.1')
+        self.port = int(port or os.getenv('IBKR_PORT', 7497))
+        self.client_id = int(client_id or os.getenv('IBKR_CLIENT_ID', 1))
         self.ib = IB()
 
     async def connect(self):
