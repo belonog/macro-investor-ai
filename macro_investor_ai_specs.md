@@ -92,10 +92,10 @@ SECONDARY
                      │  macro data → quadrant score +       │
                      │  confidence + transition signals     │
                      └─────────────────┬───────────────────┘
-                                       │ regimeLatest.json
-                     ┌─────────────────▼───────────────────┐
-                     │   REBALANCING AGENT (TypeScript)     │  ★ PRIMARY
-                     │  regime + portfolio snapshot →       │
+                                       │ regimeLatest.json           │
+                     ┌─────────────────▼───────────────────┐         │
+                     │   REBALANCING AGENT (TypeScript)     │◄────────┘
+                     │  regime + portfolio snapshot →       │ portfolio snapshot
                      │  alignment score + action list       │
                      └──────┬──────────────────────────────┘
                             │
