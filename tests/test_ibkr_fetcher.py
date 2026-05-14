@@ -15,6 +15,18 @@ def mock_ib():
         yield mock_instance
 
 @pytest.mark.asyncio
+async def test_ibkr_fetcher_connect_env_vars(mock_ib):
+    with patch.dict('os.environ', {
+        'IBKR_HOST': '10.0.0.1',
+        'IBKR_PORT': '4002',
+        'IBKR_CLIENT_ID': '20'
+    }):
+        fetcher = IBKRFetcher()
+        await fetcher.connect()
+        
+        mock_ib.connectAsync.assert_called_once_with('10.0.0.1', 4002, clientId=20)
+
+@pytest.mark.asyncio
 async def test_ibkr_fetcher_connect(mock_ib):
     fetcher = IBKRFetcher(host='localhost', port=4001, client_id=10)
     await fetcher.connect()
@@ -52,7 +64,11 @@ async def test_get_portfolio_snapshot(mock_ib):
     assert snapshot.quantity == 10.0
     assert snapshot.market_price == 155.0
     assert snapshot.avg_cost == 140.0
-    assert snapshot.unrealized_pnl == 100.0
+    # Recalculated values
+    assert snapshot.market_value == 1550.0 # 10.0 * 155.0
+    assert snapshot.unrealized_pnl == 150.0 # (155.0 - 140.0) * 10.0
+    assert pytest.approx(snapshot.unrealized_pnl_pct) == 10.7142857 # (155/140 - 1) * 100
+    assert snapshot.fetched_at is not None
 
 @pytest.mark.asyncio
 async def test_get_portfolio_snapshot_fallback_price(mock_ib):
@@ -82,3 +98,6 @@ async def test_get_portfolio_snapshot_fallback_price(mock_ib):
     assert len(snapshots) == 1
     snapshot = snapshots[0]
     assert snapshot.market_price == 150.0 # Should fallback to portfolio price
+    assert snapshot.market_value == 1500.0
+    assert snapshot.unrealized_pnl == 100.0
+    assert pytest.approx(snapshot.unrealized_pnl_pct) == 7.142857 # (150/140 - 1) * 100
