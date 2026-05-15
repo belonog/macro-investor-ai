@@ -10,8 +10,8 @@ async function main() {
   try {
     // 1. Fetch latest data from FRED
     console.log('\n📡 Step 1: Updating Macro Data from FRED...');
-    const snapshot = await updateMacroCache(12); // Fetch 12 months of history
-    const seriesCount = Object.keys(snapshot).length;
+    const snapshot = await updateMacroCache(); 
+    const seriesCount = Object.keys(snapshot.series).length;
     console.log(`✅ Successfully updated ${seriesCount} series in cache.`);
 
     // 2. Get latest values for the agent
@@ -20,19 +20,19 @@ async function main() {
     console.log('Current Indicators:', JSON.stringify(latestValues, null, 2));
 
     // 3. Evaluate Regime via Gemini
-    console.log('\n🧠 Step 3: Evaluating Macro Regime via Gemini 3.0 Flash...');
+    console.log('\n🧠 Step 3: Evaluating Macro Regime via Gemini...');
     const regime = await evaluateRegime(latestValues);
     
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`CURRENT REGIME: ${regime.quadrant}`);
+    console.log(`CURRENT REGIME: ${regime.regime_quadrant}`);
     console.log(`CONFIDENCE:     ${regime.confidence}%`);
     console.log(`DRIFT:          ${regime.regime_drift_vs_prior}`);
     console.log(`INFLATION SCORE: ${(regime.inflation_score * 100).toFixed(1)}%`);
     console.log(`GROWTH SCORE:    ${(regime.growth_score * 100).toFixed(1)}%`);
-    console.log(`EVALUATED AT:    ${regime.evaluatedAt}`);
+    console.log(`EVALUATED AT:    ${regime.assessed_at}`);
     
     console.log('\nKEY DRIVERS:');
-    regime.keyDrivers.forEach(driver => console.log(`• ${driver}`));
+    regime.key_drivers.forEach(driver => console.log(`• ${driver}`));
     
     console.log('\nCENTRAL THESIS CONFLICT:');
     console.log(regime.central_thesis_conflict);
@@ -47,6 +47,7 @@ async function main() {
     console.log('\nWATCH NEXT:');
     regime.watch_next.forEach(event => console.log(`👀 ${event}`));
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
     
     console.log('\n✅ Logged to SQLite (logs/macro_investor.db)');
     
