@@ -1,0 +1,34 @@
+import fs from 'fs';
+import path from 'path';
+import { generateAgentResponse } from './baseAgent';
+import { InterpreterOutput, InterpreterOutputSchema, PortfolioConfig } from '../types';
+import { buildPortfolioContext } from '../utils/portfolioContext';
+
+/**
+ * Analyzes raw economic release data and produces structured output.
+ * @param releaseName The name of the economic release (e.g., "CPI", "NFP").
+ * @param releaseData The raw data of the release.
+ * @param positionsConfig The current portfolio configuration.
+ * @returns A promise that resolves to an InterpreterOutput.
+ */
+export async function runInterpreterAgent(
+  releaseName: string,
+  releaseData: string,
+  positionsConfig: PortfolioConfig
+): Promise<InterpreterOutput> {
+  const templatePath = path.join(process.cwd(), 'src/prompts/interpreter_system.txt');
+  const template = fs.readFileSync(templatePath, 'utf-8');
+  
+  const portfolioContext = buildPortfolioContext(positionsConfig);
+  const systemPrompt = template.replace('{{PORTFOLIO_CONTEXT}}', portfolioContext);
+
+  const userPrompt = `Data Release: ${releaseName}\n\nRaw Data:\n${releaseData}`;
+
+  return await generateAgentResponse({
+    systemPrompt,
+    prompt: userPrompt,
+    schema: InterpreterOutputSchema,
+    agentName: 'InterpreterAgent',
+    trigger: 'manual'
+  });
+}
