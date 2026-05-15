@@ -26,6 +26,7 @@ vi.mock('../src/agents/db', () => ({
 
 import { dbManager } from '../src/agents/db';
 import { generateRebalancingReport } from '../src/agents/rebalancingAgent';
+import { StaleRegimeError } from '../src/utils/errors';
 
 describe('rebalancingAgent', () => {
   beforeEach(() => {
@@ -37,20 +38,51 @@ describe('rebalancingAgent', () => {
     expect(generateRebalancingReport).toBeDefined();
   });
 
-  it('should generate rebalancing report using Gemini API', async () => {
+  it('should throw StaleRegimeError if regime data is older than 7 days', async () => {
+    const staleDate = new Date();
+    staleDate.setDate(staleDate.getDate() - 8);
+    
     const mockRegime = {
-      quadrant: 'Goldilocks',
+      regime_quadrant: 'Goldilocks',
       confidence: 90,
       inflation_score: 0.2,
       growth_score: 0.8,
       regime_drift_vs_prior: 'Stable',
-      keyDrivers: ['Strong GDP'],
+      key_drivers: ['Strong GDP'],
       confirming_indicators: [],
       contradicting_indicators: [],
       central_thesis_conflict: 'None',
       fastest_path_to_being_wrong: 'Inflation spike',
       watch_next: [],
-      evaluatedAt: new Date().toISOString()
+      assessed_at: staleDate.toISOString()
+    };
+
+    vi.mocked(fs.readFileSync).mockImplementation((path) => {
+      if (typeof path === 'string') {
+        if (path.includes('regimeLatest.json')) return JSON.stringify(mockRegime);
+        if (path.includes('rebalancing_system.txt')) return 'Mock Prompt';
+        if (path.includes('positions.json')) return '{}';
+      }
+      return '{}';
+    });
+
+    await expect(generateRebalancingReport()).rejects.toThrow(StaleRegimeError);
+  });
+
+  it('should generate rebalancing report using Gemini API', async () => {
+    const mockRegime = {
+      regime_quadrant: 'Goldilocks',
+      confidence: 90,
+      inflation_score: 0.2,
+      growth_score: 0.8,
+      regime_drift_vs_prior: 'Stable',
+      key_drivers: ['Strong GDP'],
+      confirming_indicators: [],
+      contradicting_indicators: [],
+      central_thesis_conflict: 'None',
+      fastest_path_to_being_wrong: 'Inflation spike',
+      watch_next: [],
+      assessed_at: new Date().toISOString()
     };
     
     const mockPositions = [
@@ -89,7 +121,7 @@ describe('rebalancingAgent', () => {
 
     mockGenerateContent.mockResolvedValue({
       text: JSON.stringify({
-        alignment_score: 0.65,
+        regime_portfolio_alignment_score: 0.65,
         alignment_grade: 'B',
         position_assessments: [
           {
@@ -114,9 +146,9 @@ describe('rebalancingAgent', () => {
     const result = await generateRebalancingReport();
 
     expect(result.alignment_grade).toBe('B');
-    expect(result.alignment_score).toBe(0.65);
+    expect(result.regime_portfolio_alignment_score).toBe(0.65);
     expect(result.position_assessments[0].symbol).toBe('TLT');
-    expect(result.evaluatedAt).toBeDefined();
+    expect(result.evaluated_at).toBeDefined();
     
     expect(dbManager.logRebalancingDecision).toHaveBeenCalled();
     expect(fs.writeFileSync).toHaveBeenCalledWith(
