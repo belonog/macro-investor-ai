@@ -5,7 +5,7 @@ import {
   PortfolioConfig, 
   Alert, 
   PositionConfig 
-} from '../data/types';
+} from '../types';
 import { getLatestValues, TARGET_SERIES } from '../data/fetchers/fredFetcher';
 
 const POSITIONS_CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'positionsSnapshot.json');

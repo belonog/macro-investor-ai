@@ -1,6 +1,6 @@
 import { XMLParser } from 'fast-xml-parser';
 import axios from 'axios';
-import { PositionSnapshot, PositionSnapshotSchema } from '../types.js';
+import { PositionSnapshot, PositionSnapshotSchema } from '../../types/index.js';
 
 export function parseFlexXml(xml: string): PositionSnapshot[] {
   const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '' });

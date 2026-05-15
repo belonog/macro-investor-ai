@@ -6,6 +6,9 @@ QUADRANT DEFINITIONS:
 - Stagflation:            growth below trend, inflation above target
 - Deflationary Recession: growth below trend, inflation below target
 
+PORTFOLIO_CONTEXT:
+{{PORTFOLIO_CONTEXT}}
+
 CRITICAL CONSTRAINTS:
 1. You suggest actions; the investor executes. Never imply automation.
 2. Every "Exit" or "Trim" must reference the original thesis invalidation condition from the position configuration, not just a price level.

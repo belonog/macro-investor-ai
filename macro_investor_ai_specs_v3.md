@@ -3,7 +3,7 @@
 > **Purpose:** AI-powered macro regime detection and portfolio rebalancing engine for a
 > retail investor operating a growth/inflation framework.
 > **Runtime:** Node.js 20+ / TypeScript 5.x — single service, single runtime
-> **Primary AI:** Anthropic Claude API (`@anthropic-ai/sdk`)
+> **Primary AI:** Provider Agnostic via Vercel AI SDK (`ai`, `@ai-sdk/anthropic`, `@ai-sdk/google`)
 > **Brokerage:** Interactive Brokers (Flex Reports — read-only, pure HTTPS, no gateway)
 
 ---
@@ -133,7 +133,7 @@ type PositionType = 'macro_core' | 'macro_hedge' | 'speculative' | 'equity_singl
 |---|---|---|
 | **Language** | TypeScript 5.x | Strict mode enabled |
 | **Runtime** | Node.js 20+ | Native `fetch` available; use `axios` for consistency |
-| **AI SDK** | `@anthropic-ai/sdk` | First-class TS support; streaming optional |
+| **AI SDK** | Vercel AI SDK (`ai`) | Provider agnostic; native Zod validation (`generateObject`) |
 | **HTTP** | `axios` | All REST calls: FRED, BLS, EIA, Polygon, Telegram, IBKR Flex |
 | **XML parsing** | `fast-xml-parser` | IBKR Flex Report XML → JSON |
 | **Validation** | `zod` | All inter-module schemas; replaces pydantic |
@@ -180,7 +180,7 @@ macro-investor-ai/
 │   │       └── regime_latest.json
 │   │
 │   ├── agents/
-│   │   ├── baseAgent.ts              # Claude API wrapper + run logger
+│   │   ├── baseAgent.ts              # AI Provider API wrapper + run logger
 │   │   ├── regimeAgent.ts            # ★ Agent 1: Regime Detection
 │   │   ├── rebalancingAgent.ts       # ★ Agent 2: Portfolio Rebalancing
 │   │   ├── coherenceAgent.ts         # Agent 3: Thesis Coherence
@@ -234,8 +234,12 @@ macro-investor-ai/
 ### `.env.example`
 
 ```dotenv
-# Anthropic
+# AI Provider Routing (vercel/ai)
+AI_PROVIDER=anthropic # Options: anthropic, google
 ANTHROPIC_API_KEY=your_key_here
+GEMINI_API_KEY=your_key_here
+REGIME_AGENT_MODEL=claude-3-5-sonnet-20240620 # e.g. gemini-1.5-flash
+REBALANCING_AGENT_MODEL=claude-3-5-sonnet-20240620
 
 # FRED REST API (free — fred.stlouisfed.org/docs/api)
 FRED_API_KEY=your_key_here
@@ -701,7 +705,7 @@ export async function runRegimeAgent(input: RegimeAgentInput): Promise<RegimeAss
 2. Call `buildPortfolioContext(positionsConfig)` → structured portfolio summary string
 3. Inject into template: `systemPrompt.replace('{{PORTFOLIO_CONTEXT}}', portfolioContext)`
 4. Build structured user message from `input` macro data
-5. Call Claude API via `baseAgent.callClaude()`
+5. Call `baseAgent.generateAgentResponse()`
 6. Parse JSON response → validate with `RegimeAssessmentSchema`
 7. Write to `src/data/cache/regime_latest.json`
 8. Insert row into `regime_history.db`
@@ -882,7 +886,7 @@ Output is Markdown-formatted — sent to Telegram and logged locally.
 ### 6.7 EOD Position Monitor
 
 **File:** `src/monitor/eodMonitor.ts`
-**Trigger:** Called from `eodCheck.ts` flow at 4:15 PM ET — **no Claude API call**
+**Trigger:** Called from `eodCheck.ts` flow at 4:15 PM ET — **no AI Provider API call**
 
 ```typescript
 // 1. Stop proximity check (all position types)
@@ -919,20 +923,25 @@ consistent with the regime framework rather than price-reactive.
 
 #### `src/agents/baseAgent.ts`
 
-**Responsibility:** Shared Claude API call wrapper with retry logic and run logging.
+**Responsibility:** Shared AI provider wrapper using Vercel AI SDK (`ai`). 
+Handles routing to configured provider, retry logic, and Zod-based object generation.
 
 ```typescript
-import Anthropic from '@anthropic-ai/sdk';
+import { generateObject } from 'ai';
 
-interface AgentCallOptions {
+interface AgentCallOptions<T> {
   systemPrompt: string;
-  userMessage:  string;
+  prompt:       string;
+  schema:       z.ZodSchema<T>;
   agentName:    string;
   trigger:      'scheduled' | 'post_release' | 'manual';
 }
 
-export async function callClaude(options: AgentCallOptions): Promise<string>
-// Wraps Anthropic messages.create()
+export async function generateAgentResponse<T>(
+  options: AgentCallOptions<T>
+): Promise<T>
+// Leverages AI_PROVIDER and model env vars to route request
+// Wraps generateObject() for type-safe structured output
 // Retry 3× with exponential backoff on 5xx
 // Logs input hash, output, token usage to agent_runs.db
 // Throws typed AgentError on final failure
@@ -1207,7 +1216,7 @@ cron.schedule('0 9 * * 0', runRegimeCycle, {
   timezone: 'America/New_York'
 });
 
-// Daily digest — weekday mornings (reads cache, no Claude call unless stale)
+// Daily digest — weekday mornings (reads cache, no AI call unless stale)
 cron.schedule('0 7 * * 1-5', runDailyDigest, {
   timezone: 'America/New_York'
 });
@@ -1464,7 +1473,7 @@ before connecting Flex Reports or running against live data.
 | Regime agent | Zod schema validation on output before caching; Telegram alert on run failure |
 | Rebalancing agent | Rejects `RegimeAssessment` older than 7 days; throws `StaleRegimeError` |
 | Flex snapshot | Stale threshold: 26h; EOD monitor skips and alerts if snapshot older than 30 min at run time |
-| Claude API | Retry 3× exponential backoff on 5xx via `baseAgent.ts`; log all failures |
+| AI Provider API | Retry 3× exponential backoff on 5xx via `baseAgent.ts`; log all failures |
 | FRED cache | Check `fetchedAt` before regime cycle; alert if fetch fails |
 | Manual indicators | Stale threshold: 35 days; regime agent alerts if `ism_services` or `fao_food_price_index` overdue |
 | `positions.json` sync | Warn if any symbol in Flex has no `positions.json` entry; excluded from analysis until configured |
@@ -1481,4 +1490,4 @@ Before using regime output to inform real portfolio decisions:
 
 ---
 
-*Generated for Claude Code implementation. All API credentials in `.env` — never hardcoded.*
+*Generated for AI agent implementation. All API credentials in `.env` — never hardcoded.*

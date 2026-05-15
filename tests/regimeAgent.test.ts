@@ -1,21 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import fs from 'fs';
 
-const { mockGenerateContent } = vi.hoisted(() => ({
-  mockGenerateContent: vi.fn()
+const { mockGenerateAgentResponse } = vi.hoisted(() => ({
+  mockGenerateAgentResponse: vi.fn()
 }));
 
-vi.mock('@google/genai', () => {
-  return {
-    GoogleGenAI: vi.fn().mockImplementation(function() {
-      return {
-        models: {
-          generateContent: mockGenerateContent
-        }
-      };
-    })
-  };
-});
+vi.mock('../src/agents/baseAgent', () => ({
+  generateAgentResponse: mockGenerateAgentResponse
+}));
 
 vi.mock('fs');
 vi.mock('../src/agents/db', () => ({
@@ -31,84 +23,74 @@ describe('regimeAgent', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(fs.existsSync).mockReturnValue(true);
+    
+    // Default fs.readFileSync mock
+    vi.mocked(fs.readFileSync).mockImplementation((path) => {
+      if (typeof path === 'string') {
+        if (path.includes('regime_system.txt')) return 'Mock Prompt with {{PORTFOLIO_CONTEXT}}';
+        if (path.includes('regime_weights.json')) return JSON.stringify({});
+        if (path.includes('regimeLatest.json')) return JSON.stringify({});
+        if (path.includes('positions.json')) return JSON.stringify({});
+      }
+      return '';
+    });
   });
 
   it('should define evaluateRegime function', () => {
     expect(evaluateRegime).toBeDefined();
   });
 
-  it('should evaluate regime using Gemini API', async () => {
+  it('should evaluate regime using generateAgentResponse', async () => {
     const mockMacroData = { inflation: 2.5, growth: 1.5 };
     
-    // Mock fs.readFileSync
-    vi.mocked(fs.readFileSync).mockImplementation((path) => {
-      if (typeof path === 'string') {
-        if (path.includes('regime_system.txt')) return 'Mock Prompt';
-        if (path.includes('regime_weights.json')) return JSON.stringify({ weights: {} });
-        if (path.includes('regimeLatest.json')) return JSON.stringify({ prior: {} });
-      }
-      return '';
-    });
-    
-    // Mock GoogleGenAI response
-    mockGenerateContent.mockResolvedValue({
-      text: JSON.stringify({
-        quadrant: 'Goldilocks',
-        confidence: 85,
-        inflation_score: 0.3,
-        growth_score: 0.7,
-        regime_drift_vs_prior: 'Stable',
-        keyDrivers: ['Driver 1', 'Driver 2'],
-        confirming_indicators: ['Confirming 1'],
-        contradicting_indicators: ['Contradicting 1'],
-        central_thesis_conflict: 'No conflict',
-        fastest_path_to_being_wrong: 'Growth slowing faster than expected',
-        watch_next: ['Release 1'],
-        transition_signal: 'None'
-      })
-    });
+    const mockResponse = {
+      regime_quadrant: 'Goldilocks',
+      confidence: 85,
+      inflation_score: 0.3,
+      growth_score: 0.7,
+      regime_drift_vs_prior: 'Stable',
+      key_drivers: ['Driver 1', 'Driver 2'],
+      confirming_indicators: ['Confirming 1'],
+      contradicting_indicators: ['Contradicting 1'],
+      central_thesis_conflict: 'No conflict',
+      fastest_path_to_being_wrong: 'Growth slowing faster than expected',
+      watch_next: ['Release 1'],
+      transition_signal: 'None',
+      assessed_at: new Date().toISOString()
+    };
+
+    mockGenerateAgentResponse.mockResolvedValue(mockResponse);
 
     const result = await evaluateRegime(mockMacroData);
 
-    expect(result.quadrant).toBe('Goldilocks');
+    expect(result.regime_quadrant).toBe('Goldilocks');
     expect(result.confidence).toBe(85);
-    expect(result.inflation_score).toBe(0.3);
-    expect(result.growth_score).toBe(0.7);
-    expect(result.regime_drift_vs_prior).toBe('Stable');
-    expect(result.evaluatedAt).toBeDefined();
-    
-    expect(fs.readFileSync).toHaveBeenCalled();
-    expect(mockGenerateContent).toHaveBeenCalled();
+    expect(mockGenerateAgentResponse).toHaveBeenCalledWith(expect.objectContaining({
+      agentName: 'regimeAgent',
+      systemPrompt: expect.stringContaining('Mock Prompt')
+    }));
   });
 
   it('should persist to DB and cache to JSON', async () => {
     const mockMacroData = { inflation: 2.5, growth: 1.5 };
     
-    vi.mocked(fs.readFileSync).mockImplementation((path) => {
-        if (typeof path === 'string') {
-          if (path.includes('regime_system.txt')) return 'Mock Prompt';
-          if (path.includes('regime_weights.json')) return JSON.stringify({});
-          if (path.includes('regimeLatest.json')) return JSON.stringify({});
-        }
-        return '';
-      });
+    const mockResponse = {
+      regime_quadrant: 'Goldilocks',
+      confidence: 85,
+      inflation_score: 0.3,
+      growth_score: 0.7,
+      regime_drift_vs_prior: 'Stable',
+      key_drivers: ['Driver 1'],
+      confirming_indicators: [],
+      contradicting_indicators: [],
+      central_thesis_conflict: 'None',
+      fastest_path_to_being_wrong: 'None',
+      watch_next: [],
+      transition_signal: 'None',
+      assessed_at: new Date().toISOString()
+    };
 
-    mockGenerateContent.mockResolvedValue({
-      text: JSON.stringify({
-        quadrant: 'Goldilocks',
-        confidence: 85,
-        inflation_score: 0.3,
-        growth_score: 0.7,
-        regime_drift_vs_prior: 'Stable',
-        keyDrivers: ['Driver 1'],
-        confirming_indicators: [],
-        contradicting_indicators: [],
-        central_thesis_conflict: 'None',
-        fastest_path_to_being_wrong: 'None',
-        watch_next: [],
-        transition_signal: 'None'
-      })
-    });
+    mockGenerateAgentResponse.mockResolvedValue(mockResponse);
 
     await evaluateRegime(mockMacroData);
 
@@ -120,17 +102,8 @@ describe('regimeAgent', () => {
     
     expect(fs.writeFileSync).toHaveBeenCalledWith(
       expect.stringContaining('regimeLatest.json'),
-      expect.stringContaining('"quadrant": "Goldilocks"')
+      expect.stringContaining('"regime_quadrant": "Goldilocks"')
     );
-  });
-
-  it('should throw error if GEMINI_API_KEY is missing', async () => {
-    const originalKey = process.env.GEMINI_API_KEY;
-    delete process.env.GEMINI_API_KEY;
-    
-    await expect(evaluateRegime({})).rejects.toThrow('GEMINI_API_KEY is not set');
-    
-    process.env.GEMINI_API_KEY = originalKey;
   });
 
   it('should throw error if prompt file is missing', async () => {
@@ -142,33 +115,38 @@ describe('regimeAgent', () => {
     await expect(evaluateRegime({})).rejects.toThrow('System prompt file not found');
   });
 
-  it('should use model name from REGIME_AGENT_MODEL env var', async () => {
-    const customModel = 'gemini-1.5-pro';
-    process.env.REGIME_AGENT_MODEL = customModel;
-    
-    vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({}));
-    mockGenerateContent.mockResolvedValue({ text: JSON.stringify({
-      quadrant: 'Goldilocks',
-      confidence: 85,
-      inflation_score: 0.3,
-      growth_score: 0.7,
-      regime_drift_vs_prior: 'Stable',
-      keyDrivers: [],
-      confirming_indicators: [],
-      contradicting_indicators: [],
-      central_thesis_conflict: '',
-      fastest_path_to_being_wrong: '',
-      watch_next: [],
-      transition_signal: ''
-    }) });
+  it('should inject portfolio context into system prompt', async () => {
+    vi.mocked(fs.readFileSync).mockImplementation((path) => {
+      if (typeof path === 'string') {
+        if (path.includes('regime_system.txt')) return 'PROMPT: {{PORTFOLIO_CONTEXT}}';
+        if (path.includes('positions.json')) return JSON.stringify({
+          'AAPL': {
+            shares: 10,
+            avg_cost: 150,
+            position_type: 'equity_single',
+            thesis: 'Good company',
+            regime_match: ['Goldilocks'],
+            thesis_invalidation: 'Bad earnings'
+          }
+        });
+      }
+      return JSON.stringify({});
+    });
+
+    mockGenerateAgentResponse.mockResolvedValue({
+      regime_quadrant: 'Goldilocks',
+      confidence: 90,
+      assessed_at: new Date().toISOString(),
+      key_drivers: []
+    });
 
     await evaluateRegime({});
 
-    const { GoogleGenAI } = await import('@google/genai');
-    expect(mockGenerateContent).toHaveBeenCalledWith(expect.objectContaining({
-      model: customModel
+    expect(mockGenerateAgentResponse).toHaveBeenCalledWith(expect.objectContaining({
+      systemPrompt: expect.stringContaining('AAPL')
     }));
-
-    delete process.env.REGIME_AGENT_MODEL;
+    expect(mockGenerateAgentResponse).toHaveBeenCalledWith(expect.objectContaining({
+      systemPrompt: expect.not.stringContaining('{{PORTFOLIO_CONTEXT}}')
+    }));
   });
 });

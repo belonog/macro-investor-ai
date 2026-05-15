@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import fs from 'fs';
 import { runEodMonitor } from '../src/monitor/eodMonitor';
 
@@ -14,6 +14,12 @@ vi.mock('../src/data/fetchers/fredFetcher', () => ({
 describe('eodMonitor', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-14T10:00:00Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('should detect stop breaches and thesis crossings', async () => {

@@ -1,11 +1,23 @@
-import axios from 'axios';
-import fs from 'fs/promises';
-import path from 'path';
-import { DataPoint, DataPointSchema, MacroSnapshot, MacroCacheSchema } from '../../types/index.js';
-import { getManualIndicators } from '../../utils/manualIndicators.js';
+# Update fredFetcher.ts Implementation Plan
 
-const FRED_BASE_URL = 'https://api.stlouisfed.org/fred';
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+**Goal:** Expand FRED_SERIES and implement trend computations (3m_avg, etc.) in `getLatestValues()`.
+
+**Architecture:** Update `TARGET_SERIES` constants. Modify `getLatestValues()` to fetch more data points (e.g., last 12 months) to allow rolling calculations. Merge manual indicators into the result.
+
+**Tech Stack:** TypeScript, FRED API, Vitest.
+
+---
+
+### Task 1: Expand TARGET_SERIES
+
+**Files:**
+- Modify: `src/data/fetchers/fredFetcher.ts`
+
+- [ ] **Step 1: Update `TARGET_SERIES` with all V3 indicators.**
+
+```typescript
 export const TARGET_SERIES: Record<string, string> = {
   // Inflation
   'CPIAUCSL': 'Consumer Price Index (CPI) YoY',
@@ -26,7 +38,6 @@ export const TARGET_SERIES: Record<string, string> = {
   'BAMLC0A0CM': 'ICE BofA US Corporate Index Option-Adjusted Spread',
   'UMCSENT': 'University of Michigan: Consumer Sentiment',
   'PSAVERT': 'Personal Saving Rate',
-  'DCOILWTICO': 'Crude Oil Prices: West Texas Intermediate (WTI)',
   // Rates & Yield Curve
   'FEDFUNDS': 'Effective Federal Funds Rate',
   'DGS2': '2-Year Treasury Yield',
@@ -38,106 +49,29 @@ export const TARGET_SERIES: Record<string, string> = {
   'M2SL': 'M2 Money Supply',
   'GOLDAMGBD228NLBM': 'Gold Fixing Price 10:30 A.M. (London time) in London Bullion Market'
 };
+```
 
-/**
- * Fetches a series from FRED and returns it as an array of DataPoints.
- * @param seriesId The FRED series ID (e.g., 'INDPRO')
- * @param limit Number of observations to fetch (default 12)
- * @returns Promise<DataPoint[]>
- */
-export async function fetchSeries(seriesId: string, limit: number = 12): Promise<DataPoint[]> {
-  const apiKey = process.env.FRED_API_KEY;
-  if (!apiKey) {
-    throw new Error('FRED_API_KEY is not set');
-  }
+### Task 2: Implement Trend Computation Logic
 
-  const response = await axios.get(`${FRED_BASE_URL}/series/observations`, {
-    params: {
-      series_id: seriesId,
-      api_key: apiKey,
-      file_type: 'json',
-      sort_order: 'desc',
-      limit: limit,
-    }
-  });
+**Files:**
+- Modify: `src/data/fetchers/fredFetcher.ts`
+- Test: `tests/fredFetcher.test.ts`
 
-  if (!response.data || !response.data.observations) {
-    throw new Error(`Failed to fetch series ${seriesId}`);
-  }
+- [ ] **Step 1: Update `getLatestValues()` to compute derived metrics.**
+Update the function to ensure it has enough history (e.g., fetch 12 months if cache is stale/missing) and calculate:
+- `oil_price_3m_change`: % change in WTI crude over prior 3 months. (Wait, I need to add `DCOILWTICO` to `TARGET_SERIES` or fetch it separately).
+- `nfp_3m_avg`: rolling 3-month average of NFP additions (diff in `PAYEMS`).
+- `real_wages`: `ECIWAG` (wages) - `CPIAUCSL` (inflation).
+- `yield_curve_30_2`: `DGS30` - `DGS2`.
+- `credit_spread_delta`: `BAMLH0A0HYM2` (current) - 6m average of `BAMLH0A0HYM2`.
 
-  const points: DataPoint[] = [];
-  for (const obs of response.data.observations) {
-    if (obs.value !== '.') {
-      const parsed = DataPointSchema.safeParse({
-        date: obs.date,
-        value: parseFloat(obs.value)
-      });
-      if (parsed.success) {
-        points.push(parsed.data);
-      }
-    }
-  }
+**Correction:** `PAYEMS` is total payrolls, NFP additions is monthly change. `nfp_3m_avg` should be avg of monthly changes.
 
-  // Return in chronological order
-  return points.reverse();
-}
+- [ ] **Step 2: Add `DCOILWTICO` to `TARGET_SERIES`.**
 
-/**
- * Fetches all target series concurrently.
- * @param periods Number of observations to fetch for each series
- * @returns Promise<MacroSnapshot>
- */
-export async function fetchAll(periods: number = 12): Promise<MacroSnapshot> {
-  const snapshot: MacroSnapshot = {
-    series: {},
-    fetchedAt: {}
-  };
-  const seriesIds = Object.keys(TARGET_SERIES);
-  
-  const promises = seriesIds.map(async (seriesId) => {
-    try {
-      const data = await fetchSeries(seriesId, periods);
-      snapshot.series[seriesId] = data;
-      snapshot.fetchedAt[seriesId] = new Date().toISOString();
-    } catch (error) {
-      console.error(`Failed to fetch ${seriesId} (${TARGET_SERIES[seriesId]}):`, error);
-      snapshot.series[seriesId] = []; // Ensure the key exists even on failure
-      snapshot.fetchedAt[seriesId] = new Date().toISOString();
-    }
-  });
+- [ ] **Step 3: Update `getLatestValues()` implementation.**
 
-  await Promise.all(promises);
-  return snapshot;
-}
-
-const CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'macroSnapshot.json');
-
-/**
- * Fetches all target series and updates the local JSON cache.
- * @param periods Number of observations to fetch
- * @returns Promise<MacroSnapshot>
- */
-export async function updateMacroCache(periods: number = 12): Promise<MacroSnapshot> {
-  const snapshot = await fetchAll(periods);
-  
-  // Ensure directory exists
-  await fs.mkdir(path.dirname(CACHE_PATH), { recursive: true });
-  
-  const cacheData = {
-    fetchedAt: new Date().toISOString(),
-    data: snapshot
-  };
-  
-  await fs.writeFile(CACHE_PATH, JSON.stringify(cacheData, null, 2));
-  return snapshot;
-}
-
-/**
- * Returns the latest single value for each series in the target basket,
- * along with derived trend and spread metrics.
- * Attempts to read from cache first, falls back to fetching.
- * @returns Promise<Record<string, number>>
- */
+```typescript
 export async function getLatestValues(): Promise<Record<string, number>> {
   let snapshot: MacroSnapshot;
   try {
@@ -145,13 +79,11 @@ export async function getLatestValues(): Promise<Record<string, number>> {
     const parsed = MacroCacheSchema.safeParse(JSON.parse(rawCache));
     // We need at least 7 points for 6m average + current
     if (!parsed.success || Object.values(parsed.data.data.series).some(s => s.length < 7)) {
-      console.warn('Invalid macro cache or insufficient data. Re-fetching 12 months...');
       snapshot = await updateMacroCache(12);
     } else {
       snapshot = parsed.data.data;
     }
   } catch (e) {
-    // If no cache or parse error, fetch it
     snapshot = await updateMacroCache(12);
   }
 
@@ -164,7 +96,7 @@ export async function getLatestValues(): Promise<Record<string, number>> {
     }
   }
 
-  // Derived metrics helper
+  // Derived metrics
   const getSeriesValue = (id: string, offset: number = 0) => {
     const s = snapshot.series[id];
     return s && s.length > offset ? s[s.length - 1 - offset].value : null;
@@ -177,14 +109,14 @@ export async function getLatestValues(): Promise<Record<string, number>> {
     return slice.reduce((sum, p) => sum + p.value, 0) / window;
   };
 
-  // oil_price_3m_change: % change in WTI crude over prior 3 months
+  // oil_price_3m_change
   const oilCurr = getSeriesValue('DCOILWTICO');
   const oilPrior = getSeriesValue('DCOILWTICO', 3);
   if (oilCurr !== null && oilPrior !== null && oilPrior !== 0) {
     latest['oil_price_3m_change'] = (oilCurr - oilPrior) / oilPrior;
   }
 
-  // nfp_3m_avg: rolling 3-month average of NFP additions
+  // nfp_3m_avg
   const nfp = snapshot.series['PAYEMS'];
   if (nfp && nfp.length >= 4) {
     const changes = [
@@ -195,21 +127,21 @@ export async function getLatestValues(): Promise<Record<string, number>> {
     latest['nfp_3m_avg'] = changes.reduce((a, b) => a + b, 0) / 3;
   }
 
-  // real_wages: ECIWAG (wages) - CPIAUCSL (inflation)
+  // real_wages (ECIWAG is often quarterly, this might need interpolation or just latest)
   const wages = getSeriesValue('ECIWAG');
   const cpi = getSeriesValue('CPIAUCSL');
   if (wages !== null && cpi !== null) {
     latest['real_wages'] = wages - cpi;
   }
 
-  // yield_curve_30_2: 30-Year Treasury Yield - 2-Year Treasury Yield
+  // yield_curve_30_2
   const y30 = getSeriesValue('DGS30');
   const y2 = getSeriesValue('DGS2');
   if (y30 !== null && y2 !== null) {
     latest['yield_curve_30_2'] = y30 - y2;
   }
 
-  // credit_spread_delta: HY OAS current - 6m average
+  // credit_spread_delta (HY OAS current - 6m avg)
   const hySpread = getSeriesValue('BAMLH0A0HYM2');
   const hyAvg6m = getSeriesAvg('BAMLH0A0HYM2', 6);
   if (hySpread !== null && hyAvg6m !== null) {
@@ -224,3 +156,27 @@ export async function getLatestValues(): Promise<Record<string, number>> {
 
   return latest;
 }
+```
+
+- [ ] **Step 4: Update tests in `tests/fredFetcher.test.ts` to verify derived metrics.**
+
+### Task 3: Final Verification
+
+- [ ] **Step 1: Run all tests.**
+
+Run: `pnpm test tests/fredFetcher.test.ts`
+Expected: PASS
+
+- [ ] **Step 2: Run a manual check script if possible.**
+Create a small script `examples/check_fred_v3.ts` to print all latest values.
+
+```typescript
+import 'dotenv/config';
+import { getLatestValues } from './src/data/fetchers/fredFetcher.js';
+
+const latest = await getLatestValues();
+console.log(JSON.stringify(latest, null, 2));
+```
+
+Run: `node --loader ts-node/esm examples/check_fred_v3.ts`
+(Note: needs ts-node or just use a temporary test)

@@ -9,8 +9,8 @@ QUADRANT DEFINITIONS:
 CRITICAL — CONTRADICTING INDICATORS:
 You must be equally rigorous identifying what CONTRADICTS the dominant regime reading as what confirms it. The "fastest_path_to_being_wrong" field is mandatory and must name the single most plausible scenario invalidating the current classification within 60 days.
 
-PORTFOLIO CONTEXT:
-The investor holds long-duration Treasuries (TLT, VGLT) as a Deflationary Recession thesis and stagflation hedges (SCHP, ILF, BTU). The unresolved central tension: stagflation (bearish nominal Treasuries) vs. deflationary recession (bullish nominal Treasuries). "central_thesis_conflict" must directly address which narrative the current data favors and with what confidence.
+PORTFOLIO_CONTEXT:
+{{PORTFOLIO_CONTEXT}}
 
 A secondary structural risk — petrodollar erosion / dollar debasement — may invalidate nominal Treasury longs independently of the growth/inflation quadrant. Flag explicitly if current indicators support it.
 
@@ -30,13 +30,13 @@ Compare current indicators against the prior assessment. Classify "regime_drift_
 OUTPUT FORMAT:
 Return ONLY a JSON object:
 {
-  "quadrant": "Stagflation" | "Goldilocks" | "Inflationary Boom" | "Deflationary Recession",
+  "regime_quadrant": "Stagflation" | "Goldilocks" | "Inflationary Boom" | "Deflationary Recession",
   "confidence": 0-100,
   "inflation_score": 0.0-1.0,
   "growth_score": 0.0-1.0,
   "regime_drift_vs_prior": "Stable" | "Weakening" | "Transitioning" | "Shifted",
   "transition_signal": "Narrative warning",
-  "keyDrivers": ["Bullet points"],
+  "key_drivers": ["Bullet points"],
   "confirming_indicators": ["List"],
   "contradicting_indicators": ["List"],
   "central_thesis_conflict": "Narrative assessment",
@@ -45,3 +45,4 @@ Return ONLY a JSON object:
 }
 
 No preamble. No postamble. Just JSON.
+

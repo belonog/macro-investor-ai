@@ -1,4 +1,3 @@
-import { GoogleGenAI } from '@google/genai';
 import fs from 'fs';
 import path from 'path';
 import {
@@ -6,9 +5,12 @@ import {
   RebalancingOutputSchema,
   RegimeAssessment,
   PositionSnapshot,
-  PortfolioConfig
+  PortfolioConfig,
+  PortfolioConfigSchema
 } from '../types';
 import { dbManager } from './db';
+import { generateAgentResponse } from './baseAgent';
+import { buildPortfolioContext } from '../utils/portfolioContext';
 import { StaleRegimeError } from '../utils/errors';
 import dotenv from 'dotenv';
 
@@ -25,15 +27,11 @@ const REBALANCING_CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 
  */
 export async function generateRebalancingReport(): Promise<RebalancingOutput> {
   try {
-    if (!process.env.GEMINI_API_KEY) {
-      throw new Error('GEMINI_API_KEY is not set in environment variables');
-    }
-
     if (!fs.existsSync(PROMPT_PATH)) {
       throw new Error(`System prompt file not found at ${PROMPT_PATH}`);
     }
 
-    const systemPrompt = fs.readFileSync(PROMPT_PATH, 'utf8');
+    let systemPrompt = fs.readFileSync(PROMPT_PATH, 'utf8');
 
     // 1. Load Regime Snapshot
     if (!fs.existsSync(REGIME_CACHE_PATH)) {
@@ -50,7 +48,6 @@ export async function generateRebalancingReport(): Promise<RebalancingOutput> {
     }
 
     // 2. Load Portfolio Snapshot (from IBKR fetcher)
-    // Note: In a real scenario, we might want to ensure this is fresh.
     let positionSnapshots: PositionSnapshot[] = [];
     if (fs.existsSync(POSITIONS_CACHE_PATH)) {
       positionSnapshots = JSON.parse(fs.readFileSync(POSITIONS_CACHE_PATH, 'utf8'));
@@ -60,11 +57,13 @@ export async function generateRebalancingReport(): Promise<RebalancingOutput> {
     if (!fs.existsSync(POSITIONS_CONFIG_PATH)) {
       throw new Error(`Positions config not found at ${POSITIONS_CONFIG_PATH}`);
     }
-    const positionsConfig: PortfolioConfig = JSON.parse(fs.readFileSync(POSITIONS_CONFIG_PATH, 'utf8'));
+    const positionsConfig: PortfolioConfig = PortfolioConfigSchema.parse(
+      JSON.parse(fs.readFileSync(POSITIONS_CONFIG_PATH, 'utf8'))
+    );
 
-    const ai = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY,
-    });
+    // Inject Portfolio Context
+    const portfolioContext = buildPortfolioContext(positionsConfig);
+    systemPrompt = systemPrompt.replace('{{PORTFOLIO_CONTEXT}}', portfolioContext);
 
     const promptContext = {
       regime_assessment: regimeSnapshot,
@@ -72,35 +71,21 @@ export async function generateRebalancingReport(): Promise<RebalancingOutput> {
       positions_config: positionsConfig,
     };
 
-    const modelName = process.env.REBALANCING_AGENT_MODEL || 'gemini-2.0-flash';
-    const response = await ai.models.generateContent({
-      model: modelName,
-      contents: `${systemPrompt}\n\nContext:\n${JSON.stringify(promptContext, null, 2)}`,
-      config: {
-        responseMimeType: 'application/json',
-      }
-    });
-
-
-    if (!response.text) {
-      throw new Error('Empty response from Gemini API');
-    }
-
-    const rawJson = JSON.parse(response.text);
-    const evaluated_at = new Date().toISOString();
-
-    const validated = RebalancingOutputSchema.parse({
-      ...rawJson,
-      evaluated_at,
+    const validated = await generateAgentResponse<RebalancingOutput>({
+      agentName: 'rebalancingAgent',
+      trigger: 'manual',
+      systemPrompt,
+      prompt: `Context:\n${JSON.stringify(promptContext, null, 2)}`,
+      schema: RebalancingOutputSchema,
     });
 
     // 4. Persist to SQLite
     dbManager.logRebalancingDecision({
-      timestamp: evaluated_at,
+      timestamp: validated.evaluated_at,
       alignment_score: validated.regime_portfolio_alignment_score,
       alignment_grade: validated.alignment_grade,
       position_assessments: validated.position_assessments,
-      raw_response: rawJson,
+      raw_response: validated,
     });
 
     // 5. Cache to JSON
