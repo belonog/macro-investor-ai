@@ -105,7 +105,9 @@ describe('fredFetcher', () => {
         fetchedAt: new Date().toISOString(),
         data: {
           series: {
-            'CPIAUCSL': Array(7).fill({ date: '2023-01-01', value: 3.0 }),
+            'CPIAUCSL': Array(13).fill({ date: '2023-01-01', value: 3.0 }),
+            'PCEPI': Array(13).fill({ date: '2023-01-01', value: 2.0 }),
+            'GDPC1': Array(13).fill({ date: '2023-01-01', value: 20000 }),
             'PAYEMS': [
               { date: '2023-01-01', value: 1000 },
               { date: '2023-01-02', value: 1000 },
@@ -124,9 +126,9 @@ describe('fredFetcher', () => {
               { date: '2023-03-01', value: 110 },
               { date: '2023-04-01', value: 120 }
             ],
-            'ECIWAG': Array(7).fill({ date: '2023-01-01', value: 4.5 }),
-            'DGS30': Array(7).fill({ date: '2023-01-01', value: 4.0 }),
-            'DGS2': Array(7).fill({ date: '2023-01-01', value: 4.5 }),
+            'ECIWAG': Array(13).fill({ date: '2023-01-01', value: 4.5 }),
+            'DGS30': Array(13).fill({ date: '2023-01-01', value: 4.0 }),
+            'DGS2': Array(13).fill({ date: '2023-01-01', value: 4.5 }),
             'BAMLH0A0HYM2': [
               { date: '2023-01-01', value: 4.0 },
               { date: '2023-01-02', value: 4.1 },
@@ -136,7 +138,6 @@ describe('fredFetcher', () => {
               { date: '2023-01-06', value: 4.6 },
               { date: '2023-01-07', value: 4.6 }
             ],
-            'PCEPI': Array(7).fill({ date: '2023-01-01', value: 0 }),
             'PPIACO': Array(7).fill({ date: '2023-01-01', value: 0 }),
             'T5YIE': Array(7).fill({ date: '2023-01-01', value: 0 }),
             'T5YIFR': Array(7).fill({ date: '2023-01-01', value: 0 }),

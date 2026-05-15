@@ -251,11 +251,11 @@ export async function getLatestValues(): Promise<Record<string, number>> {
     latest['nfp_3m_avg'] = changes.reduce((a, b) => a + b, 0) / 3;
   }
 
-  // cpi_yoy: 12-month change
-  const cpiCurr = getSeriesValue('CPIAUCSL');
-  const cpiPrior = getSeriesValue('CPIAUCSL', 12);
-  if (cpiCurr !== null && cpiPrior !== null) {
-    latest['cpi_yoy'] = calculateGrowth(cpiCurr, cpiPrior);
+  // real_wages: ECIWAG (wages) - CPIAUCSL (inflation)
+  const wages = getSeriesValue('ECIWAG');
+  const cpi = getSeriesValue('CPIAUCSL');
+  if (wages !== null && cpi !== null) {
+    latest['real_wages'] = wages - cpi;
   }
 
   // pce_yoy: 12-month change
