@@ -27,6 +27,7 @@ export const TARGET_SERIES: Record<string, string> = {
   'UMCSENT': 'University of Michigan: Consumer Sentiment',
   'PSAVERT': 'Personal Saving Rate',
   'DCOILWTICO': 'Crude Oil Prices: West Texas Intermediate (WTI)',
+  'DHHNGSP': 'Henry Hub Natural Gas Spot Price',
   // Rates & Yield Curve
   'FEDFUNDS': 'Effective Federal Funds Rate',
   'DGS2': '2-Year Treasury Yield',

@@ -8,6 +8,13 @@ vi.mock('axios');
 vi.mock('fs/promises');
 vi.mock('../src/utils/manualIndicators.js');
 
+describe('fredFetcher TARGET_SERIES', () => {
+  it('contains WTI Crude and Henry Hub Natural Gas series IDs', () => {
+    expect(TARGET_SERIES).toHaveProperty('DCOILWTICO');
+    expect(TARGET_SERIES).toHaveProperty('DHHNGSP');
+  });
+});
+
 describe('fredFetcher', () => {
   beforeEach(() => {
     vi.resetAllMocks();
