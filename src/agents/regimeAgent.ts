@@ -4,6 +4,7 @@ import { RegimeAssessment, RegimeAssessmentSchema, PortfolioConfigSchema } from 
 import { dbManager } from './db';
 import { generateAgentResponse } from './baseAgent';
 import { buildPortfolioContext } from '../utils/portfolioContext';
+import { TARGET_SERIES } from '../data/fetchers/fredFetcher';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -77,8 +78,15 @@ export async function evaluateRegime(
       }
     }
 
+    // Translate tickers to natural language descriptions
+    const translatedMacroData: Record<string, number> = {};
+    for (const [key, value] of Object.entries(macroData)) {
+      const translatedKey = TARGET_SERIES[key] || key;
+      translatedMacroData[translatedKey] = value;
+    }
+
     const promptContext = {
-      macro_indicators: macroData,
+      macro_indicators: translatedMacroData,
       regime_weights: weights,
       prior_assessment: priorAssessment,
       additional_context: additionalContext,
@@ -100,7 +108,7 @@ export async function evaluateRegime(
       timestamp: validated.assessed_at,
       quadrant: validated.regime_quadrant,
       confidence: validated.confidence,
-      data_inputs: macroData,
+      data_inputs: macroData, // Persist raw keys to db
       raw_response: validated,
     });
 
