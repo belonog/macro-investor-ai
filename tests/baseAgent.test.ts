@@ -8,13 +8,21 @@ vi.mock('ai', () => ({
   generateObject: vi.fn(),
 }));
 
-vi.mock('@ai-sdk/google', () => ({
-  google: vi.fn(),
-}));
+vi.mock('@ai-sdk/google', () => {
+  const googleMock = vi.fn();
+  return {
+    createGoogleGenerativeAI: vi.fn(() => googleMock),
+    google: googleMock,
+  };
+});
 
-vi.mock('@ai-sdk/anthropic', () => ({
-  anthropic: vi.fn(),
-}));
+vi.mock('@ai-sdk/anthropic', () => {
+  const anthropicMock = vi.fn();
+  return {
+    createAnthropic: vi.fn(() => anthropicMock),
+    anthropic: anthropicMock,
+  };
+});
 
 // Mock database
 vi.mock('../src/db/database', () => ({

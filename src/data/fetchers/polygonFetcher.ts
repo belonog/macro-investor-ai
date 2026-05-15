@@ -1,9 +1,7 @@
-/**
- * Polygon.io Data Fetcher.
- * This will eventually fetch price and earnings data from Polygon.io.
- */
-
+import axios from 'axios';
 import { EarningsEvent } from '../../types/index.js';
+
+const POLYGON_BASE = 'https://api.polygon.io';
 
 /**
  * Gets EOD prices for a list of symbols.
@@ -11,11 +9,17 @@ import { EarningsEvent } from '../../types/index.js';
  * @returns Promise<Record<string, number>>
  */
 export async function getEodPrices(symbols: string[]): Promise<Record<string, number>> {
-  console.log(`Polygon Fetcher: Getting EOD prices for ${symbols.join(', ')} (stub)`);
   const prices: Record<string, number> = {};
-  symbols.forEach(symbol => {
-    prices[symbol] = 0;
-  });
+  for (const symbol of symbols) {
+    const response = await axios.get(`${POLYGON_BASE}/v2/aggs/ticker/${symbol}/prev`, {
+      params: { adjusted: true, apiKey: process.env.POLYGON_API_KEY }
+    });
+    if (response.data && response.data.results && response.data.results.length > 0) {
+      prices[symbol] = response.data.results[0].c;
+    } else {
+      prices[symbol] = 0;
+    }
+  }
   return prices;
 }
 
@@ -26,8 +30,22 @@ export async function getEodPrices(symbols: string[]): Promise<Record<string, nu
  * @returns Promise<EarningsEvent[]>
  */
 export async function getEarningsCalendar(symbols: string[], daysAhead: number): Promise<EarningsEvent[]> {
-  console.log(`Polygon Fetcher: Getting earnings calendar for ${symbols.join(', ')} (stub)`);
-  return [];
+  const response = await axios.get(`${POLYGON_BASE}/vX/reference/tickers/earnings`, {
+    params: { apiKey: process.env.POLYGON_API_KEY }
+  });
+
+  const events: EarningsEvent[] = [];
+  for (const item of response.data.results || []) {
+    if (symbols.includes(item.ticker)) {
+      events.push({
+        symbol: item.ticker,
+        reportDate: item.report_date,
+        epsEstimate: item.eps_estimate || null,
+        timeOfDay: item.amc ? 'post' : item.bmo ? 'pre' : 'unknown'
+      });
+    }
+  }
+  return events;
 }
 
 /**
@@ -35,6 +53,11 @@ export async function getEarningsCalendar(symbols: string[], daysAhead: number):
  * @returns Promise<number>
  */
 export async function getGoldSpotPrice(): Promise<number> {
-  console.log('Polygon Fetcher: Getting gold spot price (stub)');
-  return 2300;
+  const response = await axios.get(`${POLYGON_BASE}/v2/aggs/ticker/C:XAUUSD/prev`, {
+    params: { adjusted: true, apiKey: process.env.POLYGON_API_KEY }
+  });
+  if (response.data && response.data.results && response.data.results.length > 0) {
+    return response.data.results[0].c;
+  }
+  return 0;
 }
