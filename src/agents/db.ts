@@ -1,10 +1,5 @@
-import Database from 'better-sqlite3';
-import path from 'path';
-import fs from 'fs';
-import { RegimeQuadrant } from '../data/types';
-
-const IS_TEST = process.env.NODE_ENV === 'test';
-const DB_PATH = IS_TEST ? ':memory:' : path.join(process.cwd(), 'logs', 'macro_investor.db');
+import { db as newDb } from '../db/database';
+import { RegimeQuadrant } from '../types';
 
 export interface RegimeEvaluationRecord {
   timestamp: string;
@@ -16,19 +11,8 @@ export interface RegimeEvaluationRecord {
 
 class DatabaseManager {
   private static instance: DatabaseManager;
-  private db: Database.Database;
 
-  private constructor() {
-    if (!IS_TEST) {
-      const logsDir = path.dirname(DB_PATH);
-      if (!fs.existsSync(logsDir)) {
-        fs.mkdirSync(logsDir, { recursive: true });
-      }
-    }
-
-    this.db = new Database(DB_PATH);
-    this.initSchema();
-  }
+  private constructor() {}
 
   public static getInstance(): DatabaseManager {
     if (!DatabaseManager.instance) {
@@ -37,75 +21,61 @@ class DatabaseManager {
     return DatabaseManager.instance;
   }
 
-  private initSchema() {
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS regime_evaluations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        timestamp TEXT NOT NULL,
-        quadrant TEXT NOT NULL,
-        confidence REAL NOT NULL,
-        data_inputs TEXT NOT NULL,
-        raw_response TEXT NOT NULL
-      );
-
-      CREATE TABLE IF NOT EXISTS rebalancing_decisions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        timestamp TEXT NOT NULL,
-        alignment_score REAL NOT NULL,
-        alignment_grade TEXT NOT NULL,
-        position_assessments TEXT NOT NULL,
-        raw_response TEXT NOT NULL
-      );
-    `);
-  }
-
   public logRegimeEvaluation(evaluation: RegimeEvaluationRecord) {
-    const stmt = this.db.prepare(`
-      INSERT INTO regime_evaluations (timestamp, quadrant, confidence, data_inputs, raw_response)
-      VALUES (?, ?, ?, ?, ?)
-    `);
-
-    stmt.run(
-      evaluation.timestamp,
-      evaluation.quadrant,
-      evaluation.confidence,
-      JSON.stringify(evaluation.data_inputs),
-      JSON.stringify(evaluation.raw_response)
-    );
+    newDb.insertRegimeHistory({
+      regime_quadrant: evaluation.quadrant,
+      confidence: evaluation.confidence,
+      assessed_at: evaluation.timestamp,
+      data_inputs: evaluation.data_inputs,
+      raw_response: evaluation.raw_response
+    });
+    
+    newDb.insertAgentRun({
+      agent: 'regimeAgent',
+      input_json: JSON.stringify(evaluation.data_inputs),
+      output_json: JSON.stringify(evaluation.raw_response),
+      run_at: evaluation.timestamp
+    });
   }
 
   public logRebalancingDecision(decision: any) {
-    const stmt = this.db.prepare(`
-      INSERT INTO rebalancing_decisions (timestamp, alignment_score, alignment_grade, position_assessments, raw_response)
-      VALUES (?, ?, ?, ?, ?)
-    `);
+    newDb.insertRebalancingHistory(decision);
 
-    stmt.run(
-      decision.timestamp,
-      decision.alignment_score,
-      decision.alignment_grade,
-      JSON.stringify(decision.position_assessments),
-      JSON.stringify(decision.raw_response)
-    );
+    if (decision.position_assessments && Array.isArray(decision.position_assessments)) {
+      for (const pa of decision.position_assessments) {
+        newDb.insertDecision({
+          symbol: pa.symbol,
+          action: pa.suggested_action,
+          rationale: pa.action_rationale,
+          regime_at_time: decision.timestamp,
+          notes: pa.conflict_flag
+        });
+      }
+    }
+
+    newDb.insertAgentRun({
+      agent: 'rebalancingAgent',
+      output_json: JSON.stringify(decision.raw_response || decision),
+      run_at: decision.timestamp
+    });
   }
 
   public getRecentEvaluations(limit: number = 10): any[] {
-    const stmt = this.db.prepare(`SELECT * FROM regime_evaluations ORDER BY timestamp DESC LIMIT ?`);
-    return stmt.all(limit).map((row: any) => ({
-      ...row,
-      data_inputs: JSON.parse(row.data_inputs),
-      raw_response: JSON.parse(row.raw_response)
+    return newDb.getRegimeHistory(limit).map(assessment => ({
+      timestamp: assessment.assessed_at,
+      quadrant: assessment.regime_quadrant,
+      confidence: assessment.confidence,
+      data_inputs: assessment.data_inputs || {}, 
+      raw_response: assessment.raw_response || assessment
     }));
   }
 
-  // For testing purposes
   public clearEvaluations() {
-    this.db.exec(`DELETE FROM regime_evaluations`);
+    newDb.clearRegimeHistory();
   }
 
-  // For testing purposes
   public close() {
-    this.db.close();
+    newDb.close();
   }
 }
 
