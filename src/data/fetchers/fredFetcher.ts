@@ -4,6 +4,13 @@ import path from 'path';
 import { DataPoint, DataPointSchema, MacroSnapshot, MacroCacheSchema } from '../../types/index.js';
 import { getManualIndicators } from '../../utils/manualIndicators.js';
 
+/**
+ * Helper for calculating percentage change.
+ */ 
+function calculateGrowth(current: number, past: number): number {
+  return past === 0 ? 0 : (current - past) / past;
+}
+
 const FRED_BASE_URL = 'https://api.stlouisfed.org/fred';
 
 export const TARGET_SERIES: Record<string, string> = {
@@ -244,11 +251,25 @@ export async function getLatestValues(): Promise<Record<string, number>> {
     latest['nfp_3m_avg'] = changes.reduce((a, b) => a + b, 0) / 3;
   }
 
-  // real_wages: ECIWAG (wages) - CPIAUCSL (inflation)
-  const wages = getSeriesValue('ECIWAG');
-  const cpi = getSeriesValue('CPIAUCSL');
-  if (wages !== null && cpi !== null) {
-    latest['real_wages'] = wages - cpi;
+  // cpi_yoy: 12-month change
+  const cpiCurr = getSeriesValue('CPIAUCSL');
+  const cpiPrior = getSeriesValue('CPIAUCSL', 12);
+  if (cpiCurr !== null && cpiPrior !== null) {
+    latest['cpi_yoy'] = calculateGrowth(cpiCurr, cpiPrior);
+  }
+
+  // pce_yoy: 12-month change
+  const pceCurr = getSeriesValue('PCEPI');
+  const pcePrior = getSeriesValue('PCEPI', 12);
+  if (pceCurr !== null && pcePrior !== null) {
+    latest['pce_yoy'] = calculateGrowth(pceCurr, pcePrior);
+  }
+
+  // real_gdp_qoq: 1-quarter change
+  const gdpCurr = getSeriesValue('GDPC1');
+  const gdpPrior = getSeriesValue('GDPC1', 1);
+  if (gdpCurr !== null && gdpPrior !== null) {
+    latest['real_gdp_qoq'] = calculateGrowth(gdpCurr, gdpPrior);
   }
 
   // yield_curve_30_2: 30-Year Treasury Yield - 2-Year Treasury Yield
