@@ -14,9 +14,9 @@
     - [x] Implement `src/flows/eodCheck.ts`.
 - [x] **Task 5: Implement Unified CLI**
     - [x] Setup `commander` CLI in `src/cli.ts`.
-- [ ] **Task 6: Implement Scheduler**
-    - [ ] Setup `node-cron` schedules in `src/scheduler.ts`.
-- [ ] **Task 7: Final Verification**
-    - [ ] Test CLI commands.
-    - [ ] Test flows with mocked data.
-    - [ ] Verify Telegram alerts work.
+- [x] **Task 6: Implement Scheduler**
+    - [x] Setup `node-cron` schedules in `src/scheduler.ts`.
+- [x] **Task 7: Final Verification**
+    - [x] Test CLI commands.
+    - [x] Test flows with mocked data.
+    - [x] Verify Telegram alerts work.

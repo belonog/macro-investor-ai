@@ -41,14 +41,20 @@ describe('AlertSchema', () => {
       symbol: 'BTC',
       message: 'Volatility high',
       action: 'Check positions',
+      createdAt: new Date().toISOString(),
     };
     expect(AlertSchema.safeParse(validAlert).success).toBe(true);
   });
 
   it('should validate without optional fields', () => {
+    // Note: In our schema, symbol and action are nullable but must be present,
+    // and createdAt is mandatory.
     const minimalAlert = {
       level: 'INFO',
+      symbol: null,
       message: 'System online',
+      action: null,
+      createdAt: new Date().toISOString(),
     };
     expect(AlertSchema.safeParse(minimalAlert).success).toBe(true);
   });
