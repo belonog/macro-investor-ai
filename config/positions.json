@@ -1,37 +1,45 @@
 {
   "TLT": {
     "shares": 100,
-    "avg_cost": 90.00,
+    "avg_cost": 90,
     "position_type": "macro_core",
     "thesis": "Long-duration Treasury recession play. Fed forced to cut as growth collapses.",
-    "regime_match": ["Deflationary Recession"],
-    "stop": 88.00,
-    "hard_stop": 85.00,
+    "regime_match": [
+      "Deflationary Recession"
+    ],
+    "stop": 88,
+    "hard_stop": 85,
     "thesis_invalidation": "30-year yield breaks above 5.10% on sustained basis; stagflation regime confirmed with no recession signal",
     "threshold_monitor": {
       "indicator": "yield_30y",
-      "warn_at": 4.50,
-      "hard_exit_at": 5.10
+      "warn_at": 4.5,
+      "hard_exit_at": 5.1
     }
   },
   "GLD": {
     "shares": 50,
-    "avg_cost": 200.00,
+    "avg_cost": 200,
     "position_type": "macro_hedge",
     "thesis": "Stagflation hedge; gold performs well when real rates are negative and growth is low.",
-    "regime_match": ["Stagflation"],
-    "stop": 195.00,
-    "hard_stop": 190.00,
+    "regime_match": [
+      "Stagflation"
+    ],
+    "stop": 195,
+    "hard_stop": 190,
     "thesis_invalidation": "Real rates turn strongly positive; growth accelerates with low inflation."
   },
   "SHY": {
     "shares": 200,
-    "avg_cost": 82.00,
+    "avg_cost": 82,
     "position_type": "macro_hedge",
     "thesis": "Short-term treasury cash proxy; low duration risk.",
-    "regime_match": ["Deflationary Recession", "Stagflation", "Goldilocks"],
-    "stop": 81.50,
-    "hard_stop": 81.00,
+    "regime_match": [
+      "Deflationary Recession",
+      "Stagflation",
+      "Goldilocks"
+    ],
+    "stop": 81.5,
+    "hard_stop": 81,
     "thesis_invalidation": "Fed aggressively hikes rates beyond expectations."
   }
 }

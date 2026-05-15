@@ -9,7 +9,8 @@ import {
   RegimeAssessmentSchema,
   PositionConfigSchema,
   CoherenceOutputSchema,
-  InterpreterOutputSchema
+  InterpreterOutputSchema,
+  EarningsEventSchema
 } from '../src/types';
 
 describe('PositionSnapshotSchema', () => {
@@ -219,5 +220,37 @@ describe('InterpreterOutputSchema', () => {
       summary_markdown: '# Summary',
     };
     expect(InterpreterOutputSchema.safeParse(validOutput).success).toBe(true);
+  });
+});
+
+describe('EarningsEventSchema', () => {
+  it('should validate a correct earnings event', () => {
+    const validEvent = {
+      symbol: 'AAPL',
+      reportDate: '2024-05-01',
+      epsEstimate: 1.5,
+      timeOfDay: 'post',
+    };
+    expect(EarningsEventSchema.safeParse(validEvent).success).toBe(true);
+  });
+
+  it('should allow null epsEstimate', () => {
+    const event = {
+      symbol: 'TSLA',
+      reportDate: '2024-04-20',
+      epsEstimate: null,
+      timeOfDay: 'post',
+    };
+    expect(EarningsEventSchema.safeParse(event).success).toBe(true);
+  });
+
+  it('should reject invalid timeOfDay', () => {
+    const invalidEvent = {
+      symbol: 'MSFT',
+      reportDate: '2024-04-25',
+      epsEstimate: 2.0,
+      timeOfDay: 'noon',
+    };
+    expect(EarningsEventSchema.safeParse(invalidEvent).success).toBe(false);
   });
 });

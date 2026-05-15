@@ -51,7 +51,7 @@ describe('rebalancingAgent', () => {
 
     vi.mocked(fs.readFileSync).mockImplementation((path) => {
       if (typeof path === 'string') {
-        if (path.includes('regimeLatest.json')) return JSON.stringify(mockRegime);
+        if (path.includes('regime_latest.json')) return JSON.stringify(mockRegime);
         if (path.includes('rebalancing_system.txt')) return 'Mock Prompt';
         if (path.includes('positions.json')) return '{}';
       }
@@ -103,8 +103,8 @@ describe('rebalancingAgent', () => {
 
     vi.mocked(fs.readFileSync).mockImplementation((path) => {
       if (typeof path === 'string') {
-        if (path.includes('regimeLatest.json')) return JSON.stringify(mockRegime);
-        if (path.includes('positionsSnapshot.json')) return JSON.stringify(mockPositions);
+        if (path.includes('regime_latest.json')) return JSON.stringify(mockRegime);
+        if (path.includes('positions_snapshot.json')) return JSON.stringify(mockPositions);
         if (path.includes('positions.json')) return JSON.stringify(mockConfig);
         if (path.includes('rebalancing_system.txt')) return 'Mock Prompt: {{PORTFOLIO_CONTEXT}}';
       }

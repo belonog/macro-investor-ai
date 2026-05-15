@@ -50,4 +50,21 @@ describe('DatabaseManager', () => {
     expect(recent[0].timestamp).toBe(eval2.timestamp);
     expect(recent[1].timestamp).toBe(eval1.timestamp);
   });
+
+  it('should log an alert and retrieve it', () => {
+    const alert = {
+      level: 'CRITICAL',
+      symbol: 'AAPL',
+      message: 'Significant price drop',
+      action: 'Check position'
+    };
+
+    dbManager.logAlert(alert);
+
+    const recent = dbManager.getRecentAlerts(1);
+    expect(recent.length).toBe(1);
+    expect(recent[0].level).toBe(alert.level);
+    expect(recent[0].symbol).toBe(alert.symbol);
+    expect(recent[0].message).toBe(alert.message);
+  });
 });

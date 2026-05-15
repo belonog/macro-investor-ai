@@ -2,7 +2,7 @@ import { generateObject } from 'ai';
 import { google } from '@ai-sdk/google';
 import { anthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
-import { db } from '../db/database';
+import { db } from '../db/database.js';
 import dotenv from 'dotenv';
 
 dotenv.config();

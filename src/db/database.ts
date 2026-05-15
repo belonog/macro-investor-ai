@@ -4,7 +4,7 @@ import fs from 'fs';
 import { 
   RegimeAssessment, 
   Alert
-} from '../types';
+} from '../types/index.js';
 
 const LOGS_DIR = path.join(process.cwd(), 'logs');
 
@@ -87,6 +87,7 @@ export class DatabaseManager {
         level        TEXT,
         symbol       TEXT,
         message      TEXT,
+        action       TEXT,
         acknowledged INTEGER DEFAULT 0,
         ack_at       TIMESTAMP
       );
@@ -153,13 +154,14 @@ export class DatabaseManager {
 
   public insertAlert(alert: Alert) {
     const stmt = this.alertsSentDb.prepare(`
-      INSERT INTO alerts_sent (level, symbol, message)
-      VALUES (?, ?, ?)
+      INSERT INTO alerts_sent (level, symbol, message, action)
+      VALUES (?, ?, ?, ?)
     `);
     return stmt.run(
       alert.level,
       alert.symbol || null,
-      alert.message
+      alert.message,
+      alert.action || null
     );
   }
 
@@ -214,6 +216,13 @@ export class DatabaseManager {
       UPDATE alerts_sent SET acknowledged = 1, ack_at = CURRENT_TIMESTAMP WHERE id = ?
     `);
     return stmt.run(id);
+  }
+
+  public getAlerts(limit: number = 10): any[] {
+    const stmt = this.alertsSentDb.prepare(`
+      SELECT * FROM alerts_sent ORDER BY sent_at DESC LIMIT ?
+    `);
+    return stmt.all(limit);
   }
 
   public clearRegimeHistory() {

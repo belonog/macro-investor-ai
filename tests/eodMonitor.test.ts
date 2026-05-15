@@ -67,7 +67,7 @@ describe('eodMonitor', () => {
     vi.mocked(fs.readFileSync).mockImplementation((path) => {
       if (typeof path === 'string') {
         if (path.includes('positions.json')) return JSON.stringify(mockConfig);
-        if (path.includes('positionsSnapshot.json')) return JSON.stringify(mockSnapshots);
+        if (path.includes('positions_snapshot.json')) return JSON.stringify(mockSnapshots);
       }
       return '';
     });

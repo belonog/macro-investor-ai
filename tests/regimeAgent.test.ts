@@ -29,7 +29,7 @@ describe('regimeAgent', () => {
       if (typeof path === 'string') {
         if (path.includes('regime_system.txt')) return 'Mock Prompt with {{PORTFOLIO_CONTEXT}}';
         if (path.includes('regime_weights.json')) return JSON.stringify({});
-        if (path.includes('regimeLatest.json')) return JSON.stringify({});
+        if (path.includes('regime_latest.json')) return JSON.stringify({});
         if (path.includes('positions.json')) return JSON.stringify({});
       }
       return '';
@@ -101,7 +101,7 @@ describe('regimeAgent', () => {
     }));
     
     expect(fs.writeFileSync).toHaveBeenCalledWith(
-      expect.stringContaining('regimeLatest.json'),
+      expect.stringContaining('regime_latest.json'),
       expect.stringContaining('"regime_quadrant": "Goldilocks"')
     );
   });

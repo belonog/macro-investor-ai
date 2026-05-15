@@ -16,8 +16,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const REGIME_CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'regimeLatest.json');
-const POSITIONS_CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'positionsSnapshot.json');
+const REGIME_CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'regime_latest.json');
+const POSITIONS_CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'positions_snapshot.json');
 const POSITIONS_CONFIG_PATH = path.join(process.cwd(), 'config', 'positions.json');
 const PROMPT_PATH = path.join(process.cwd(), 'src', 'prompts', 'rebalancing_system.txt');
 const REBALANCING_CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'rebalancingLatest.json');

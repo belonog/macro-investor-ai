@@ -15,12 +15,14 @@ export type PositionSnapshot = z.infer<typeof PositionSnapshotSchema>;
 
 export const AlertSchema = z.object({
   level: z.enum(['INFO', 'WARNING', 'CRITICAL']),
-  symbol: z.string().optional(),
+  symbol: z.string().nullable(),
   message: z.string(),
-  action: z.string().optional(),
+  action: z.string().nullable(),
+  createdAt: z.string(),
 });
 
 export type Alert = z.infer<typeof AlertSchema>;
+export type AlertLevel = 'INFO' | 'WARNING' | 'CRITICAL';
 
 export const DataPointSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD
@@ -161,3 +163,11 @@ export const InterpreterOutputSchema = z.object({
   summary_markdown: z.string(),
 });
 export type InterpreterOutput = z.infer<typeof InterpreterOutputSchema>;
+
+export const EarningsEventSchema = z.object({
+  symbol: z.string(),
+  reportDate: z.string(),
+  epsEstimate: z.number().nullable(),
+  timeOfDay: z.enum(['pre', 'post', 'unknown']),
+});
+export type EarningsEvent = z.infer<typeof EarningsEventSchema>;

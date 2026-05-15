@@ -8,7 +8,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'regimeLatest.json');
+const CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'regime_latest.json');
 const WEIGHTS_PATH = path.join(process.cwd(), 'config', 'regime_weights.json');
 const POSITIONS_PATH = path.join(process.cwd(), 'config', 'positions.json');
 const PROMPT_PATH = path.join(process.cwd(), 'src', 'prompts', 'regime_system.txt');
@@ -16,9 +16,15 @@ const PROMPT_PATH = path.join(process.cwd(), 'src', 'prompts', 'regime_system.tx
 /**
  * Evaluates the current economic regime based on macro data.
  * @param macroData A record of macro indicator names and their values.
+ * @param additionalContext Optional additional context from other sources (e.g. BLS, EIA).
+ * @param trigger The trigger for this evaluation (manual, post_release, scheduled).
  * @returns A promise that resolves to a RegimeAssessment.
  */
-export async function evaluateRegime(macroData: Record<string, number>): Promise<RegimeAssessment> {
+export async function evaluateRegime(
+  macroData: Record<string, number>,
+  additionalContext: Record<string, any> = {},
+  trigger: 'manual' | 'post_release' | 'scheduled' = 'manual'
+): Promise<RegimeAssessment> {
   try {
     if (!fs.existsSync(PROMPT_PATH)) {
       throw new Error(`System prompt file not found at ${PROMPT_PATH}`);
@@ -27,32 +33,58 @@ export async function evaluateRegime(macroData: Record<string, number>): Promise
     let systemPrompt = fs.readFileSync(PROMPT_PATH, 'utf8');
 
     // Inject Portfolio Context
-    const positionsConfig = fs.existsSync(POSITIONS_PATH)
-      ? PortfolioConfigSchema.parse(JSON.parse(fs.readFileSync(POSITIONS_PATH, 'utf8')))
-      : {};
+    let positionsConfig = {};
+    if (fs.existsSync(POSITIONS_PATH)) {
+      try {
+        const raw = fs.readFileSync(POSITIONS_PATH, 'utf8');
+        if (raw.trim()) {
+          positionsConfig = PortfolioConfigSchema.parse(JSON.parse(raw));
+        }
+      } catch (err) {
+        console.warn(`Failed to parse positions config at ${POSITIONS_PATH}:`, err);
+      }
+    }
     const portfolioContext = buildPortfolioContext(positionsConfig);
     systemPrompt = systemPrompt.replace('{{PORTFOLIO_CONTEXT}}', portfolioContext);
 
     // Load weights
-    const weights = fs.existsSync(WEIGHTS_PATH)
-      ? JSON.parse(fs.readFileSync(WEIGHTS_PATH, 'utf8'))
-      : {};
+    let weights = {};
+    if (fs.existsSync(WEIGHTS_PATH)) {
+      try {
+        const raw = fs.readFileSync(WEIGHTS_PATH, 'utf8');
+        if (raw.trim()) {
+          weights = JSON.parse(raw);
+        }
+      } catch (err) {
+        console.warn(`Failed to parse weights at ${WEIGHTS_PATH}:`, err);
+      }
+    }
 
     // Load prior assessment
-    const priorAssessment = fs.existsSync(CACHE_PATH)
-      ? JSON.parse(fs.readFileSync(CACHE_PATH, 'utf8'))
-      : null;
+    let priorAssessment = null;
+    if (fs.existsSync(CACHE_PATH)) {
+      try {
+        const raw = fs.readFileSync(CACHE_PATH, 'utf8');
+        if (raw.trim()) {
+          priorAssessment = JSON.parse(raw);
+        }
+      } catch (err) {
+        console.warn(`Failed to parse prior assessment at ${CACHE_PATH}:`, err);
+      }
+    }
 
     const promptContext = {
       macro_indicators: macroData,
       regime_weights: weights,
       prior_assessment: priorAssessment,
+      additional_context: additionalContext,
       current_time: new Date().toISOString(),
+      trigger: trigger
     };
 
     const validated = await generateAgentResponse<RegimeAssessment>({
       agentName: 'regimeAgent',
-      trigger: 'manual',
+      trigger: trigger,
       systemPrompt,
       prompt: `Context:\n${JSON.stringify(promptContext, null, 2)}`,
       schema: RegimeAssessmentSchema,

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { parseFlexXml, fetchPortfolioSnapshot } from '../src/data/fetchers/ibkrFetcher.js';
+import { parseFlexXml, fetchPortfolioSnapshot } from '../src/data/fetchers/flexReportFetcher.js';
 import axios from 'axios';
 
 vi.mock('axios');

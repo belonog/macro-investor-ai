@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { PositionSnapshot, PortfolioConfig, SyncResult, Alert } from '../types';
+import { PositionSnapshot, PortfolioConfig, SyncResult, Alert } from '../types/index.js';
 
 /**
  * Synchronizes shares and avg_cost from IBKR Flex snapshot to positions.json config.
@@ -9,7 +9,7 @@ import { PositionSnapshot, PortfolioConfig, SyncResult, Alert } from '../types';
 export function syncPositions(
   snapshot: PositionSnapshot[],
   positionsConfig: PortfolioConfig,
-  configPath: string
+  configPath?: string
 ): SyncResult {
   const updatedConfig: PortfolioConfig = JSON.parse(JSON.stringify(positionsConfig));
   const alerts: Alert[] = [];
@@ -21,13 +21,22 @@ export function syncPositions(
   for (const pos of snapshot) {
     if (configSymbols.has(pos.symbol)) {
       updatedConfig[pos.symbol].shares = pos.quantity;
-      updatedConfig[pos.symbol].avg_cost = pos.avgCost;
+      
+      // ONLY update avg_cost if it differs by > 0.5%
+      const currentAvgCost = positionsConfig[pos.symbol].avg_cost;
+      const newAvgCost = pos.avgCost;
+      const diff = Math.abs(newAvgCost - currentAvgCost) / currentAvgCost;
+      
+      if (diff > 0.005) {
+        updatedConfig[pos.symbol].avg_cost = newAvgCost;
+      }
     } else {
       alerts.push({
         level: 'WARNING',
         symbol: pos.symbol,
         message: `New unrecognized symbol found in IBKR: ${pos.symbol}. Quantity: ${pos.quantity}`,
         action: 'Add to positions.json if this is a new intentional position.',
+        createdAt: new Date().toISOString(),
       });
     }
   }
@@ -42,6 +51,7 @@ export function syncPositions(
           symbol: symbol,
           message: `Closed position detected: ${symbol} is no longer in IBKR snapshot.`,
           action: 'Verify if position was intentionally closed and update thesis if needed.',
+          createdAt: new Date().toISOString(),
         });
         updatedConfig[symbol].shares = 0;
       }

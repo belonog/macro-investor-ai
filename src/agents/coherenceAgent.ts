@@ -1,13 +1,13 @@
 import fs from 'fs';
 import path from 'path';
-import { generateAgentResponse } from './baseAgent';
+import { generateAgentResponse } from './baseAgent.js';
 import { 
   CoherenceOutput, 
   CoherenceOutputSchema, 
   PortfolioConfig, 
   RegimeAssessment 
-} from '../types';
-import { buildPortfolioContext } from '../utils/portfolioContext';
+} from '../types/index.js';
+import { buildPortfolioContext } from '../utils/portfolioContext.js';
 
 export interface CoherenceInput {
   symbol: string;
