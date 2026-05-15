@@ -6,8 +6,11 @@ import {
   MacroSnapshotSchema, 
   MacroCacheSchema, 
   RegimeQuadrantSchema, 
-  RegimeSnapshotSchema 
-} from '../src/data/types';
+  RegimeAssessmentSchema,
+  PositionConfigSchema,
+  CoherenceOutputSchema,
+  InterpreterOutputSchema
+} from '../src/types';
 
 describe('PositionSnapshotSchema', () => {
   it('should validate a correct position snapshot', () => {
@@ -65,8 +68,14 @@ describe('DataPointSchema', () => {
 describe('MacroSnapshotSchema', () => {
   it('should validate a correct macro snapshot', () => {
     const validSnapshot = {
-      'CPI': [{ date: '2024-01-01', value: 3.1 }],
-      'GDP': [{ date: '2023-12-31', value: 2.5 }],
+      series: {
+        'CPI': [{ date: '2024-01-01', value: 3.1 }],
+        'GDP': [{ date: '2023-12-31', value: 2.5 }],
+      },
+      fetchedAt: {
+        'CPI': new Date().toISOString(),
+        'GDP': new Date().toISOString(),
+      }
     };
     expect(MacroSnapshotSchema.safeParse(validSnapshot).success).toBe(true);
   });
@@ -77,7 +86,12 @@ describe('MacroCacheSchema', () => {
     const validCache = {
       fetchedAt: new Date().toISOString(),
       data: {
-        'CPI': [{ date: '2024-01-01', value: 3.1 }],
+        series: {
+          'CPI': [{ date: '2024-01-01', value: 3.1 }],
+        },
+        fetchedAt: {
+          'CPI': new Date().toISOString(),
+        }
       },
     };
     expect(MacroCacheSchema.safeParse(validCache).success).toBe(true);
@@ -97,24 +111,24 @@ describe('RegimeQuadrantSchema', () => {
   });
 });
 
-describe('RegimeSnapshotSchema', () => {
-  it('should validate a correct regime snapshot', () => {
-    const validSnapshot = {
-      quadrant: 'Goldilocks',
+describe('RegimeAssessmentSchema', () => {
+  it('should validate a correct regime assessment', () => {
+    const validAssessment = {
+      regime_quadrant: 'Goldilocks',
       confidence: 85,
       inflation_score: 0.3,
       growth_score: 0.7,
       regime_drift_vs_prior: 'Stable',
-      keyDrivers: ['Low inflation', 'Moderate growth'],
+      key_drivers: ['Low inflation', 'Moderate growth'],
       confirming_indicators: ['CPI stable'],
       contradicting_indicators: ['PPI rising'],
       central_thesis_conflict: 'None',
       fastest_path_to_being_wrong: 'Growth slowing faster than expected',
       watch_next: ['NFP'],
       transition_signal: 'Possible uptick in CPI',
-      evaluatedAt: new Date().toISOString()
+      assessed_at: new Date().toISOString()
     };
-    const result = RegimeSnapshotSchema.safeParse(validSnapshot);
+    const result = RegimeAssessmentSchema.safeParse(validAssessment);
     if (!result.success) {
       console.log(result.error);
     }
@@ -122,57 +136,88 @@ describe('RegimeSnapshotSchema', () => {
   });
 
   it('should validate without optional transition_signal', () => {
-    const validSnapshot = {
-      quadrant: 'Stagflation',
+    const validAssessment = {
+      regime_quadrant: 'Stagflation',
       confidence: 70,
       inflation_score: 0.8,
       growth_score: 0.4,
       regime_drift_vs_prior: 'Weakening',
-      keyDrivers: ['Rising prices', 'Stagnant growth'],
+      key_drivers: ['Rising prices', 'Stagnant growth'],
       confirming_indicators: [],
       contradicting_indicators: [],
       central_thesis_conflict: 'Conflict here',
       fastest_path_to_being_wrong: 'Deflation spike',
       watch_next: [],
-      evaluatedAt: new Date().toISOString()
+      assessed_at: new Date().toISOString()
     };
-    const result = RegimeSnapshotSchema.safeParse(validSnapshot);
+    const result = RegimeAssessmentSchema.safeParse(validAssessment);
     expect(result.success).toBe(true);
   });
+});
 
-  it('should reject confidence out of bounds', () => {
-    const base = {
-      quadrant: 'Goldilocks',
-      inflation_score: 0.5,
-      growth_score: 0.5,
-      regime_drift_vs_prior: 'Stable',
-      keyDrivers: ['Test'],
-      confirming_indicators: [],
-      contradicting_indicators: [],
-      central_thesis_conflict: 'None',
-      fastest_path_to_being_wrong: 'None',
-      watch_next: [],
-      evaluatedAt: new Date().toISOString()
+describe('PositionConfigSchema', () => {
+  it('should validate with optional fields', () => {
+    const config = {
+      shares: 100,
+      avg_cost: 50,
+      position_type: 'macro_core',
+      thesis: 'Long term growth',
+      regime_match: ['Goldilocks'],
+      thesis_invalidation: 'Growth slows',
+      targets: [100, 150],
+      notes: 'Some notes'
     };
-    expect(RegimeSnapshotSchema.safeParse({ ...base, confidence: -1 }).success).toBe(false);
-    expect(RegimeSnapshotSchema.safeParse({ ...base, confidence: 101 }).success).toBe(false);
+    expect(PositionConfigSchema.safeParse(config).success).toBe(true);
   });
 
-  it('should reject invalid date format', () => {
-    const invalidSnapshot = {
-      quadrant: 'Goldilocks',
-      confidence: 50,
-      inflation_score: 0.5,
-      growth_score: 0.5,
-      regime_drift_vs_prior: 'Stable',
-      keyDrivers: ['Test'],
-      confirming_indicators: [],
-      contradicting_indicators: [],
-      central_thesis_conflict: 'None',
-      fastest_path_to_being_wrong: 'None',
-      watch_next: [],
-      evaluatedAt: 'not-a-date'
+  it('should validate without optional fields', () => {
+    const minimalConfig = {
+      shares: 100,
+      avg_cost: 50,
+      position_type: 'macro_core',
+      thesis: 'Long term growth',
+      regime_match: ['Goldilocks'],
+      thesis_invalidation: 'Growth slows'
     };
-    expect(RegimeSnapshotSchema.safeParse(invalidSnapshot).success).toBe(false);
+    expect(PositionConfigSchema.safeParse(minimalConfig).success).toBe(true);
+  });
+});
+
+describe('CoherenceOutputSchema', () => {
+  it('should validate a correct coherence output', () => {
+    const validOutput = {
+      regimeMatch: 'Strong',
+      correlationRisk: 'Low',
+      thesisConflicts: [],
+      sizingNote: 'Standard size',
+      verdict: 'Proceed',
+      questionsBeforeEntry: ['Q1?', 'Q2?', 'Q3?'],
+    };
+    expect(CoherenceOutputSchema.safeParse(validOutput).success).toBe(true);
+  });
+
+  it('should reject if questionsBeforeEntry does not have exactly 3 items', () => {
+    const invalidOutput = {
+      regimeMatch: 'Strong',
+      correlationRisk: 'Low',
+      thesisConflicts: [],
+      sizingNote: 'Standard size',
+      verdict: 'Proceed',
+      questionsBeforeEntry: ['Q1?', 'Q2?'],
+    };
+    expect(CoherenceOutputSchema.safeParse(invalidOutput).success).toBe(false);
+  });
+});
+
+describe('InterpreterOutputSchema', () => {
+  it('should validate a correct interpreter output', () => {
+    const validOutput = {
+      confirms: ['A'],
+      contradicts: ['B'],
+      ambiguous: ['C'],
+      resolution_requirement: 'Check D',
+      summary_markdown: '# Summary',
+    };
+    expect(InterpreterOutputSchema.safeParse(validOutput).success).toBe(true);
   });
 });

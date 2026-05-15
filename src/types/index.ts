@@ -142,3 +142,22 @@ export const ManualIndicatorSchema = z.object({
   source: z.string(),
 });
 export type ManualIndicator = z.infer<typeof ManualIndicatorSchema>;
+
+export const CoherenceOutputSchema = z.object({
+  regimeMatch: z.enum(['Strong', 'Moderate', 'Weak', 'Conflicting']),
+  correlationRisk: z.string(),
+  thesisConflicts: z.array(z.string()),
+  sizingNote: z.string(),
+  verdict: z.enum(['Proceed', 'Reduce Size', 'Reconsider', 'Conflicts']),
+  questionsBeforeEntry: z.array(z.string()).length(3),
+});
+export type CoherenceOutput = z.infer<typeof CoherenceOutputSchema>;
+
+export const InterpreterOutputSchema = z.object({
+  confirms: z.array(z.string()),
+  contradicts: z.array(z.string()),
+  ambiguous: z.array(z.string()),
+  resolution_requirement: z.string(),
+  summary_markdown: z.string(),
+});
+export type InterpreterOutput = z.infer<typeof InterpreterOutputSchema>;
