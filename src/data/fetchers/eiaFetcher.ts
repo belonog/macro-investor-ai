@@ -1,39 +1,35 @@
-/**
- * Energy Information Administration (EIA) Data Fetcher.
- * This will eventually fetch data from the EIA API.
- */
+import axios from 'axios';
 
-/**
- * Gets the current crude oil price (WTI).
- */
-export async function getCrudeOilPrice(): Promise<number> {
-  console.log('EIA Fetcher: Getting Crude Oil Price (stub)');
-  return 0;
-}
+const EIA_BASE = 'https://api.eia.gov/v2';
 
-/**
- * Gets the current natural gas price (Henry Hub).
- */
-export async function getNatGasPrice(): Promise<number> {
-  console.log('EIA Fetcher: Getting Nat Gas Price (stub)');
-  return 0;
+async function fetchEiaValue(apiPath: string): Promise<number> {
+  const url = `${EIA_BASE}${apiPath}`;
+  const response = await axios.get(url, {
+    params: { api_key: process.env.EIA_API_KEY }
+  });
+  return response.data.response.data[0].value;
 }
 
 /**
  * Gets the latest crude inventory change.
  */
 export async function getCrudeInventoryChange(): Promise<number> {
-  console.log('EIA Fetcher: Getting Crude Inventory Change (stub)');
-  return 0;
+  return fetchEiaValue('/petroleum/sum/sndw/data/');
 }
 
 /**
- * Gets all latest values from EIA.
+ * Gets the latest US crude oil field production.
+ */
+export async function getCrudeProduction(): Promise<number> {
+  return fetchEiaValue('/petroleum/crd/crpdn/data/');
+}
+
+/**
+ * Gets all latest fundamental values from EIA.
  */
 export async function getLatest(): Promise<Record<string, number>> {
   return {
-    crude_oil_price: await getCrudeOilPrice(),
-    nat_gas_price: await getNatGasPrice(),
     crude_inventory_change: await getCrudeInventoryChange(),
+    crude_production: await getCrudeProduction(),
   };
 }
