@@ -66,7 +66,11 @@ export async function evaluateRegime(
       try {
         const raw = fs.readFileSync(CACHE_PATH, 'utf8');
         if (raw.trim()) {
-          priorAssessment = JSON.parse(raw);
+          const parsed = JSON.parse(raw);
+          // Check if it's a valid assessment structure
+          if (parsed && typeof parsed === 'object') {
+            priorAssessment = parsed;
+          }
         }
       } catch (err) {
         console.warn(`Failed to parse prior assessment at ${CACHE_PATH}:`, err);
