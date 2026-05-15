@@ -1,6 +1,6 @@
 import { generateObject } from 'ai';
-import { google } from '@ai-sdk/google';
-import { anthropic } from '@ai-sdk/anthropic';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { createAnthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
 import { db } from '../db/database.js';
 import dotenv from 'dotenv';
@@ -38,9 +38,14 @@ export async function generateAgentResponse<T>(
       : process.env.REBALANCING_AGENT_MODEL
   ) || (provider === 'google' ? 'gemini-2.0-flash' : 'claude-3-5-sonnet-20241022');
 
-  const model = provider === 'google' 
-    ? google(modelName) 
-    : anthropic(modelName);
+  let model;
+  if (provider === 'google') {
+    const google = createGoogleGenerativeAI({ apiKey });
+    model = google(modelName);
+  } else {
+    const anthropic = createAnthropic({ apiKey });
+    model = anthropic(modelName);
+  }
 
   let lastError: any;
   const maxRetries = 3;

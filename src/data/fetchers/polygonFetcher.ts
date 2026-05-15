@@ -29,3 +29,12 @@ export async function getEarningsCalendar(symbols: string[], daysAhead: number):
   console.log(`Polygon Fetcher: Getting earnings calendar for ${symbols.join(', ')} (stub)`);
   return [];
 }
+
+/**
+ * Gets the gold spot price.
+ * @returns Promise<number>
+ */
+export async function getGoldSpotPrice(): Promise<number> {
+  console.log('Polygon Fetcher: Getting gold spot price (stub)');
+  return 2300;
+}

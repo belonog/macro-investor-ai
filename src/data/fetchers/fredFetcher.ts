@@ -35,29 +35,31 @@ export const TARGET_SERIES: Record<string, string> = {
   'T10Y2Y': '10-Year to 2-Year Treasury Spread (Yield Curve)',
   // Dollar & Liquidity
   'DTWEXBGS': 'Trade Weighted U.S. Dollar Index (DXY Proxy)',
-  'M2SL': 'M2 Money Supply',
-  'GOLDAMGBD228NLBM': 'Gold Fixing Price 10:30 A.M. (London time) in London Bullion Market'
+  'M2SL': 'M2 Money Supply'
 };
 
 /**
  * Fetches a series from FRED and returns it as an array of DataPoints.
  * @param seriesId The FRED series ID (e.g., 'INDPRO')
- * @param limit Number of observations to fetch (default 12)
+ * @param startDate Optional date to start fetching from (YYYY-MM-DD)
  * @returns Promise<DataPoint[]>
  */
-export async function fetchSeries(seriesId: string, limit: number = 12): Promise<DataPoint[]> {
+export async function fetchSeries(seriesId: string, startDate?: string): Promise<DataPoint[]> {
   const apiKey = process.env.FRED_API_KEY;
   if (!apiKey) {
     throw new Error('FRED_API_KEY is not set');
   }
+
+  const defaultStartDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const obsStart = startDate || defaultStartDate;
 
   const response = await axios.get(`${FRED_BASE_URL}/series/observations`, {
     params: {
       series_id: seriesId,
       api_key: apiKey,
       file_type: 'json',
-      sort_order: 'desc',
-      limit: limit,
+      sort_order: 'asc',
+      observation_start: obsStart,
     }
   });
 
@@ -79,15 +81,14 @@ export async function fetchSeries(seriesId: string, limit: number = 12): Promise
   }
 
   // Return in chronological order
-  return points.reverse();
+  return points;
 }
 
 /**
  * Fetches all target series concurrently.
- * @param periods Number of observations to fetch for each series
  * @returns Promise<MacroSnapshot>
  */
-export async function fetchAll(periods: number = 12): Promise<MacroSnapshot> {
+export async function fetchAll(): Promise<MacroSnapshot> {
   const snapshot: MacroSnapshot = {
     series: {},
     fetchedAt: {}
@@ -96,7 +97,7 @@ export async function fetchAll(periods: number = 12): Promise<MacroSnapshot> {
   
   const promises = seriesIds.map(async (seriesId) => {
     try {
-      const data = await fetchSeries(seriesId, periods);
+      const data = await fetchSeries(seriesId);
       snapshot.series[seriesId] = data;
       snapshot.fetchedAt[seriesId] = new Date().toISOString();
     } catch (error) {
@@ -113,12 +114,59 @@ export async function fetchAll(periods: number = 12): Promise<MacroSnapshot> {
 const CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'macroSnapshot.json');
 
 /**
- * Fetches all target series and updates the local JSON cache.
- * @param periods Number of observations to fetch
+ * Fetches all target series incrementally and updates the local JSON cache.
  * @returns Promise<MacroSnapshot>
  */
-export async function updateMacroCache(periods: number = 12): Promise<MacroSnapshot> {
-  const snapshot = await fetchAll(periods);
+export async function updateMacroCache(): Promise<MacroSnapshot> {
+  let existingSnapshot: MacroSnapshot = { series: {}, fetchedAt: {} };
+  
+  try {
+    const rawCache = await fs.readFile(CACHE_PATH, 'utf-8');
+    const parsed = MacroCacheSchema.safeParse(JSON.parse(rawCache));
+    if (parsed.success) {
+      existingSnapshot = parsed.data.data;
+    }
+  } catch (e) {
+    // No cache or invalid cache, ignore
+  }
+
+  const snapshot: MacroSnapshot = {
+    series: { ...existingSnapshot.series },
+    fetchedAt: { ...existingSnapshot.fetchedAt }
+  };
+
+  const seriesIds = Object.keys(TARGET_SERIES);
+  
+  const promises = seriesIds.map(async (seriesId) => {
+    try {
+      const cachedSeries = snapshot.series[seriesId] || [];
+      let startDate: string | undefined = undefined;
+      
+      if (cachedSeries.length > 0) {
+        startDate = cachedSeries[cachedSeries.length - 1].date;
+      }
+      
+      const newPoints = await fetchSeries(seriesId, startDate);
+      
+      // Merge
+      const map = new Map<string, DataPoint>();
+      for (const p of cachedSeries) map.set(p.date, p);
+      for (const p of newPoints) map.set(p.date, p);
+      
+      const merged = Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
+      
+      snapshot.series[seriesId] = merged;
+      snapshot.fetchedAt[seriesId] = new Date().toISOString();
+    } catch (error) {
+      console.error(`Failed to fetch ${seriesId} (${TARGET_SERIES[seriesId]}):`, error);
+      if (!snapshot.series[seriesId]) {
+        snapshot.series[seriesId] = [];
+      }
+      snapshot.fetchedAt[seriesId] = new Date().toISOString();
+    }
+  });
+
+  await Promise.all(promises);
   
   // Ensure directory exists
   await fs.mkdir(path.dirname(CACHE_PATH), { recursive: true });
@@ -143,16 +191,16 @@ export async function getLatestValues(): Promise<Record<string, number>> {
   try {
     const rawCache = await fs.readFile(CACHE_PATH, 'utf-8');
     const parsed = MacroCacheSchema.safeParse(JSON.parse(rawCache));
-    // We need at least 7 points for 6m average + current
-    if (!parsed.success || Object.values(parsed.data.data.series).some(s => s.length < 7)) {
-      console.warn('Invalid macro cache or insufficient data. Re-fetching 12 months...');
-      snapshot = await updateMacroCache(12);
+    // We need at least 7 points for 6m average + current, but we guarantee at least 1 year
+    if (!parsed.success) {
+      console.warn('Invalid macro cache. Re-fetching...');
+      snapshot = await updateMacroCache();
     } else {
       snapshot = parsed.data.data;
     }
   } catch (e) {
     // If no cache or parse error, fetch it
-    snapshot = await updateMacroCache(12);
+    snapshot = await updateMacroCache();
   }
 
   const latest: Record<string, number> = {};

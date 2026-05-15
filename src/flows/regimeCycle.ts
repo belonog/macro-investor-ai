@@ -3,6 +3,7 @@ import path from 'path';
 import { updateMacroCache, getLatestValues } from '../data/fetchers/fredFetcher.js';
 import { getLatestReleases } from '../data/fetchers/blsFetcher.js';
 import { getLatest as getLatestEia } from '../data/fetchers/eiaFetcher.js';
+import { getGoldSpotPrice } from '../data/fetchers/polygonFetcher.js';
 import { evaluateRegime } from '../agents/regimeAgent.js';
 import { generateRebalancingReport } from '../agents/rebalancingAgent.js';
 import { sendTelegramAlert } from '../alerts/telegramBot.js';
@@ -17,6 +18,9 @@ export async function runRegimeCycle(trigger: 'manual' | 'post_release' | 'sched
     // 1. Update Macro Data
     await updateMacroCache();
     const flatSnapshot = await getLatestValues();
+
+    // Add gold price from Polygon
+    flatSnapshot.gold_price = await getGoldSpotPrice();
 
     // 2. Fetch BLS and EIA data (Spec v3 Flow 1 Steps 2 & 3)
     const blsData = await getLatestReleases();

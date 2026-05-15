@@ -25,7 +25,7 @@ describe('fredFetcher', () => {
       }
     });
 
-    const result = await fetchSeries('CPIAUCSL', 12);
+    const result = await fetchSeries('CPIAUCSL', '2023-01-01');
     expect(result).toHaveLength(1);
     expect(result[0]).toEqual({ date: '2023-01-01', value: 100.5 });
   });
@@ -48,7 +48,7 @@ describe('fredFetcher', () => {
         }
       });
 
-      const result = await fetchAll(1);
+      const result = await fetchAll();
       expect(Object.keys(result.series)).toEqual(expect.arrayContaining(Object.keys(TARGET_SERIES)));
       expect(result.series['CPIAUCSL']).toEqual([{ date: '2023-01-01', value: 100.0 }]);
     });
@@ -66,7 +66,7 @@ describe('fredFetcher', () => {
         });
       });
 
-      const result = await fetchAll(1);
+      const result = await fetchAll();
       expect(result.series['T10Y2Y']).toEqual([]);
       expect(result.series['CPIAUCSL']).toEqual([{ date: '2023-01-01', value: 100.0 }]);
     });
@@ -80,8 +80,9 @@ describe('fredFetcher', () => {
           observations: [{ date: '2023-01-01', value: '100.0' }]
         }
       });
+      vi.mocked(fs.readFile).mockRejectedValue(new Error('File not found'));
 
-      const result = await updateMacroCache(1);
+      const result = await updateMacroCache();
       expect(fs.mkdir).toHaveBeenCalled();
       expect(fs.writeFile).toHaveBeenCalledWith(
         expect.stringContaining('macroSnapshot.json'),
@@ -145,8 +146,7 @@ describe('fredFetcher', () => {
             'DGS10': Array(7).fill({ date: '2023-01-01', value: 0 }),
             'T10Y2Y': Array(7).fill({ date: '2023-01-01', value: 0 }),
             'DTWEXBGS': Array(7).fill({ date: '2023-01-01', value: 0 }),
-            'M2SL': Array(7).fill({ date: '2023-01-01', value: 0 }),
-            'GOLDAMGBD228NLBM': Array(7).fill({ date: '2023-01-01', value: 0 })
+            'M2SL': Array(7).fill({ date: '2023-01-01', value: 0 })
           },
           fetchedAt: Object.keys(TARGET_SERIES).reduce((acc, k) => ({ ...acc, [k]: new Date().toISOString() }), {})
         }
