@@ -268,6 +268,14 @@ export const InterpreterOutputSchema = z.object({
 });
 export type InterpreterOutput = z.infer<typeof InterpreterOutputSchema>;
 
+export const PrebriefOutputSchema = z.object({
+  key_metrics_to_watch: z.array(z.string()),
+  thesis_impact: z.string(),
+  risk_factors: z.array(z.string()),
+  summary_markdown: z.string(),
+});
+export type PrebriefOutput = z.infer<typeof PrebriefOutputSchema>;
+
 export const EarningsEventSchema = z.object({
   symbol: z.string(),
   reportDate: z.string(),

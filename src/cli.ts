@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { runRegimeCycle } from './flows/regimeCycle.js';
 import { runEodCheck } from './flows/eodCheck.js';
+import { runEventPrebrief } from './flows/eventPrebrief.js';
 import { generateRebalancingReport } from './agents/rebalancingAgent.js';
 import { setManualIndicator } from './utils/manualIndicators.js';
 import { runCoherenceAgent } from './agents/coherenceAgent.js';
@@ -41,6 +42,19 @@ program
       console.log('EOD check completed.');
     } catch (error) {
       console.error('EOD check failed:', error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('prebrief')
+  .description('Run event pre-brief flow (check upcoming earnings and generate briefs)')
+  .action(async () => {
+    try {
+      await runEventPrebrief();
+      console.log('Event pre-brief completed.');
+    } catch (error) {
+      console.error('Event pre-brief failed:', error);
       process.exit(1);
     }
   });
