@@ -1,11 +1,33 @@
 # Macro Investor AI — Project Instructions
 
-## Current Architecture Status
-- **Spec v3 Migration in Progress**: We are currently migrating the codebase from spec v1/v2 to **v3**.
-- **Source of Truth**: The active specification is `macro_investor_ai_specs_v3.md`. 
-- **Legacy Specs**: Ignore `macro_investor_ai_specs_v1.md` and `macro_investor_ai_specs_v2.md` unless specifically asked to reference them for historical context or migration purposes.
+## Current Architecture (Spec v3)
+The system has been fully migrated to **Spec v3**. All operations follow the "Regime-First" framework.
 
-## General Guidelines
-- Always refer to `macro_investor_ai_specs_v3.md` for architectural decisions, data schemas, and agent flows.
-- Ensure all new code and modifications strictly adhere to the v3 specifications.
-- Check the private project memory (`MEMORY.md`) for the latest migration state and next session priorities.
+### Core Value Hierarchy
+1. **Regime Detection**: Weekly assessment of growth/inflation quadrant.
+2. **Rebalancing**: Translation of regime signal into portfolio action.
+3. **EOD Monitoring**: Daily check of stops, thesis thresholds, and deadlines.
+4. **Event Pre-Brief**: AI analysis of upcoming earnings events.
+
+### CLI Usage
+Use the unified CLI for all manual and on-demand operations:
+- `npx tsx src/cli.ts regime`: Run full macro assessment and rebalancing check.
+- `npx tsx src/cli.ts eod`: Sync positions from IBKR Flex and check risk thresholds.
+- `npx tsx src/cli.ts prebrief`: Generate AI briefs for upcoming earnings events.
+- `npx tsx src/cli.ts interpret <release> <data>`: Analyze raw data through the macro lens.
+- `npx tsx src/cli.ts coherence <symbol> <thesis>`: Verify trade-thesis alignment before entry.
+
+### Automation
+- **Scheduler**: Managed by `src/scheduler.ts` using `node-cron`.
+- **Database**: Runs and history are logged to SQLite databases in `logs/`.
+- **Alerts**: Delivered via Telegram with inline keyboard support for acknowledgments.
+
+### Verification Standards
+- **Backtesting**: Use `examples/backtest_regime_engine.ts` to verify model accuracy against historical FRED data.
+- **Tests**: Maintain 100% pass rate in `vitest` suite.
+- **Zod**: Every data boundary (fetchers, agent outputs, config) must be validated via Zod.
+
+## Development Workflows
+- **Prompting**: All system prompts reside in `src/prompts/`. Never use consensus-based framing; prioritize "Thesis Invalidation" and the growth/inflation quadrant.
+- **Data**: Primary data only (FRED, BLS, EIA, Polygon). No news or sentiment APIs.
+- **Positions**: Managed via `config/positions.json`. Quantitative fields are auto-synced; semantic fields (thesis, regime_match) are manual.

@@ -189,36 +189,20 @@ export async function updateMacroCache(): Promise<MacroSnapshot> {
 }
 
 /**
- * Returns the latest single value for each series in the target basket,
- * along with derived trend and spread metrics.
- * Attempts to read from cache first, falls back to fetching.
- * @returns Promise<Record<string, number>>
+ * Derives metrics from a macro snapshot for a given base date.
+ * This function is used both for the latest data and for backtesting.
  */
-export async function getLatestValues(): Promise<Record<string, number>> {
-  let snapshot: MacroSnapshot;
-  try {
-    const rawCache = await fs.readFile(CACHE_PATH, 'utf-8');
-    const parsed = MacroCacheSchema.safeParse(JSON.parse(rawCache));
-    if (!parsed.success) {
-      console.warn('Invalid macro cache. Re-fetching...');
-      snapshot = await updateMacroCache();
-    } else {
-      snapshot = parsed.data.data;
-    }
-  } catch (e) {
-    snapshot = await updateMacroCache();
-  }
-
+export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Date().toISOString()): Record<string, number> {
   const latest: Record<string, number> = {};
   
   // Helpers
   const getSeriesValue = (id: string, offset: number = 0) => {
-    const s = snapshot.series[id];
+    const s = snapshot.series[id]?.filter(p => p.date <= baseDate);
     return s && s.length > offset ? s[s.length - 1 - offset].value : null;
   };
 
   const getSeriesValueMonthsAgo = (id: string, months: number) => {
-    const s = snapshot.series[id];
+    const s = snapshot.series[id]?.filter(p => p.date <= baseDate);
     if (!s || s.length === 0) return null;
     
     const lastPoint = s[s.length - 1];
@@ -269,12 +253,12 @@ export async function getLatestValues(): Promise<Record<string, number>> {
     latest['real_gdp_qoq_ann_pct'] = (Math.pow(1 + qoq, 4) - 1) * 100;
   }
 
-  const nfp = snapshot.series['PAYEMS'];
-  if (nfp && nfp.length >= 4) {
+  const nfpSeries = snapshot.series['PAYEMS']?.filter(p => p.date <= baseDate);
+  if (nfpSeries && nfpSeries.length >= 4) {
     const changes = [
-      nfp[nfp.length - 1].value - nfp[nfp.length - 2].value,
-      nfp[nfp.length - 2].value - nfp[nfp.length - 3].value,
-      nfp[nfp.length - 3].value - nfp[nfp.length - 4].value,
+      nfpSeries[nfpSeries.length - 1].value - nfpSeries[nfpSeries.length - 2].value,
+      nfpSeries[nfpSeries.length - 2].value - nfpSeries[nfpSeries.length - 3].value,
+      nfpSeries[nfpSeries.length - 3].value - nfpSeries[nfpSeries.length - 4].value,
     ];
     latest['nfp_3m_avg_k'] = changes.reduce((a, b) => a + b, 0) / 3;
   }
@@ -290,15 +274,11 @@ export async function getLatestValues(): Promise<Record<string, number>> {
   }
 
   // 3. Keep raw series and other legacy derived metrics
-  for (const [series, points] of Object.entries(snapshot.series)) {
-    if (points.length > 0) {
-      latest[series] = points[points.length - 1].value;
+  for (const seriesId of Object.keys(snapshot.series)) {
+    const val = getSeriesValue(seriesId, 0);
+    if (val !== null) {
+      latest[seriesId] = val;
     }
-  }
-
-  // Legacy derived (keeping for backward compatibility if needed)
-  if (latest['PAYEMS'] && snapshot.series['PAYEMS'].length >= 4) {
-    latest['nfp_3m_avg'] = latest['nfp_3m_avg_k']; // Alias
   }
 
   const y30 = getSeriesValue('DGS30');
@@ -308,17 +288,45 @@ export async function getLatestValues(): Promise<Record<string, number>> {
   }
 
   const hySpread = getSeriesValue('BAMLH0A0HYM2');
-  const s = snapshot.series['BAMLH0A0HYM2'];
+  const s = snapshot.series['BAMLH0A0HYM2']?.filter(p => p.date <= baseDate);
   if (hySpread !== null && s && s.length >= 6) {
     const hyAvg6m = s.slice(-6).reduce((sum, p) => sum + p.value, 0) / 6;
     latest['credit_spread_delta'] = hySpread - hyAvg6m;
   }
 
-  // Merge manual indicators
+  // Merge manual indicators (if baseDate is now, or if we have historical manual data)
   const manual = getManualIndicators();
   for (const [key, indicator] of Object.entries(manual)) {
-    latest[key] = indicator.value;
+    // Only use manual indicators if they are not newer than baseDate
+    if (indicator.updatedAt <= baseDate) {
+      latest[key] = indicator.value;
+    }
   }
 
   return latest;
 }
+
+/**
+ * Returns the latest single value for each series in the target basket,
+ * along with derived trend and spread metrics.
+ * Attempts to read from cache first, falls back to fetching.
+ * @returns Promise<Record<string, number>>
+ */
+export async function getLatestValues(): Promise<Record<string, number>> {
+  let snapshot: MacroSnapshot;
+  try {
+    const rawCache = await fs.readFile(CACHE_PATH, 'utf-8');
+    const parsed = MacroCacheSchema.safeParse(JSON.parse(rawCache));
+    if (!parsed.success) {
+      console.warn('Invalid macro cache. Re-fetching...');
+      snapshot = await updateMacroCache();
+    } else {
+      snapshot = parsed.data.data;
+    }
+  } catch (e) {
+    snapshot = await updateMacroCache();
+  }
+
+  return deriveMetrics(snapshot, new Date().toISOString());
+}
+
