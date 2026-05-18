@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { generateAgentResponse } from '../src/agents/baseAgent';
+import { generateAgentResponse } from '../src/agents/baseAgent.js';
 import { z } from 'zod';
-import { db } from '../src/db/database';
+import { db } from '../src/db/database.js';
 
 // Mock AI SDK and providers
 vi.mock('ai', () => ({

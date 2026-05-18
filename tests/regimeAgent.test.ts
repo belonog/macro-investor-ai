@@ -74,14 +74,12 @@ vi.mock('../src/agents/baseAgent', () => ({
   generateAgentResponse: mockGenerateAgentResponse
 }));
 
-vi.mock('../src/agents/db', () => ({
-  dbManager: {
-    logRegimeEvaluation: vi.fn()
-  }
+vi.mock('../src/db/database', () => ({
+  logRegimeEvaluation: vi.fn()
 }));
 
-import { dbManager } from '../src/agents/db';
-import { runRegimeAgent, evaluateRegime } from '../src/agents/regimeAgent';
+import { logRegimeEvaluation } from '../src/db/database.js';
+import { runRegimeAgent, evaluateRegime } from '../src/agents/regimeAgent.js';
 
 describe('regimeAgent', () => {
   beforeEach(() => {
@@ -177,7 +175,7 @@ describe('regimeAgent', () => {
 
     await runRegimeAgent(mockMacroData);
 
-    expect(dbManager.logRegimeEvaluation).toHaveBeenCalledWith(expect.objectContaining({
+    expect(logRegimeEvaluation).toHaveBeenCalledWith(expect.objectContaining({
       quadrant: 'Boundary Zone',
       data_inputs: mockMacroData
     }));

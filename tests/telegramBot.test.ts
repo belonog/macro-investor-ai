@@ -14,12 +14,10 @@ vi.mock('telegraf', () => {
   };
 });
 
-// Mock dbManager
-vi.mock('../src/agents/db.js', () => {
+// Mock database functions
+vi.mock('../src/db/database.js', () => {
   return {
-    dbManager: {
-      logAlert: vi.fn()
-    }
+    logAlert: vi.fn()
   };
 });
 
@@ -34,15 +32,18 @@ describe('telegramBot', () => {
     process.env.TELEGRAM_CHAT_ID = '';
     
     const { sendTelegramAlert } = await import('../src/alerts/telegramBot.js');
-    const { dbManager } = await import('../src/agents/db.js');
+    const { logAlert } = await import('../src/db/database.js');
 
     await sendTelegramAlert({
       level: 'INFO',
-      message: 'Test message'
+      message: 'Test message',
+      symbol: null,
+      action: null,
+      createdAt: new Date().toISOString()
     });
 
     expect(mockSendMessage).not.toHaveBeenCalled();
-    expect(dbManager.logAlert).toHaveBeenCalledWith(expect.objectContaining({
+    expect(logAlert).toHaveBeenCalledWith(expect.objectContaining({
       level: 'INFO',
       message: 'Test message'
     }));
@@ -53,17 +54,18 @@ describe('telegramBot', () => {
     process.env.TELEGRAM_CHAT_ID = 'test_chat_id';
 
     const { sendTelegramAlert } = await import('../src/alerts/telegramBot.js');
-    const { dbManager } = await import('../src/agents/db.js');
+    const { logAlert } = await import('../src/db/database.js');
 
     await sendTelegramAlert({
       level: 'CRITICAL',
       symbol: 'BTC',
       message: 'Crash imminent',
-      action: 'Sell all'
+      action: 'Sell all',
+      createdAt: new Date().toISOString()
     });
 
     expect(mockSendMessage).toHaveBeenCalled();
-    expect(dbManager.logAlert).toHaveBeenCalledWith(expect.objectContaining({
+    expect(logAlert).toHaveBeenCalledWith(expect.objectContaining({
       level: 'CRITICAL',
       symbol: 'BTC',
       message: 'Crash imminent',

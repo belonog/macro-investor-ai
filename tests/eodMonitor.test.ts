@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import fs from 'fs';
-import { runEodMonitor } from '../src/monitor/eodMonitor';
+import { runEodMonitor } from '../src/monitor/eodMonitor.js';
 
 vi.mock('fs');
 vi.mock('../src/data/fetchers/fredFetcher', () => ({

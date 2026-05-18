@@ -11,7 +11,7 @@ vi.mock('../src/agents/baseAgent', () => ({
 
 vi.mock('fs');
 
-import { runInterpreterAgent } from '../src/agents/interpreterAgent';
+import { runInterpreterAgent } from '../src/agents/interpreterAgent.js';
 
 describe('InterpreterAgent', () => {
   beforeEach(() => {

@@ -10,15 +10,13 @@ vi.mock('../src/agents/baseAgent', () => ({
 }));
 
 vi.mock('fs');
-vi.mock('../src/agents/db', () => ({
-  dbManager: {
-    logRebalancingDecision: vi.fn()
-  }
+vi.mock('../src/db/database', () => ({
+  logRebalancingDecision: vi.fn()
 }));
 
-import { dbManager } from '../src/agents/db';
-import { generateRebalancingReport } from '../src/agents/rebalancingAgent';
-import { StaleRegimeError } from '../src/utils/errors';
+import { logRebalancingDecision } from '../src/db/database.js';
+import { generateRebalancingReport } from '../src/agents/rebalancingAgent.js';
+import { StaleRegimeError } from '../src/utils/errors.js';
 
 describe('rebalancingAgent', () => {
   beforeEach(() => {
@@ -146,7 +144,7 @@ describe('rebalancingAgent', () => {
       systemPrompt: expect.stringContaining('TLT — Deflationary Recession — Recession play')
     }));
     
-    expect(dbManager.logRebalancingDecision).toHaveBeenCalled();
+    expect(logRebalancingDecision).toHaveBeenCalled();
     expect(fs.writeFileSync).toHaveBeenCalledWith(
       expect.stringContaining('rebalancingLatest.json'),
       expect.stringContaining('"alignment_grade": "B"')

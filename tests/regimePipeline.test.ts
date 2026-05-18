@@ -9,7 +9,7 @@ import {
   isStale,
   buildLLMInput,
   mergePipelineAndLLM
-} from '../src/agents/regimePipeline';
+} from '../src/agents/regimePipeline.js';
 
 describe('regimePipeline - normalization', () => {
   const bounds = { low: 0, neutral: 2.0, high: 7.0 };

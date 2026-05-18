@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import fs from 'fs';
-import { runCoherenceAgent, CoherenceInput } from '../src/agents/coherenceAgent';
+import { runCoherenceAgent, CoherenceInput } from '../src/agents/coherenceAgent.js';
 
 const { mockGenerateAgentResponse } = vi.hoisted(() => ({
   mockGenerateAgentResponse: vi.fn()

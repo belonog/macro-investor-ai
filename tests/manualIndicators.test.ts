@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { getManualIndicators, setManualIndicator } from '../src/utils/manualIndicators';
+import { getManualIndicators, setManualIndicator } from '../src/utils/manualIndicators.js';
 import fs from 'fs';
 import path from 'path';
 

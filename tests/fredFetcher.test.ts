@@ -105,8 +105,16 @@ describe('fredFetcher', () => {
         fetchedAt: new Date().toISOString(),
         data: {
           series: {
-            'CPIAUCSL': Array(13).fill({ date: '2023-01-01', value: 3.0 }),
-            'PCEPI': Array(13).fill({ date: '2023-01-01', value: 2.0 }),
+            'CPIAUCSL': [
+              { date: '2022-01-01', value: 100.0 },
+              ...Array(11).fill({ date: '2022-02-01', value: 100.0 }),
+              { date: '2023-01-01', value: 103.0 }
+            ],
+            'PCEPI': [
+              { date: '2022-01-01', value: 100.0 },
+              ...Array(11).fill({ date: '2022-02-01', value: 100.0 }),
+              { date: '2023-01-01', value: 102.0 }
+            ],
             'GDPC1': Array(13).fill({ date: '2023-01-01', value: 20000 }),
             'PAYEMS': [
               { date: '2023-01-01', value: 1000 },
@@ -126,7 +134,11 @@ describe('fredFetcher', () => {
               { date: '2023-03-01', value: 110 },
               { date: '2023-04-01', value: 120 }
             ],
-            'ECIWAG': Array(13).fill({ date: '2023-01-01', value: 4.5 }),
+            'ECIWAG': [
+              { date: '2022-01-01', value: 100.0 },
+              ...Array(11).fill({ date: '2022-02-01', value: 100.0 }),
+              { date: '2023-01-01', value: 104.5 }
+            ],
             'DGS30': Array(13).fill({ date: '2023-01-01', value: 4.0 }),
             'DGS2': Array(13).fill({ date: '2023-01-01', value: 4.5 }),
             'BAMLH0A0HYM2': [
@@ -167,17 +179,20 @@ describe('fredFetcher', () => {
       const latest = await getLatestValues();
       
       // Basic values
-      expect(latest['CPIAUCSL']).toBe(3.0);
+      expect(latest['CPIAUCSL']).toBe(103.0);
       expect(latest['PAYEMS']).toBe(1450);
       
-      // Derived: oil_price_3m_change ( (120 - 100) / 100 = 0.2 )
-      expect(latest['oil_price_3m_change']).toBeCloseTo(0.2);
+      // Derived: oil_price_3m_change_pct ( (120 - 100) / 100 * 100 = 20 )
+      expect(latest['oil_price_3m_change_pct']).toBeCloseTo(20);
       
-      // Derived: nfp_3m_avg ( (200 + 150 + 100) / 3 = 150 )
+      // Derived: nfp_3m_avg_k ( (200 + 150 + 100) / 3 = 150 )
+      expect(latest['nfp_3m_avg_k']).toBeCloseTo(150);
+      
+      // Derived: nfp_3m_avg (Alias)
       expect(latest['nfp_3m_avg']).toBeCloseTo(150);
       
-      // Derived: real_wages ( 4.5 - 3.0 = 1.5 )
-      expect(latest['real_wages']).toBe(1.5);
+      // Derived: real_wages_yoy_pct ( 4.5 - 3.0 = 1.5 )
+      expect(latest['real_wages_yoy_pct']).toBe(1.5);
       
       // Derived: yield_curve_30_2 ( 4.0 - 4.5 = -0.5 )
       expect(latest['yield_curve_30_2']).toBe(-0.5);

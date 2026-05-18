@@ -1,10 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { dbManager } from '../src/agents/db.js';
-import { RegimeEvaluationRecord } from '../src/agents/db.js';
+import { logRegimeEvaluation, getRecentEvaluations, clearEvaluations, logAlert, getRecentAlerts, RegimeEvaluationRecord } from '../src/db/database.js';
 
 describe('DatabaseManager', () => {
   beforeEach(() => {
-    dbManager.clearEvaluations();
+    clearEvaluations();
   });
 
   it('should log a regime evaluation and retrieve it', () => {
@@ -12,13 +11,16 @@ describe('DatabaseManager', () => {
       timestamp: new Date().toISOString(),
       quadrant: 'Goldilocks',
       confidence: 85,
+      inflation_score: 0.5,
+      growth_score: 0.5,
+      regime_drift_vs_prior: 'Stable',
       data_inputs: { inflation: 2.1, growth: 2.5 },
       raw_response: { full_text: 'The economy is in a goldilocks state.' }
     };
 
-    dbManager.logRegimeEvaluation(evaluation);
+    logRegimeEvaluation(evaluation);
 
-    const recent = dbManager.getRecentEvaluations(1);
+    const recent = getRecentEvaluations(1);
     expect(recent.length).toBe(1);
     expect(recent[0].quadrant).toBe(evaluation.quadrant);
     expect(recent[0].confidence).toBe(evaluation.confidence);
@@ -31,6 +33,9 @@ describe('DatabaseManager', () => {
       timestamp: '2023-01-01T12:00:00Z',
       quadrant: 'Goldilocks',
       confidence: 80,
+      inflation_score: 0.5,
+      growth_score: 0.5,
+      regime_drift_vs_prior: 'Stable',
       data_inputs: {},
       raw_response: {}
     };
@@ -38,14 +43,17 @@ describe('DatabaseManager', () => {
       timestamp: '2023-01-02T12:00:00Z',
       quadrant: 'Stagflation',
       confidence: 70,
+      inflation_score: 0.8,
+      growth_score: 0.3,
+      regime_drift_vs_prior: 'Transitioning',
       data_inputs: {},
       raw_response: {}
     };
 
-    dbManager.logRegimeEvaluation(eval1);
-    dbManager.logRegimeEvaluation(eval2);
+    logRegimeEvaluation(eval1);
+    logRegimeEvaluation(eval2);
 
-    const recent = dbManager.getRecentEvaluations(10);
+    const recent = getRecentEvaluations(10);
     // eval2 should be first because it has a later timestamp and we ORDER BY timestamp DESC
     expect(recent[0].timestamp).toBe(eval2.timestamp);
     expect(recent[1].timestamp).toBe(eval1.timestamp);
@@ -56,12 +64,13 @@ describe('DatabaseManager', () => {
       level: 'CRITICAL',
       symbol: 'AAPL',
       message: 'Significant price drop',
-      action: 'Check position'
+      action: 'Check position',
+      createdAt: new Date().toISOString()
     };
 
-    dbManager.logAlert(alert);
+    logAlert(alert);
 
-    const recent = dbManager.getRecentAlerts(1);
+    const recent = getRecentAlerts(1);
     expect(recent.length).toBe(1);
     expect(recent[0].level).toBe(alert.level);
     expect(recent[0].symbol).toBe(alert.symbol);

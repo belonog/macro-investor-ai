@@ -11,7 +11,7 @@ import {
   CoherenceOutputSchema,
   InterpreterOutputSchema,
   EarningsEventSchema
-} from '../src/types';
+} from '../src/types/index.js';
 
 describe('PositionSnapshotSchema', () => {
   it('should validate a correct position snapshot', () => {
@@ -131,29 +131,29 @@ describe('RegimeAssessmentSchema', () => {
       regimeDriftVsPrior: 'Stable',
       driftDelta: { inflation: 0.05, growth: -0.02 },
       dataGaps: [],
-      normalized_inflation: [],
-      normalized_growth: [],
+      normalizedInflationIndicators: [],
+      normalizedGrowthIndicators: [],
       assessedAt: new Date().toISOString(),
 
-      // LLMResponse fields (snake_case)
-      classification_verdict: 'Confirmed',
-      challenge_rationale: null,
-      confidence_adjustment: 0,
-      key_drivers: ['Low inflation', 'Moderate growth'],
-      confirming_indicators: ['CPI stable'],
-      contradicting_indicators: ['PPI rising'],
-      transition_signal: 'Possible uptick in CPI',
-      central_thesis_conflict: 'None',
-      petrodollar_risk: 'Not Evidenced',
-      petrodollar_rationale: 'Stable',
-      fastest_path_to_being_wrong: 'Growth slowing faster than expected',
-      watch_next: ['NFP'],
-      requires_human_review_override: false,
-      override_reason: null,
+      // LLMResponse fields (camelCase)
+      classificationVerdict: 'Confirmed',
+      challengeRationale: null,
+      confidenceAdjustment: 0,
+      keyDrivers: ['Low inflation', 'Moderate growth'],
+      confirmingIndicators: ['CPI stable'],
+      contradictingIndicators: ['PPI rising'],
+      transitionSignal: 'Possible uptick in CPI',
+      centralThesisConflict: 'None',
+      petrodollarRisk: 'Not Evidenced',
+      petrodollarRationale: 'Stable',
+      fastestPathToBeingWrong: 'Growth slowing faster than expected',
+      watchNext: ['NFP'],
+      requiresHumanReviewOverride: false,
+      overrideReason: null,
 
       // FinalAssessment extensions
-      final_confidence: 85,
-      final_human_review: false
+      finalConfidence: 85,
+      finalHumanReview: false
     };
     const result = RegimeAssessmentSchema.safeParse(validAssessment);
     if (!result.success) {
@@ -179,27 +179,27 @@ describe('RegimeAssessmentSchema', () => {
         reason: 'missing',
         weightRedistributedTo: ['PCE']
       }],
-      normalized_inflation: [],
-      normalized_growth: [],
+      normalizedInflationIndicators: [],
+      normalizedGrowthIndicators: [],
       assessedAt: new Date().toISOString(),
 
-      classification_verdict: 'Nuanced',
-      challenge_rationale: 'Inflation might be peaking',
-      confidence_adjustment: -5,
-      key_drivers: ['Rising prices', 'Stagnant growth'],
-      confirming_indicators: [],
-      contradicting_indicators: [],
-      transition_signal: 'None',
-      central_thesis_conflict: 'Conflict here',
-      petrodollar_risk: 'Latent Risk',
-      petrodollar_rationale: 'Rising tensions',
-      fastest_path_to_being_wrong: 'Deflation spike',
-      watch_next: [],
-      requires_human_review_override: true,
-      override_reason: 'High uncertainty',
+      classificationVerdict: 'Nuanced',
+      challengeRationale: 'Inflation might be peaking',
+      confidenceAdjustment: -5,
+      keyDrivers: ['Rising prices', 'Stagnant growth'],
+      confirmingIndicators: [],
+      contradictingIndicators: [],
+      transitionSignal: 'None',
+      centralThesisConflict: 'Conflict here',
+      petrodollarRisk: 'Latent Risk',
+      petrodollarRationale: 'Rising tensions',
+      fastestPathToBeingWrong: 'Deflation spike',
+      watchNext: [],
+      requiresHumanReviewOverride: true,
+      overrideReason: 'High uncertainty',
 
-      final_confidence: 65,
-      final_human_review: true
+      finalConfidence: 65,
+      finalHumanReview: true
     };
     const result = RegimeAssessmentSchema.safeParse(validAssessment);
     if (!result.success) {

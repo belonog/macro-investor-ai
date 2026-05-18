@@ -284,6 +284,11 @@ export async function getLatestValues(): Promise<Record<string, number>> {
     latest['retail_sales_yoy_real_pct'] = rsNominalYoY - cpiYoY;
   }
 
+  const eciYoY = calculateYoY('ECIWAG');
+  if (eciYoY !== null && cpiYoY !== null) {
+    latest['real_wages_yoy_pct'] = eciYoY - cpiYoY;
+  }
+
   // 3. Keep raw series and other legacy derived metrics
   for (const [series, points] of Object.entries(snapshot.series)) {
     if (points.length > 0) {
