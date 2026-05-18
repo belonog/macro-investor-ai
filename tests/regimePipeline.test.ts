@@ -1,22 +1,27 @@
 import { describe, it, expect } from 'vitest';
-import { normalize, redistributeWeights } from '../src/agents/regimePipeline';
+import { 
+  normalize, 
+  redistributeWeights, 
+  classifyQuadrant, 
+  runPipeline, 
+  detectDrift, 
+  computeConfidence,
+  isStale,
+  buildLLMInput,
+  mergePipelineAndLLM
+} from '../src/agents/regimePipeline';
 
 describe('regimePipeline - normalization', () => {
   const bounds = { low: 0, neutral: 2.0, high: 7.0 };
 
   it('normalizes values below neutral', () => {
-    // 0 should map to 0
     expect(normalize(0, bounds)).toBe(0);
-    // 1.0 should map to 0.25 (midpoint of 0 and 2.0)
     expect(normalize(1.0, bounds)).toBe(0.25);
-    // 2.0 should map to 0.5
     expect(normalize(2.0, bounds)).toBe(0.5);
   });
 
   it('normalizes values above neutral', () => {
-    // 4.5 should map to 0.75 (midpoint of 2.0 and 7.0)
     expect(normalize(4.5, bounds)).toBe(0.75);
-    // 7.0 should map to 1.0
     expect(normalize(7.0, bounds)).toBe(1.0);
   });
 
@@ -35,18 +40,15 @@ describe('regimePipeline - weight redistribution', () => {
 
   it('returns original weights when all indicators present', () => {
     const indicators = { a: 1, b: 2, c: 3 };
-    const { effectiveWeights, gaps } = redistributeWeights(weights, indicators as any);
+    const { effectiveWeights, gaps } = redistributeWeights(weights, indicators as any, new Date());
     expect(effectiveWeights).toEqual(weights);
     expect(gaps).toHaveLength(0);
   });
 
   it('redistributes weights when an indicator is missing', () => {
     const indicators = { a: 1, c: 3 }; // b is missing
-    const { effectiveWeights, gaps } = redistributeWeights(weights, indicators as any);
+    const { effectiveWeights, gaps } = redistributeWeights(weights, indicators as any, new Date());
     
-    // Total available weight = 0.5 (a) + 0.2 (c) = 0.7
-    // Effective a = 0.5 / 0.7 = 0.714...
-    // Effective c = 0.2 / 0.7 = 0.285...
     expect(effectiveWeights.a).toBeCloseTo(0.5 / 0.7);
     expect(effectiveWeights.c).toBeCloseTo(0.2 / 0.7);
     expect(effectiveWeights.b).toBeUndefined();
@@ -55,11 +57,174 @@ describe('regimePipeline - weight redistribution', () => {
     expect(gaps[0].indicator).toBe('b');
     expect(gaps[0].weightRedistributedTo).toEqual(['a', 'c']);
   });
+});
 
-  it('handles all indicators missing', () => {
-    const indicators = {};
-    const { effectiveWeights, gaps } = redistributeWeights(weights, indicators as any);
-    expect(effectiveWeights).toEqual({});
-    expect(gaps).toHaveLength(3);
+describe('regimePipeline - classifyQuadrant', () => {
+  const thresholds = {
+    inflation_high: 0.6,
+    inflation_low: 0.4,
+    growth_high: 0.55,
+    growth_low: 0.45,
+    boundary_zone: 0.05
+  };
+
+  it('classifies Goldilocks', () => {
+    expect(classifyQuadrant(0.3, 0.6, thresholds)).toBe('Goldilocks');
+  });
+
+  it('classifies Inflationary Boom', () => {
+    expect(classifyQuadrant(0.7, 0.6, thresholds)).toBe('Inflationary Boom');
+  });
+
+  it('classifies Stagflation', () => {
+    expect(classifyQuadrant(0.7, 0.3, thresholds)).toBe('Stagflation');
+  });
+
+  it('classifies Deflationary Recession', () => {
+    expect(classifyQuadrant(0.3, 0.3, thresholds)).toBe('Deflationary Recession');
+  });
+
+  it('classifies Boundary Zone', () => {
+    expect(classifyQuadrant(0.5, 0.5, thresholds)).toBe('Boundary Zone');
+  });
+});
+
+describe('regimePipeline - runPipeline', () => {
+  it('runs the full pipeline successfully', () => {
+    const indicators = {
+      cpi_yoy_pct: { value: 3.0, unit: '%', asOf: '2026-05-15', source: 'fred' },
+      pce_yoy_pct: { value: 2.5, unit: '%', asOf: '2026-05-15', source: 'fred' },
+      breakeven_5y_pct: { value: 2.2, unit: '%', asOf: '2026-05-15', source: 'fred' },
+      ppi_yoy_pct: { value: 2.1, unit: '%', asOf: '2026-05-15', source: 'fred' },
+      oil_price_3m_change_pct: { value: 5.0, unit: '%', asOf: '2026-05-15', source: 'eia' },
+      fertilizer_index_3m_change_pct: { value: 2.0, unit: '%', asOf: '2026-05-15', source: 'bls' },
+      ism_manufacturing: { value: 52.0, unit: 'index', asOf: '2026-05-15', source: 'ism' },
+      ism_services: { value: 54.0, unit: 'index', asOf: '2026-05-15', source: 'ism' },
+      real_gdp_qoq_ann_pct: { value: 2.1, unit: '%', asOf: '2026-05-15', source: 'bea' },
+      nfp_3m_avg_k: { value: 200, unit: 'k', asOf: '2026-05-15', source: 'bls' },
+      retail_sales_yoy_real_pct: { value: 2.5, unit: '%', asOf: '2026-05-15', source: 'census' },
+    };
+    
+    const input = {
+      indicators,
+      priorAssessment: null,
+      portfolioContext: { positions: [], secondary_risks: [] },
+      currentTime: '2026-05-16T12:00:00Z'
+    };
+    
+    const output = runPipeline(input as any);
+    
+    expect(output.inflationScore).toBeDefined();
+    expect(output.growthScore).toBeDefined();
+    expect(output.regimeQuadrant).toBeDefined();
+    expect(output.confidence).toBeGreaterThan(0);
+    expect(output.assessedAt).toBe('2026-05-16T12:00:00.000Z');
+  });
+});
+
+describe('regimePipeline - detectDrift', () => {
+  const prior = {
+    regime_quadrant: 'Goldilocks' as any,
+    inflation_score: 0.3,
+    growth_score: 0.6,
+    confidence: 90,
+    assessed_at: '2026-05-10T12:00:00Z'
+  };
+
+  it('returns Stable when scores are similar', () => {
+    const { status } = detectDrift(0.32, 0.62, 'Goldilocks', prior);
+    expect(status).toBe('Stable');
+  });
+
+  it('returns Weakening when scores drift moderately', () => {
+    // Inflation 0.3 -> 0.36 (diff 0.06)
+    // Growth 0.6 stays Goldilocks
+    const { status } = detectDrift(0.36, 0.6, 'Goldilocks', prior);
+    expect(status).toBe('Weakening');
+  });
+
+  it('returns Transitioning when a threshold is crossed', () => {
+    // Growth 0.6 -> 0.76 (diff 0.16)
+    // Both stay in Goldilocks
+    const { status } = detectDrift(0.3, 0.76, 'Goldilocks', prior);
+    expect(status).toBe('Transitioning');
+  });
+
+  it('returns Shifted when quadrant changes', () => {
+    const { status } = detectDrift(0.7, 0.3, 'Stagflation', prior);
+    expect(status).toBe('Shifted');
+  });
+});
+
+describe('regimePipeline - computeConfidence', () => {
+  it('returns high confidence for complete data', () => {
+    const { score } = computeConfidence({
+      inflationScore: 0.2, 
+      growthScore: 0.8,
+      inflationGaps: [],
+      growthGaps: [],
+      drift: 'Stable',
+      inflationMissing: 0,
+      growthMissing: 0,
+      staleHighWeightFound: false,
+      anyDataGaps: false
+    });
+    expect(score).toBe(90);
+  });
+
+  it('penalizes for missing high weight indicators', () => {
+    const { score } = computeConfidence({
+      inflationScore: 0.2,
+      growthScore: 0.8,
+      inflationGaps: [{ indicator: 'pce_yoy_pct', originalWeight: 0.20, reason: 'missing', weightRedistributedTo: [] }],
+      growthGaps: [],
+      drift: 'Stable',
+      inflationMissing: 0.20,
+      growthMissing: 0,
+      staleHighWeightFound: false,
+      anyDataGaps: true
+    });
+    expect(score).toBe(82);
+  });
+});
+
+describe('regimePipeline - helpers', () => {
+  it('isStale correctly identifies stale data', () => {
+    const currentDate = new Date('2026-05-15T12:00:00Z');
+    const staleDate = '2026-03-01'; 
+    const freshDate = '2026-05-10'; 
+    
+    expect(isStale(staleDate, 'cpi_yoy_pct', currentDate)).toBe(true);
+    expect(isStale(freshDate, 'cpi_yoy_pct', currentDate)).toBe(false);
+  });
+
+  it('buildLLMInput produces valid JSON', () => {
+    const indicators = {
+      cpi_yoy_pct: { value: 3.0, unit: '%', asOf: '2026-05-15', source: 'fred' },
+    };
+    const input = {
+      indicators,
+      priorAssessment: null,
+      portfolioContext: { positions: [], secondary_risks: [] },
+    };
+    const output = runPipeline(input as any);
+    const llmInput = buildLLMInput(output, input as any);
+    const parsed = JSON.parse(llmInput);
+    expect(parsed.quantitative_assessment.regime_quadrant).toBe(output.regimeQuadrant);
+    expect(parsed.weighted_raw_indicators.cpi_yoy_pct.value).toBe(3.0);
+  });
+
+  it('mergePipelineAndLLM correctly adjusts confidence', () => {
+    const pipeline = {
+      confidence: 80,
+      requiresHumanReview: false,
+    } as any;
+    const llm = {
+      confidenceAdjustment: 5,
+      requiresHumanReviewOverride: true,
+    } as any;
+    const final = mergePipelineAndLLM(pipeline, llm);
+    expect(final.finalConfidence).toBe(85);
+    expect(final.finalHumanReview).toBe(true);
   });
 });

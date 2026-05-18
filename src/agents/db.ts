@@ -59,7 +59,7 @@ class DatabaseManager {
             action: pa.suggested_action,
             rationale: pa.action_rationale,
             regime_at_time: decision.timestamp,
-            notes: pa.conflict_flag
+            notes: pa.conflict_flag ?? undefined
           });
         }
       }

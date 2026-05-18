@@ -8,7 +8,7 @@
     "macro-investor": "./dist/cli.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "dev": "ts-node src/index.ts",
     "test": "vitest",
     "cli": "tsx src/cli.ts"

@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import { updateMacroCache, getLatestValues } from '../src/data/fetchers/fredFetcher.js';
-import { evaluateRegime } from '../src/agents/regimeAgent.js';
+import { runRegimeAgent } from '../src/agents/regimeAgent.js';
 
 dotenv.config();
 
@@ -21,31 +21,31 @@ async function main() {
 
     // 3. Evaluate Regime via Gemini
     console.log('\n🧠 Step 3: Evaluating Macro Regime via Gemini...');
-    const regime = await evaluateRegime(latestValues);
+    const regime = await runRegimeAgent(latestValues);
     
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`CURRENT REGIME: ${regime.regime_quadrant}`);
-    console.log(`CONFIDENCE:     ${regime.confidence}%`);
-    console.log(`DRIFT:          ${regime.regime_drift_vs_prior}`);
-    console.log(`INFLATION SCORE: ${(regime.inflation_score * 100).toFixed(1)}%`);
-    console.log(`GROWTH SCORE:    ${(regime.growth_score * 100).toFixed(1)}%`);
-    console.log(`EVALUATED AT:    ${regime.assessed_at}`);
+    console.log(`CURRENT REGIME: ${regime.regimeQuadrant}`);
+    console.log(`CONFIDENCE:     ${regime.finalConfidence}%`);
+    console.log(`DRIFT:          ${regime.regimeDriftVsPrior}`);
+    console.log(`INFLATION SCORE: ${(regime.inflationScore * 100).toFixed(1)}%`);
+    console.log(`GROWTH SCORE:    ${(regime.growthScore * 100).toFixed(1)}%`);
+    console.log(`EVALUATED AT:    ${regime.assessedAt}`);
     
     console.log('\nKEY DRIVERS:');
-    regime.key_drivers.forEach(driver => console.log(`• ${driver}`));
+    regime.keyDrivers.forEach(driver => console.log(`• ${driver}`));
     
     console.log('\nCENTRAL THESIS CONFLICT:');
-    console.log(regime.central_thesis_conflict);
+    console.log(regime.centralThesisConflict);
 
     console.log('\nFASTEST PATH TO BEING WRONG:');
-    console.log(`⚠️ ${regime.fastest_path_to_being_wrong}`);
+    console.log(`⚠️ ${regime.fastestPathToBeingWrong}`);
 
-    if (regime.transition_signal) {
-      console.log(`\n🚨 TRANSITION SIGNAL: ${regime.transition_signal}`);
+    if (regime.transitionSignal) {
+      console.log(`\n🚨 TRANSITION SIGNAL: ${regime.transitionSignal}`);
     }
 
     console.log('\nWATCH NEXT:');
-    regime.watch_next.forEach(event => console.log(`👀 ${event}`));
+    regime.watchNext.forEach(event => console.log(`👀 ${event}`));
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     

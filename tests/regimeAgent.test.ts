@@ -134,7 +134,7 @@ describe('regimeAgent', () => {
       centralThesisConflict: 'No conflict',
       petrodollarRisk: 'Not Evidenced',
       petrodollarRationale: 'Stable',
-      fastestPathToBeing_wrong: 'Growth slowing',
+      fastestPathToBeingWrong: 'Growth slowing',
       watchNext: [],
       requiresHumanReviewOverride: false,
       overrideReason: null
@@ -167,7 +167,7 @@ describe('regimeAgent', () => {
       centralThesisConflict: 'None',
       petrodollarRisk: 'Not Evidenced',
       petrodollarRationale: 'None',
-      fastestPathToBeing_wrong: 'None',
+      fastestPathToBeingWrong: 'None',
       watchNext: [],
       requiresHumanReviewOverride: false,
       overrideReason: null
@@ -228,7 +228,7 @@ describe('regimeAgent', () => {
       keyDrivers: [],
       petrodollarRisk: 'Not Evidenced',
       petrodollarRationale: '',
-      fastestPathToBeing_wrong: '',
+      fastestPathToBeingWrong: '',
       transitionSignal: '',
       centralThesisConflict: '',
       confirmingIndicators: [],

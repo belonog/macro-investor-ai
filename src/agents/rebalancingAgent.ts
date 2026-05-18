@@ -7,11 +7,11 @@ import {
   PositionSnapshot,
   PortfolioConfig,
   PortfolioConfigSchema
-} from '../types';
-import { dbManager } from './db';
-import { generateAgentResponse } from './baseAgent';
-import { buildPortfolioContext } from '../utils/portfolioContext';
-import { StaleRegimeError } from '../utils/errors';
+} from '../types/index.js';
+import { dbManager } from './db.js';
+import { generateAgentResponse } from './baseAgent.js';
+import { buildPortfolioContext } from '../utils/portfolioContext.js';
+import { StaleRegimeError } from '../utils/errors.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -40,7 +40,7 @@ export async function generateRebalancingReport(): Promise<RebalancingOutput> {
     const regimeSnapshot: RegimeAssessment = JSON.parse(fs.readFileSync(REGIME_CACHE_PATH, 'utf8'));
 
     // Stale-data guard
-    const assessedAt = new Date(regimeSnapshot.assessed_at);
+    const assessedAt = new Date(regimeSnapshot.assessedAt || (regimeSnapshot as any).assessed_at);
     const now = new Date();
     const diffDays = (now.getTime() - assessedAt.getTime()) / (1000 * 3600 * 24);
     if (diffDays > 7) {
@@ -81,10 +81,8 @@ export async function generateRebalancingReport(): Promise<RebalancingOutput> {
 
     // 4. Persist to SQLite
     dbManager.logRebalancingDecision({
+      ...validated,
       timestamp: validated.evaluated_at,
-      alignment_score: validated.regime_portfolio_alignment_score,
-      alignment_grade: validated.alignment_grade,
-      position_assessments: validated.position_assessments,
       raw_response: validated,
     });
 
@@ -109,7 +107,7 @@ if (import.meta.url.endsWith(process.argv[1])) {
       console.log('Rebalancing Report Generated Successfully');
       console.log(`Grade: ${report.alignment_grade} (Score: ${report.regime_portfolio_alignment_score})`);
       console.log('\nPriority Actions:');
-      report.priority_actions.forEach(action => console.log(`- ${action}`));
+      report.priority_actions.forEach((action: string) => console.log(`- ${action}`));
     })
     .catch(err => {
       console.error('Failed to generate report:', err.message);

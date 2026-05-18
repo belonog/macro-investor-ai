@@ -4,7 +4,7 @@ import { updateMacroCache, getLatestValues } from '../data/fetchers/fredFetcher.
 import { getLatestReleases } from '../data/fetchers/blsFetcher.js';
 import { getLatest as getLatestEia } from '../data/fetchers/eiaFetcher.js';
 import { getGoldSpotPrice } from '../data/fetchers/polygonFetcher.js';
-import { evaluateRegime } from '../agents/regimeAgent.js';
+import { runRegimeAgent } from '../agents/regimeAgent.js';
 import { generateRebalancingReport } from '../agents/rebalancingAgent.js';
 import { sendTelegramAlert } from '../alerts/telegramBot.js';
 import { PositionSnapshot } from '../types/index.js';
@@ -27,10 +27,10 @@ export async function runRegimeCycle(trigger: 'manual' | 'post_release' | 'sched
     const eiaData = await getLatestEia();
     
     // 3. Run Regime Agent
-    const assessment = await evaluateRegime(flatSnapshot, { bls: blsData, eia: eiaData }, trigger);
+    const assessment = await runRegimeAgent(flatSnapshot, { bls: blsData, eia: eiaData }, trigger);
     
     // 4. Conditional Rebalancing
-    if (['Transitioning', 'Shifted'].includes(assessment.regime_drift_vs_prior)) {
+    if (['Transitioning', 'Shifted'].includes(assessment.regimeDriftVsPrior)) {
       // Verify fetchedAt < 26h for portfolio snapshot (Spec v3 Flow 1 Step 6)
       if (fs.existsSync(POSITIONS_CACHE_PATH)) {
         try {
@@ -57,8 +57,8 @@ export async function runRegimeCycle(trigger: 'manual' | 'post_release' | 'sched
 
       const report = await generateRebalancingReport();
       await sendTelegramAlert({
-        level: assessment.regime_drift_vs_prior === 'Shifted' ? 'CRITICAL' : 'WARNING',
-        message: `Regime ${assessment.regime_drift_vs_prior}: ${assessment.regime_quadrant}\nAlignment: ${report.alignment_grade} (${(report.regime_portfolio_alignment_score * 100).toFixed(0)}%)`,
+        level: assessment.regimeDriftVsPrior === 'Shifted' ? 'CRITICAL' : 'WARNING',
+        message: `Regime ${assessment.regimeDriftVsPrior}: ${assessment.regimeQuadrant}\nAlignment: ${report.alignment_grade} (${(report.regime_portfolio_alignment_score * 100).toFixed(0)}%)`,
         action: 'Review Rebalancing Report',
         createdAt: new Date().toISOString(),
         symbol: null
@@ -66,7 +66,7 @@ export async function runRegimeCycle(trigger: 'manual' | 'post_release' | 'sched
     } else {
       await sendTelegramAlert({
         level: 'INFO',
-        message: `Regime Stable: ${assessment.regime_quadrant} (Confidence: ${assessment.confidence}%)`,
+        message: `Regime Stable: ${assessment.regimeQuadrant} (Confidence: ${assessment.finalConfidence}%)`,
         createdAt: new Date().toISOString(),
         symbol: null,
         action: null

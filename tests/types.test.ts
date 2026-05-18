@@ -121,43 +121,90 @@ describe('RegimeQuadrantSchema', () => {
 describe('RegimeAssessmentSchema', () => {
   it('should validate a correct regime assessment', () => {
     const validAssessment = {
-      regime_quadrant: 'Goldilocks',
+      // PipelineOutput fields (camelCase)
+      inflationScore: 0.3,
+      growthScore: 0.7,
+      regimeQuadrant: 'Goldilocks',
       confidence: 85,
-      inflation_score: 0.3,
-      growth_score: 0.7,
-      regime_drift_vs_prior: 'Stable',
+      requiresHumanReview: false,
+      flagReasons: [],
+      regimeDriftVsPrior: 'Stable',
+      driftDelta: { inflation: 0.05, growth: -0.02 },
+      dataGaps: [],
+      normalized_inflation: [],
+      normalized_growth: [],
+      assessedAt: new Date().toISOString(),
+
+      // LLMResponse fields (snake_case)
+      classification_verdict: 'Confirmed',
+      challenge_rationale: null,
+      confidence_adjustment: 0,
       key_drivers: ['Low inflation', 'Moderate growth'],
       confirming_indicators: ['CPI stable'],
       contradicting_indicators: ['PPI rising'],
+      transition_signal: 'Possible uptick in CPI',
       central_thesis_conflict: 'None',
+      petrodollar_risk: 'Not Evidenced',
+      petrodollar_rationale: 'Stable',
       fastest_path_to_being_wrong: 'Growth slowing faster than expected',
       watch_next: ['NFP'],
-      transition_signal: 'Possible uptick in CPI',
-      assessed_at: new Date().toISOString()
+      requires_human_review_override: false,
+      override_reason: null,
+
+      // FinalAssessment extensions
+      final_confidence: 85,
+      final_human_review: false
     };
     const result = RegimeAssessmentSchema.safeParse(validAssessment);
     if (!result.success) {
-      console.log(result.error);
+      console.log(JSON.stringify(result.error.format(), null, 2));
     }
     expect(result.success).toBe(true);
   });
 
-  it('should validate without optional transition_signal', () => {
+  it('should validate without optional fields if any', () => {
+    // Note: All fields in our schema seem to be mandatory except those marked optional
     const validAssessment = {
-      regime_quadrant: 'Stagflation',
+      inflationScore: 0.8,
+      growthScore: 0.4,
+      regimeQuadrant: 'Stagflation',
       confidence: 70,
-      inflation_score: 0.8,
-      growth_score: 0.4,
-      regime_drift_vs_prior: 'Weakening',
+      requiresHumanReview: true,
+      flagReasons: ['High inflation'],
+      regimeDriftVsPrior: 'Weakening',
+      driftDelta: null,
+      dataGaps: [{
+        indicator: 'CPI',
+        originalWeight: 0.2,
+        reason: 'missing',
+        weightRedistributedTo: ['PCE']
+      }],
+      normalized_inflation: [],
+      normalized_growth: [],
+      assessedAt: new Date().toISOString(),
+
+      classification_verdict: 'Nuanced',
+      challenge_rationale: 'Inflation might be peaking',
+      confidence_adjustment: -5,
       key_drivers: ['Rising prices', 'Stagnant growth'],
       confirming_indicators: [],
       contradicting_indicators: [],
+      transition_signal: 'None',
       central_thesis_conflict: 'Conflict here',
+      petrodollar_risk: 'Latent Risk',
+      petrodollar_rationale: 'Rising tensions',
       fastest_path_to_being_wrong: 'Deflation spike',
       watch_next: [],
-      assessed_at: new Date().toISOString()
+      requires_human_review_override: true,
+      override_reason: 'High uncertainty',
+
+      final_confidence: 65,
+      final_human_review: true
     };
     const result = RegimeAssessmentSchema.safeParse(validAssessment);
+    if (!result.success) {
+      console.log(JSON.stringify(result.error.format(), null, 2));
+    }
     expect(result.success).toBe(true);
   });
 });

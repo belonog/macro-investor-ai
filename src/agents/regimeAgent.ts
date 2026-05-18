@@ -9,11 +9,11 @@ import {
   RawIndicator,
   PriorAssessment,
   LLMResponseSchema
-} from '../types';
-import { dbManager } from './db';
-import { generateAgentResponse } from './baseAgent';
-import { buildPortfolioContext } from '../utils/portfolioContext';
-import { runPipeline, buildLLMInput, mergePipelineAndLLM } from './regimePipeline';
+} from '../types/index.js';
+import { dbManager } from './db.js';
+import { generateAgentResponse } from './baseAgent.js';
+import { buildPortfolioContext } from '../utils/portfolioContext.js';
+import { runPipeline, buildLLMInput, mergePipelineAndLLM } from './regimePipeline.js';
 import dotenv from 'dotenv';
 
 dotenv.config();

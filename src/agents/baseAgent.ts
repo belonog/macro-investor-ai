@@ -12,7 +12,7 @@ export interface AgentCallOptions<T> {
   prompt: string;
   schema: z.ZodSchema<T>;
   agentName: string;
-  trigger: 'scheduled' | 'post_release' | 'manual';
+  trigger: 'scheduled' | 'post_release' | 'manual' | 'alert';
   model?: string;
 }
 

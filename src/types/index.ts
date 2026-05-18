@@ -52,6 +52,55 @@ export const RegimeQuadrantSchema = z.enum([
 ]);
 export type RegimeQuadrant = z.infer<typeof RegimeQuadrantSchema>;
 
+export const RawIndicatorSchema = z.object({
+  value: z.number(),
+  unit: z.string(),
+  asOf: z.string(),
+  source: z.string(),
+});
+export type RawIndicator = z.infer<typeof RawIndicatorSchema>;
+
+export const MacroIndicatorsSchema = z.record(z.string(), RawIndicatorSchema);
+export type MacroIndicators = z.infer<typeof MacroIndicatorsSchema>;
+
+export const PriorAssessmentSchema = z.object({
+  regime_quadrant:   RegimeQuadrantSchema,
+  inflation_score:   z.number(),
+  growth_score:      z.number(),
+  confidence:        z.number(),
+  assessed_at:       z.string(),
+});
+export type PriorAssessment = z.infer<typeof PriorAssessmentSchema>;
+
+export const PipelineInputSchema = z.object({
+  indicators:       MacroIndicatorsSchema,
+  priorAssessment:  PriorAssessmentSchema.nullable(),
+  portfolioContext: z.any(), // Can be refined later if needed
+  currentTime:     z.string().optional(),
+  trigger:         z.enum(['scheduled', 'manual', 'alert', 'post_release']).optional(),
+});
+export type PipelineInput = z.infer<typeof PipelineInputSchema>;
+
+export const NormalizedIndicatorSchema = z.object({
+  key:                 z.string(),
+  rawValue:            z.number(),
+  unit:                z.string(),
+  normalizedScore:     z.number(),
+  effectiveWeight:     z.number(),
+  originalWeight:      z.number(),
+  weightedContribution: z.number(),
+  asOf:                z.string(),
+});
+export type NormalizedIndicator = z.infer<typeof NormalizedIndicatorSchema>;
+
+export const DataGapSchema = z.object({
+  indicator:              z.string(),
+  originalWeight:         z.number(),
+  reason:                 z.enum(['missing', 'stale']),
+  weightRedistributedTo:  z.array(z.string()),
+});
+export type DataGap = z.infer<typeof DataGapSchema>;
+
 export const PipelineOutputSchema = z.object({
   inflationScore:  z.number(),
   growthScore:     z.number(),
@@ -61,7 +110,9 @@ export const PipelineOutputSchema = z.object({
   flagReasons:     z.array(z.string()),
   regimeDriftVsPrior: z.enum(['Stable', 'Weakening', 'Transitioning', 'Shifted', 'N/A']),
   driftDelta:      z.object({ inflation: z.number(), growth: z.number() }).nullable(),
-  dataGaps:        z.array(z.any()), // Simplified for now, can be refined
+  dataGaps:        z.array(DataGapSchema),
+  normalizedInflationIndicators: z.array(NormalizedIndicatorSchema),
+  normalizedGrowthIndicators:    z.array(NormalizedIndicatorSchema),
   assessedAt:      z.string()
 });
 
@@ -69,25 +120,25 @@ export const RegimeDriftSchema = z.enum(['Stable', 'Weakening', 'Transitioning',
 export type RegimeDrift = z.infer<typeof RegimeDriftSchema>;
 
 export const LLMResponseSchema = z.object({
-  classification_verdict:       z.enum(['Confirmed', 'Challenged', 'Nuanced']),
-  challenge_rationale:          z.string().nullable(),
-  confidence_adjustment:        z.number(),
-  key_drivers:                  z.array(z.string()),
-  confirming_indicators:        z.array(z.any()),
-  contradicting_indicators:     z.array(z.any()),
-  transition_signal:            z.string(),
-  central_thesis_conflict:      z.string(),
-  petrodollar_risk:             z.enum(['Active Risk', 'Latent Risk', 'Not Evidenced']),
-  petrodollar_rationale:        z.string(),
-  fastest_path_to_being_wrong:  z.string(),
-  watch_next:                   z.array(z.any()),
-  requires_human_review_override: z.boolean(),
-  override_reason:              z.string().nullable()
+  classificationVerdict:       z.enum(['Confirmed', 'Challenged', 'Nuanced']),
+  challengeRationale:          z.string().nullable(),
+  confidenceAdjustment:        z.number(),
+  keyDrivers:                  z.array(z.string()),
+  confirmingIndicators:        z.array(z.any()),
+  contradictingIndicators:     z.array(z.any()),
+  transitionSignal:            z.string(),
+  centralThesisConflict:       z.string(),
+  petrodollarRisk:             z.enum(['Active Risk', 'Latent Risk', 'Not Evidenced']),
+  petrodollarRationale:        z.string(),
+  fastestPathToBeingWrong:     z.string(),
+  watchNext:                   z.array(z.any()),
+  requiresHumanReviewOverride: z.boolean(),
+  overrideReason:              z.string().nullable()
 });
 
 export const FinalAssessmentSchema = PipelineOutputSchema.merge(LLMResponseSchema).extend({
-  final_confidence: z.number(),
-  final_human_review: z.boolean()
+  finalConfidence: z.number(),
+  finalHumanReview: z.boolean()
 });
 
 export type PipelineOutput = z.infer<typeof PipelineOutputSchema>;

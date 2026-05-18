@@ -141,14 +141,22 @@ export class DatabaseManager {
       INSERT INTO regime_history (quadrant, confidence, inflation_score, growth_score, drift, full_output, assessed_at)
       VALUES (?, ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))
     `);
+    
+    // Support both snake_case (legacy) and camelCase (new)
+    const quadrant = assessment.regimeQuadrant ?? assessment.regime_quadrant;
+    const inflationScore = assessment.inflationScore ?? assessment.inflation_score;
+    const growthScore = assessment.growthScore ?? assessment.growth_score;
+    const drift = assessment.regimeDriftVsPrior ?? assessment.regime_drift_vs_prior;
+    const assessedAt = assessment.assessedAt ?? assessment.assessed_at;
+
     return stmt.run(
-      assessment.regime_quadrant,
+      quadrant || null,
       assessment.confidence,
-      assessment.inflation_score !== undefined ? assessment.inflation_score : null,
-      assessment.growth_score !== undefined ? assessment.growth_score : null,
-      assessment.regime_drift_vs_prior || null,
+      inflationScore !== undefined ? inflationScore : null,
+      growthScore !== undefined ? growthScore : null,
+      drift || null,
       JSON.stringify(assessment),
-      assessment.assessed_at || null
+      assessedAt || null
     );
   }
 

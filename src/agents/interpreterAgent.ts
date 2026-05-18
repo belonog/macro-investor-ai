@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import { generateAgentResponse } from './baseAgent';
-import { InterpreterOutput, InterpreterOutputSchema, PortfolioConfig } from '../types';
-import { buildPortfolioContext } from '../utils/portfolioContext';
+import { generateAgentResponse } from './baseAgent.js';
+import { InterpreterOutput, InterpreterOutputSchema, PortfolioConfig } from '../types/index.js';
+import { buildPortfolioContext } from '../utils/portfolioContext.js';
 
 /**
  * Analyzes raw economic release data and produces structured output.
