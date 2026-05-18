@@ -24,7 +24,7 @@ export function syncPositions(
       
       // ONLY update avg_cost if it differs by > 0.5%
       const currentAvgCost = positionsConfig[pos.symbol].avg_cost;
-      const newAvgCost = pos.avgCost;
+      const newAvgCost = pos.avg_cost;
       const diff = Math.abs(newAvgCost - currentAvgCost) / currentAvgCost;
       
       if (diff > 0.005) {
@@ -36,7 +36,7 @@ export function syncPositions(
         symbol: pos.symbol,
         message: `New unrecognized symbol found in IBKR: ${pos.symbol}. Quantity: ${pos.quantity}`,
         action: 'Add to positions.json if this is a new intentional position.',
-        createdAt: new Date().toISOString(),
+        created_at: new Date().toISOString(),
       });
     }
   }
@@ -51,7 +51,7 @@ export function syncPositions(
           symbol: symbol,
           message: `Closed position detected: ${symbol} is no longer in IBKR snapshot.`,
           action: 'Verify if position was intentionally closed and update thesis if needed.',
-          createdAt: new Date().toISOString(),
+          created_at: new Date().toISOString(),
         });
         updatedConfig[symbol].shares = 0;
       }

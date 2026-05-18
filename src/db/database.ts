@@ -142,21 +142,21 @@ export class DatabaseManager {
       VALUES (?, ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))
     `);
     
-    // Support both snake_case (legacy) and camelCase (new)
-    const quadrant = assessment.regimeQuadrant ?? assessment.regime_quadrant;
-    const inflationScore = assessment.inflationScore ?? assessment.inflation_score;
-    const growthScore = assessment.growthScore ?? assessment.growth_score;
-    const drift = assessment.regimeDriftVsPrior ?? assessment.regime_drift_vs_prior;
-    const assessedAt = assessment.assessedAt ?? assessment.assessed_at;
+    // Support snake_case as primary, camelCase as fallback for legacy
+    const quadrant = assessment.regime_quadrant ?? assessment.regimeQuadrant;
+    const inflation_score = assessment.inflation_score ?? assessment.inflationScore;
+    const growth_score = assessment.growth_score ?? assessment.growthScore;
+    const drift = assessment.regime_drift_vs_prior ?? assessment.regimeDriftVsPrior;
+    const assessed_at = assessment.assessed_at ?? assessment.assessedAt;
 
     return stmt.run(
       quadrant || null,
       assessment.confidence,
-      inflationScore !== undefined ? inflationScore : null,
-      growthScore !== undefined ? growthScore : null,
+      inflation_score !== undefined ? inflation_score : null,
+      growth_score !== undefined ? growth_score : null,
       drift || null,
       JSON.stringify(assessment),
-      assessedAt || null
+      assessed_at || null
     );
   }
 
@@ -193,8 +193,11 @@ export class DatabaseManager {
       INSERT INTO rebalancing_history (alignment_score, alignment_grade, full_output)
       VALUES (?, ?, ?)
     `);
+
+    const alignment_score = output.alignment_score ?? output.regime_portfolio_alignment_score;
+
     return stmt.run(
-      output.regime_portfolio_alignment_score,
+      alignment_score,
       output.alignment_grade,
       JSON.stringify(output)
     );

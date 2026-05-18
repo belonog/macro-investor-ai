@@ -40,7 +40,8 @@ export async function generateRebalancingReport(): Promise<RebalancingOutput> {
     const regimeSnapshot: RegimeAssessment = JSON.parse(fs.readFileSync(REGIME_CACHE_PATH, 'utf8'));
 
     // Stale-data guard
-    const assessedAt = new Date(regimeSnapshot.assessedAt || (regimeSnapshot as any).assessed_at);
+    const assessed_at_raw = regimeSnapshot.assessed_at || (regimeSnapshot as any).assessedAt;
+    const assessedAt = new Date(assessed_at_raw);
     const now = new Date();
     const diffDays = (now.getTime() - assessedAt.getTime()) / (1000 * 3600 * 24);
     if (diffDays > 7) {
@@ -105,7 +106,7 @@ if (import.meta.url.endsWith(process.argv[1])) {
   generateRebalancingReport()
     .then(report => {
       console.log('Rebalancing Report Generated Successfully');
-      console.log(`Grade: ${report.alignment_grade} (Score: ${report.regime_portfolio_alignment_score})`);
+      console.log(`Grade: ${report.alignment_grade} (Score: ${report.alignment_score})`);
       console.log('\nPriority Actions:');
       report.priority_actions.forEach((action: string) => console.log(`- ${action}`));
     })

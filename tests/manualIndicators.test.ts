@@ -28,7 +28,7 @@ describe('manualIndicators utility', () => {
     const indicator = {
       value: 51.6,
       period: '2026-05',
-      updatedAt: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
       source: 'ismworld.org',
     };
     setManualIndicator('ism_services', indicator);
@@ -38,8 +38,8 @@ describe('manualIndicators utility', () => {
   });
 
   it('should handle multiple indicators', () => {
-    const ind1 = { value: 51.6, period: '2026-05', updatedAt: new Date().toISOString(), source: 's1' };
-    const ind2 = { value: 128.3, period: '2026-04', updatedAt: new Date().toISOString(), source: 's2' };
+    const ind1 = { value: 51.6, period: '2026-05', updated_at: new Date().toISOString(), source: 's1' };
+    const ind2 = { value: 128.3, period: '2026-04', updated_at: new Date().toISOString(), source: 's2' };
     
     setManualIndicator('ism_services', ind1);
     setManualIndicator('fao_food_price_index', ind2);

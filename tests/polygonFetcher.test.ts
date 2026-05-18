@@ -25,7 +25,7 @@ describe('polygonFetcher', () => {
     const calendar = await getEarningsCalendar(['AAPL'], 7);
     expect(calendar).toHaveLength(1);
     expect(calendar[0].symbol).toBe('AAPL');
-    expect(calendar[0].epsEstimate).toBe(1.5);
+    expect(calendar[0].eps_estimate).toBe(1.5);
   });
 
   it('fetches gold spot price', async () => {

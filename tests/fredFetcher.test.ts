@@ -102,7 +102,7 @@ describe('fredFetcher', () => {
   describe('getLatestValues', () => {
     it('should return latest values and derived metrics from cache', async () => {
       const mockCache = {
-        fetchedAt: new Date().toISOString(),
+        fetched_at: new Date().toISOString(),
         data: {
           series: {
             'CPIAUCSL': [
@@ -168,12 +168,12 @@ describe('fredFetcher', () => {
             'DTWEXBGS': Array(7).fill({ date: '2023-01-01', value: 0 }),
             'M2SL': Array(7).fill({ date: '2023-01-01', value: 0 })
           },
-          fetchedAt: Object.keys(TARGET_SERIES).reduce((acc, k) => ({ ...acc, [k]: new Date().toISOString() }), {})
+          fetched_at: Object.keys(TARGET_SERIES).reduce((acc, k) => ({ ...acc, [k]: new Date().toISOString() }), {})
         }
       };
       vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(mockCache));
       vi.mocked(getManualIndicators).mockReturnValue({
-        'MANUAL_TEST': { value: 99.9, period: '2023-05', updatedAt: new Date().toISOString(), source: 'test' }
+        'MANUAL_TEST': { value: 99.9, period: '2023-05', updated_at: new Date().toISOString(), source: 'test' }
       });
 
       const latest = await getLatestValues();

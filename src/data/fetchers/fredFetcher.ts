@@ -99,7 +99,7 @@ export async function fetchSeries(seriesId: string, startDate?: string): Promise
 export async function fetchAll(): Promise<MacroSnapshot> {
   const snapshot: MacroSnapshot = {
     series: {},
-    fetchedAt: {}
+    fetched_at: {}
   };
   const seriesIds = Object.keys(TARGET_SERIES);
   
@@ -107,11 +107,11 @@ export async function fetchAll(): Promise<MacroSnapshot> {
     try {
       const data = await fetchSeries(seriesId);
       snapshot.series[seriesId] = data;
-      snapshot.fetchedAt[seriesId] = new Date().toISOString();
+      snapshot.fetched_at[seriesId] = new Date().toISOString();
     } catch (error) {
       console.error(`Failed to fetch ${seriesId} (${TARGET_SERIES[seriesId]}):`, error);
       snapshot.series[seriesId] = []; // Ensure the key exists even on failure
-      snapshot.fetchedAt[seriesId] = new Date().toISOString();
+      snapshot.fetched_at[seriesId] = new Date().toISOString();
     }
   });
 
@@ -126,7 +126,7 @@ const CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'macroSnapsh
  * @returns Promise<MacroSnapshot>
  */
 export async function updateMacroCache(): Promise<MacroSnapshot> {
-  let existingSnapshot: MacroSnapshot = { series: {}, fetchedAt: {} };
+  let existingSnapshot: MacroSnapshot = { series: {}, fetched_at: {} };
   
   try {
     const rawCache = await fs.readFile(CACHE_PATH, 'utf-8');
@@ -140,7 +140,7 @@ export async function updateMacroCache(): Promise<MacroSnapshot> {
 
   const snapshot: MacroSnapshot = {
     series: { ...existingSnapshot.series },
-    fetchedAt: { ...existingSnapshot.fetchedAt }
+    fetched_at: { ...existingSnapshot.fetched_at }
   };
 
   const seriesIds = Object.keys(TARGET_SERIES);
@@ -164,13 +164,13 @@ export async function updateMacroCache(): Promise<MacroSnapshot> {
       const merged = Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
       
       snapshot.series[seriesId] = merged;
-      snapshot.fetchedAt[seriesId] = new Date().toISOString();
+      snapshot.fetched_at[seriesId] = new Date().toISOString();
     } catch (error) {
       console.error(`Failed to fetch ${seriesId} (${TARGET_SERIES[seriesId]}):`, error);
       if (!snapshot.series[seriesId]) {
         snapshot.series[seriesId] = [];
       }
-      snapshot.fetchedAt[seriesId] = new Date().toISOString();
+      snapshot.fetched_at[seriesId] = new Date().toISOString();
     }
   });
 
@@ -180,7 +180,7 @@ export async function updateMacroCache(): Promise<MacroSnapshot> {
   await fs.mkdir(path.dirname(CACHE_PATH), { recursive: true });
   
   const cacheData = {
-    fetchedAt: new Date().toISOString(),
+    fetched_at: new Date().toISOString(),
     data: snapshot
   };
   
@@ -261,6 +261,7 @@ export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Da
       nfpSeries[nfpSeries.length - 3].value - nfpSeries[nfpSeries.length - 4].value,
     ];
     latest['nfp_3m_avg_k'] = changes.reduce((a, b) => a + b, 0) / 3;
+    latest['nfp_3m_avg'] = latest['nfp_3m_avg_k'];
   }
 
   const rsNominalYoY = calculateYoY('RSAFS');
@@ -298,7 +299,7 @@ export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Da
   const manual = getManualIndicators();
   for (const [key, indicator] of Object.entries(manual)) {
     // Only use manual indicators if they are not newer than baseDate
-    if (indicator.updatedAt <= baseDate) {
+    if (indicator.updated_at <= baseDate) {
       latest[key] = indicator.value;
     }
   }

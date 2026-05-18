@@ -54,7 +54,7 @@ export async function runEventPrebrief() {
         symbol: symbol,
         message: `🔔 *Pre-Brief: ${symbol} Earnings*\n\n${prebrief.summary_markdown}`,
         action: 'Review Thesis',
-        createdAt: new Date().toISOString()
+        created_at: new Date().toISOString()
       });
     }
 

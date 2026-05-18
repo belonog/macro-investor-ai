@@ -53,13 +53,13 @@ describe('eodMonitor', () => {
     const mockSnapshots = [
       {
         symbol: 'TLT',
-        marketPrice: 84, // Below hard stop 85
-        marketValue: 8400,
+        market_price: 84, // Below hard stop 85
+        market_value: 8400,
         quantity: 100,
-        avgCost: 90,
-        unrealizedPnl: -600,
-        unrealizedPnlPct: -6.6,
-        fetchedAt: new Date().toISOString()
+        avg_cost: 90,
+        unrealized_pnl: -600,
+        unrealized_pnl_pct: -6.6,
+        fetched_at: new Date().toISOString()
       }
     ];
 

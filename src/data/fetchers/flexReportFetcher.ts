@@ -27,12 +27,12 @@ export function parseFlexXml(xml: string): PositionSnapshot[] {
     return PositionSnapshotSchema.parse({
       symbol: p.symbol,
       quantity,
-      avgCost,
-      marketPrice: parseFloat(p.markPrice),
-      marketValue: parseFloat(p.positionValue),
-      unrealizedPnl,
-      unrealizedPnlPct,
-      fetchedAt,
+      avg_cost: avgCost,
+      market_price: parseFloat(p.markPrice),
+      market_value: parseFloat(p.positionValue),
+      unrealized_pnl: unrealizedPnl,
+      unrealized_pnl_pct: unrealizedPnlPct,
+      fetched_at: fetchedAt,
     });
   });
 }

@@ -95,15 +95,13 @@ export function redistributeWeights(
     const indicator = (indicators as any)[key];
 
     if (!indicator || typeof indicator === 'number') {
-      // The test passes `indicators as any` with number values, so we handle it for backward compatibility in tests
-      // But in real pipeline it's a RawIndicator object
       const val = typeof indicator === 'number' ? indicator : indicator?.value;
       if (val === undefined || val === null) {
         gaps.push({
           indicator:             key,
-          originalWeight:        weights[key],
+          original_weight:        weights[key],
           reason:                'missing',
-          weightRedistributedTo: [],
+          weight_redistributed_to: [],
         });
         excluded.add(key);
         continue;
@@ -115,9 +113,9 @@ export function redistributeWeights(
         if (weights[key] >= 0.15) staleHighWeight = true;
         gaps.push({
           indicator:             key,
-          originalWeight:        weights[key],
+          original_weight:        weights[key],
           reason:                'stale',
-          weightRedistributedTo: [],
+          weight_redistributed_to: [],
         });
         excluded.add(key);
       }
@@ -136,7 +134,7 @@ export function redistributeWeights(
   }
 
   for (const gap of gaps) {
-    gap.weightRedistributedTo = availableKeys;
+    gap.weight_redistributed_to = availableKeys;
   }
 
   return { effectiveWeights, gaps, missingWeightTotal, staleHighWeight };
@@ -144,7 +142,7 @@ export function redistributeWeights(
 
 interface CategoryScoreResult {
   score:                number;
-  normalizedIndicators: NormalizedIndicator[];
+  normalized_indicators: NormalizedIndicator[];
   gaps:                 DataGap[];
   missingWeightTotal:   number;
   staleHighWeight:      boolean;
@@ -159,7 +157,7 @@ export function computeCategoryScore(
   const { effectiveWeights, gaps, missingWeightTotal, staleHighWeight } =
     redistributeWeights(weights, indicators, currentDate);
 
-  const normalizedIndicators: NormalizedIndicator[] = [];
+  const normalized_indicators: NormalizedIndicator[] = [];
   let score = 0;
 
   for (const [key, effectiveWeight] of Object.entries(effectiveWeights)) {
@@ -170,21 +168,21 @@ export function computeCategoryScore(
     const weightedContribution = normalizedScore * effectiveWeight;
     score += weightedContribution;
 
-    normalizedIndicators.push({
+    normalized_indicators.push({
       key,
-      rawValue:             indicator.value,
+      raw_value:             indicator.value,
       unit:                 indicator.unit,
-      normalizedScore:      round(normalizedScore,      3),
-      effectiveWeight:      round(effectiveWeight,      3),
-      originalWeight:       round(weights[key],         3),
-      weightedContribution: round(weightedContribution, 3),
-      asOf:                 indicator.asOf,
+      normalized_score:      round(normalizedScore,      3),
+      effective_weight:      round(effectiveWeight,      3),
+      original_weight:       round(weights[key],         3),
+      weighted_contribution: round(weightedContribution, 3),
+      as_of:                 indicator.asOf,
     });
   }
 
   return {
     score: round(score, 3),
-    normalizedIndicators,
+    normalized_indicators,
     gaps,
     missingWeightTotal,
     staleHighWeight,
@@ -192,8 +190,8 @@ export function computeCategoryScore(
 }
 
 export function classifyQuadrant(
-  inflationScore: number,
-  growthScore:    number,
+  inflation_score: number,
+  growth_score:    number,
   thresholds?: {
     inflation_high: number;
     inflation_low: number;
@@ -207,10 +205,10 @@ export function classifyQuadrant(
     growth_high,    growth_low,
   } = th;
 
-  const highInflation = inflationScore > inflation_high;
-  const lowInflation  = inflationScore < inflation_low;
-  const highGrowth    = growthScore    > growth_high;
-  const lowGrowth     = growthScore    < growth_low;
+  const highInflation = inflation_score > inflation_high;
+  const lowInflation  = inflation_score < inflation_low;
+  const highGrowth    = growth_score    > growth_high;
+  const lowGrowth     = growth_score    < growth_low;
 
   if (highInflation && highGrowth) return 'Inflationary Boom';
   if (highInflation && lowGrowth)  return 'Stagflation';
@@ -233,27 +231,26 @@ function nearBoundary(score: number): boolean {
 }
 
 export function detectDrift(
-  inflationScore:  number,
-  growthScore:     number,
+  inflation_score:  number,
+  growth_score:     number,
   currentQuadrant: RegimeQuadrant,
   prior:           PriorAssessment | null
 ): { status: DriftStatus; delta: PipelineOutput['driftDelta'] } {
   if (!prior) return { status: 'N/A', delta: null };
 
-  // Handle both snake_case and camelCase for prior fields to be robust
-  const priorInflation = (prior as any).inflation_score ?? (prior as any).inflationScore;
-  const priorGrowth = (prior as any).growth_score ?? (prior as any).growthScore;
-  const priorQuadrant = (prior as any).regime_quadrant ?? (prior as any).regimeQuadrant;
+  const prior_inflation = prior.inflation_score;
+  const prior_growth = prior.growth_score;
+  const prior_quadrant = prior.regime_quadrant;
 
-  const dInflation = Math.abs(inflationScore - priorInflation);
-  const dGrowth    = Math.abs(growthScore    - priorGrowth);
+  const d_inflation = Math.abs(inflation_score - prior_inflation);
+  const d_growth    = Math.abs(growth_score    - prior_growth);
 
   const delta = {
-    inflation: round(inflationScore - priorInflation, 3),
-    growth:    round(growthScore    - priorGrowth,    3),
+    inflation: round(inflation_score - prior_inflation, 3),
+    growth:    round(growth_score    - prior_growth,    3),
   };
 
-  if (currentQuadrant !== priorQuadrant) {
+  if (currentQuadrant !== prior_quadrant) {
     return { status: 'Shifted', delta };
   }
 
@@ -266,15 +263,15 @@ export function detectDrift(
   ];
   const [iH, iL, gH, gL] = thresholdsArr;
   const crossedThreshold =
-    crossedLine(priorInflation, inflationScore, iH) ||
-    crossedLine(priorInflation, inflationScore, iL) ||
-    crossedLine(priorGrowth,    growthScore,    gH) ||
-    crossedLine(priorGrowth,    growthScore,    gL);
+    crossedLine(prior_inflation, inflation_score, iH) ||
+    crossedLine(prior_inflation, inflation_score, iL) ||
+    crossedLine(prior_growth,    growth_score,    gH) ||
+    crossedLine(prior_growth,    growth_score,    gL);
 
-  if (dInflation > 0.15 || dGrowth > 0.15 || crossedThreshold) {
+  if (d_inflation > 0.15 || d_growth > 0.15 || crossedThreshold) {
     return { status: 'Transitioning', delta };
   }
-  if (dInflation >= 0.05 || dGrowth >= 0.05) {
+  if (d_inflation >= 0.05 || d_growth >= 0.05) {
     return { status: 'Weakening', delta };
   }
   return { status: 'Stable', delta };
@@ -286,83 +283,83 @@ function crossedLine(from: number, to: number, threshold: number): boolean {
 }
 
 interface ConfidenceResult {
-  score:               number;
-  requiresHumanReview: boolean;
-  flagReasons:         string[];
+  score:                  number;
+  requires_human_review:   boolean;
+  flag_reasons:            string[];
 }
 
 export function computeConfidence(params: {
-  inflationScore:        number;
-  growthScore:           number;
-  inflationGaps:         DataGap[];
-  growthGaps:            DataGap[];
+  inflation_score:        number;
+  growth_score:           number;
+  inflation_gaps:         DataGap[];
+  growth_gaps:            DataGap[];
   drift:                 DriftStatus;
-  inflationMissing:      number;
-  growthMissing:         number;
-  staleHighWeightFound:  boolean;
-  anyDataGaps:           boolean;
+  inflation_missing:      number;
+  growth_missing:         number;
+  stale_high_weight_found:  boolean;
+  any_data_gaps:           boolean;
 }): ConfidenceResult {
   const {
-    inflationScore, growthScore,
-    inflationGaps, growthGaps,
-    drift, inflationMissing, growthMissing,
-    staleHighWeightFound, anyDataGaps,
+    inflation_score, growth_score,
+    inflation_gaps, growth_gaps,
+    drift, inflation_missing, growth_missing,
+    stale_high_weight_found, any_data_gaps,
   } = params;
 
   let confidence       = 90;
-  const flagReasons: string[] = [];
-  let requiresReview   = false;
+  const flag_reasons: string[] = [];
+  let requires_review   = false;
 
-  for (const gap of [...inflationGaps, ...growthGaps]) {
-    if (gap.originalWeight >= 0.10) {
+  for (const gap of [...inflation_gaps, ...growth_gaps]) {
+    if (gap.original_weight >= 0.10) {
       confidence -= CONFIDENCE_PENALTIES.perMissingHighWeightIndicator;
     }
   }
 
-  if (inflationMissing >= CONFIDENCE_PENALTIES.missingCategoryWeightFloor) {
+  if (inflation_missing >= CONFIDENCE_PENALTIES.missingCategoryWeightFloor) {
     confidence -= CONFIDENCE_PENALTIES.missingCategoryPenalty;
-    requiresReview = true;
-    flagReasons.push(
-      `Missing indicators cover ${pct(inflationMissing)} of inflation weight`
+    requires_review = true;
+    flag_reasons.push(
+      `Missing indicators cover ${pct(inflation_missing)} of inflation weight`
     );
   }
-  if (growthMissing >= CONFIDENCE_PENALTIES.missingCategoryWeightFloor) {
+  if (growth_missing >= CONFIDENCE_PENALTIES.missingCategoryWeightFloor) {
     confidence -= CONFIDENCE_PENALTIES.missingCategoryPenalty;
-    requiresReview = true;
-    flagReasons.push(
-      `Missing indicators cover ${pct(growthMissing)} of growth weight`
+    requires_review = true;
+    flag_reasons.push(
+      `Missing indicators cover ${pct(growth_missing)} of growth weight`
     );
   }
 
-  const inflationBoundary = nearBoundary(inflationScore);
-  const growthBoundary    = nearBoundary(growthScore);
+  const inflationBoundary = nearBoundary(inflation_score);
+  const growthBoundary    = nearBoundary(growth_score);
   if (inflationBoundary || growthBoundary) {
     confidence -= CONFIDENCE_PENALTIES.boundaryProximity;
-    requiresReview = true;
+    requires_review = true;
     const dims = [
       inflationBoundary && 'inflation',
       growthBoundary    && 'growth',
     ].filter(Boolean).join(' and ');
-    flagReasons.push(`Score near threshold boundary: ${dims}`);
+    flag_reasons.push(`Score near threshold boundary: ${dims}`);
   }
 
-  if (staleHighWeightFound) {
+  if (stale_high_weight_found) {
     confidence -= CONFIDENCE_PENALTIES.staleHighWeightIndicator;
-    flagReasons.push('Stale data for indicator with weight >= 0.15');
+    flag_reasons.push('Stale data for indicator with weight >= 0.15');
   }
 
   if (drift === 'Transitioning') {
     confidence -= CONFIDENCE_PENALTIES.driftTransitioning;
-    requiresReview = true;
-    flagReasons.push('Regime transitioning — elevated classification uncertainty');
+    requires_review = true;
+    flag_reasons.push('Regime transitioning — elevated classification uncertainty');
   }
   if (drift === 'Shifted') {
     confidence -= CONFIDENCE_PENALTIES.driftShifted;
-    requiresReview = true;
-    flagReasons.push('Regime shifted since prior assessment');
+    requires_review = true;
+    flag_reasons.push('Regime shifted since prior assessment');
   }
 
-  if (anyDataGaps) {
+  if (any_data_gaps) {
     confidence = Math.min(confidence, CONFIDENCE_CAPS.anyDataGap);
   }
   if (inflationBoundary || growthBoundary) {
@@ -370,16 +367,16 @@ export function computeConfidence(params: {
   }
 
   const finalScore = clamp(confidence, 0, 100);
-  const finalReview = requiresReview || finalScore < 65;
+  const finalReview = requires_review || finalScore < 65;
 
-  if (finalScore < 65 && !flagReasons.includes('Confidence below threshold')) {
-    flagReasons.push(`Confidence below threshold: ${finalScore}`);
+  if (finalScore < 65 && !flag_reasons.includes('Confidence below threshold')) {
+    flag_reasons.push(`Confidence below threshold: ${finalScore}`);
   }
 
   return {
-    score:               finalScore,
-    requiresHumanReview: finalReview,
-    flagReasons,
+    score:                  finalScore,
+    requires_human_review:   finalReview,
+    flag_reasons,
   };
 }
 
@@ -397,7 +394,7 @@ export function pct(fraction: number): string {
 }
 
 export function runPipeline(input: PipelineInput): PipelineOutput {
-  const currentDate = new Date(input.currentTime ?? new Date().toISOString());
+  const currentDate = new Date(input.current_time ?? new Date().toISOString());
 
   const inflation = computeCategoryScore(
     CONFIG.inflation_weights, CONFIG.inflation_bounds, input.indicators, currentDate
@@ -406,40 +403,40 @@ export function runPipeline(input: PipelineInput): PipelineOutput {
     CONFIG.growth_weights, CONFIG.growth_bounds, input.indicators, currentDate
   );
 
-  const regimeQuadrant = classifyQuadrant(inflation.score, growth.score);
+  const regime_quadrant = classifyQuadrant(inflation.score, growth.score);
 
   const { status: driftStatus, delta: driftDelta } = detectDrift(
-    inflation.score, growth.score, regimeQuadrant, input.priorAssessment
+    inflation.score, growth.score, regime_quadrant, input.prior_assessment
   );
 
   const allGaps    = [...inflation.gaps, ...growth.gaps];
   const anyDataGaps = allGaps.length > 0;
 
-  const { score: confidence, requiresHumanReview, flagReasons } = computeConfidence({
-    inflationScore:       inflation.score,
-    growthScore:          growth.score,
-    inflationGaps:        inflation.gaps,
-    growthGaps:           growth.gaps,
+  const { score: confidence, requires_human_review, flag_reasons } = computeConfidence({
+    inflation_score:       inflation.score,
+    growth_score:          growth.score,
+    inflation_gaps:        inflation.gaps,
+    growth_gaps:           growth.gaps,
     drift:                driftStatus,
-    inflationMissing:     inflation.missingWeightTotal,
-    growthMissing:        growth.missingWeightTotal,
-    staleHighWeightFound: inflation.staleHighWeight || growth.staleHighWeight,
-    anyDataGaps,
+    inflation_missing:     inflation.missingWeightTotal,
+    growth_missing:        growth.missingWeightTotal,
+    stale_high_weight_found: inflation.staleHighWeight || growth.staleHighWeight,
+    any_data_gaps:         anyDataGaps,
   });
 
   return {
-    inflationScore:  inflation.score,
-    growthScore:     growth.score,
-    regimeQuadrant,
+    inflation_score:  inflation.score,
+    growth_score:     growth.score,
+    regime_quadrant,
     confidence,
-    requiresHumanReview,
-    flagReasons,
-    regimeDriftVsPrior:             driftStatus as any,
-    driftDelta,
-    normalizedInflationIndicators:  inflation.normalizedIndicators,
-    normalizedGrowthIndicators:     growth.normalizedIndicators,
-    dataGaps:                       allGaps,
-    assessedAt:                     currentDate.toISOString(),
+    requires_human_review,
+    flag_reasons,
+    regime_drift_vs_prior:             driftStatus as any,
+    drift_delta:      driftDelta,
+    normalized_inflation_indicators:  inflation.normalized_indicators,
+    normalized_growth_indicators:     growth.normalized_indicators,
+    data_gaps:                       allGaps,
+    assessed_at:                     currentDate.toISOString(),
   };
 }
 
@@ -474,23 +471,23 @@ export function buildLLMInput(
 ): string {
   const payload = {
     quantitative_assessment: {
-      regime_quadrant:       pipelineOutput.regimeQuadrant,
-      inflation_score:       pipelineOutput.inflationScore,
-      growth_score:          pipelineOutput.growthScore,
+      regime_quadrant:       pipelineOutput.regime_quadrant,
+      inflation_score:       pipelineOutput.inflation_score,
+      growth_score:          pipelineOutput.growth_score,
       confidence:            pipelineOutput.confidence,
-      regime_drift_vs_prior: pipelineOutput.regimeDriftVsPrior,
-      drift_delta:           pipelineOutput.driftDelta,
-      requires_human_review: pipelineOutput.requiresHumanReview,
-      flag_reasons:          pipelineOutput.flagReasons,
-      data_gaps:             pipelineOutput.dataGaps,
-      normalized_inflation:  pipelineOutput.normalizedInflationIndicators,
-      normalized_growth:     pipelineOutput.normalizedGrowthIndicators,
+      regime_drift_vs_prior: pipelineOutput.regime_drift_vs_prior,
+      drift_delta:           pipelineOutput.drift_delta,
+      requires_human_review: pipelineOutput.requires_human_review,
+      flag_reasons:          pipelineOutput.flag_reasons,
+      data_gaps:             pipelineOutput.data_gaps,
+      normalized_inflation:  pipelineOutput.normalized_inflation_indicators,
+      normalized_growth:     pipelineOutput.normalized_growth_indicators,
     },
     weighted_raw_indicators: extractRaw(input.indicators, WEIGHTED_KEYS),
     supplementary_indicators: extractRaw(input.indicators, SUPPLEMENTARY_KEYS),
-    prior_assessment: input.priorAssessment,
-    portfolio_context: input.portfolioContext,
-    assessed_at: pipelineOutput.assessedAt,
+    prior_assessment: input.prior_assessment,
+    portfolio_context: input.portfolio_context,
+    assessed_at: pipelineOutput.assessed_at,
   };
 
   return JSON.stringify(payload, null, 2);
@@ -500,8 +497,8 @@ export function mergePipelineAndLLM(
   pipeline: PipelineOutput,
   llm:      LLMResponse
 ): FinalAssessment {
-  const finalConfidence = clamp(
-    pipeline.confidence + llm.confidenceAdjustment,
+  const final_confidence = clamp(
+    pipeline.confidence + llm.confidence_adjustment,
     0,
     100
   );
@@ -509,7 +506,7 @@ export function mergePipelineAndLLM(
   return {
     ...pipeline,
     ...llm,
-    finalConfidence:   finalConfidence,
-    finalHumanReview: pipeline.requiresHumanReview || llm.requiresHumanReviewOverride,
+    final_confidence:   final_confidence,
+    final_human_review: pipeline.requires_human_review || llm.requires_human_review_override,
   };
 }

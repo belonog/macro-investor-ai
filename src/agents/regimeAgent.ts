@@ -65,11 +65,11 @@ export async function runRegimeAgent(
           const parsed = JSON.parse(raw);
           // priorAssessment expects snake_case fields per Spec v3
           priorAssessment = {
-            regime_quadrant: parsed.regimeQuadrant || parsed.regime_quadrant,
-            inflation_score: parsed.inflationScore || parsed.inflation_score,
-            growth_score: parsed.growthScore || parsed.growth_score,
+            regime_quadrant: parsed.regime_quadrant,
+            inflation_score: parsed.inflation_score,
+            growth_score: parsed.growth_score,
             confidence: parsed.confidence,
-            assessed_at: parsed.assessedAt || parsed.assessed_at,
+            assessed_at: parsed.assessed_at,
           };
         }
       } catch (err) {
@@ -94,9 +94,9 @@ export async function runRegimeAgent(
 
     const pipelineInput: PipelineInput = {
       indicators,
-      priorAssessment,
-      portfolioContext,
-      currentTime: new Date().toISOString(),
+      prior_assessment: priorAssessment,
+      portfolio_context: portfolioContext,
+      current_time: new Date().toISOString(),
       trigger,
     };
 
@@ -124,12 +124,12 @@ export async function runRegimeAgent(
 
     // 8. Persist and Cache
     logRegimeEvaluation({
-      timestamp: finalAssessment.assessedAt,
-      quadrant: finalAssessment.regimeQuadrant,
-      confidence: finalAssessment.finalConfidence,
-      inflation_score: finalAssessment.inflationScore,
-      growth_score: finalAssessment.growthScore,
-      regime_drift_vs_prior: finalAssessment.regimeDriftVsPrior,
+      timestamp: finalAssessment.assessed_at,
+      quadrant: finalAssessment.regime_quadrant,
+      confidence: finalAssessment.final_confidence,
+      inflation_score: finalAssessment.inflation_score,
+      growth_score: finalAssessment.growth_score,
+      regime_drift_vs_prior: finalAssessment.regime_drift_vs_prior,
       data_inputs: macroData,
       raw_response: finalAssessment,
     });

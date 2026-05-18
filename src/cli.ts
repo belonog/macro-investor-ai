@@ -185,7 +185,7 @@ program
     setManualIndicator(key, {
       value: val,
       period: options.period,
-      updatedAt: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
       source: options.source,
     });
     

@@ -51,12 +51,12 @@ describe('coherenceAgent', () => {
     vi.mocked(fs.readFileSync).mockReturnValue('Mock Prompt: {{PORTFOLIO_CONTEXT}}');
 
     const mockResponse = {
-      regimeMatch: 'Strong',
-      correlationRisk: 'Low correlation with current book',
-      thesisConflicts: [],
-      sizingNote: 'Reasonable for a starter position',
+      regime_match: 'Strong',
+      correlation_risk: 'Low correlation with current book',
+      thesis_conflicts: [],
+      sizing_note: 'Reasonable for a starter position',
       verdict: 'Proceed',
-      questionsBeforeEntry: [
+      questions_before_entry: [
         'What is your exit plan if inflation drops?',
         'How does this impact your total risk budget?',
         'Is the current volatility within your tolerance?'

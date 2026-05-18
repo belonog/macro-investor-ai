@@ -24,12 +24,12 @@ describe('eodCheck flow', () => {
       {
         symbol: 'AAPL',
         quantity: 10,
-        avgCost: 150,
-        marketPrice: 140, // Below stop?
-        marketValue: 1400,
-        unrealizedPnl: -100,
-        unrealizedPnlPct: -6.6,
-        fetchedAt: new Date().toISOString()
+        avg_cost: 150,
+        market_price: 140, // Below stop?
+        market_value: 1400,
+        unrealized_pnl: -100,
+        unrealized_pnl_pct: -6.6,
+        fetched_at: new Date().toISOString()
       }
     ];
 

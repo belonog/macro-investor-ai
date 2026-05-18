@@ -55,7 +55,7 @@ describe('regimePipeline - weight redistribution', () => {
     
     expect(gaps).toHaveLength(1);
     expect(gaps[0].indicator).toBe('b');
-    expect(gaps[0].weightRedistributedTo).toEqual(['a', 'c']);
+    expect(gaps[0].weight_redistributed_to).toEqual(['a', 'c']);
   });
 });
 
@@ -107,18 +107,18 @@ describe('regimePipeline - runPipeline', () => {
     
     const input = {
       indicators,
-      priorAssessment: null,
-      portfolioContext: { positions: [], secondary_risks: [] },
-      currentTime: '2026-05-16T12:00:00Z'
+      prior_assessment: null,
+      portfolio_context: { positions: [], secondary_risks: [] },
+      current_time: '2026-05-16T12:00:00Z'
     };
     
     const output = runPipeline(input as any);
     
-    expect(output.inflationScore).toBeDefined();
-    expect(output.growthScore).toBeDefined();
-    expect(output.regimeQuadrant).toBeDefined();
+    expect(output.inflation_score).toBeDefined();
+    expect(output.growth_score).toBeDefined();
+    expect(output.regime_quadrant).toBeDefined();
     expect(output.confidence).toBeGreaterThan(0);
-    expect(output.assessedAt).toBe('2026-05-16T12:00:00.000Z');
+    expect(output.assessed_at).toBe('2026-05-16T12:00:00.000Z');
   });
 });
 
@@ -159,30 +159,30 @@ describe('regimePipeline - detectDrift', () => {
 describe('regimePipeline - computeConfidence', () => {
   it('returns high confidence for complete data', () => {
     const { score } = computeConfidence({
-      inflationScore: 0.2, 
-      growthScore: 0.8,
-      inflationGaps: [],
-      growthGaps: [],
+      inflation_score: 0.2, 
+      growth_score: 0.8,
+      inflation_gaps: [],
+      growth_gaps: [],
       drift: 'Stable',
-      inflationMissing: 0,
-      growthMissing: 0,
-      staleHighWeightFound: false,
-      anyDataGaps: false
+      inflation_missing: 0,
+      growth_missing: 0,
+      stale_high_weight_found: false,
+      any_data_gaps: false
     });
     expect(score).toBe(90);
   });
 
   it('penalizes for missing high weight indicators', () => {
     const { score } = computeConfidence({
-      inflationScore: 0.2,
-      growthScore: 0.8,
-      inflationGaps: [{ indicator: 'pce_yoy_pct', originalWeight: 0.20, reason: 'missing', weightRedistributedTo: [] }],
-      growthGaps: [],
+      inflation_score: 0.2,
+      growth_score: 0.8,
+      inflation_gaps: [{ indicator: 'pce_yoy_pct', original_weight: 0.20, reason: 'missing', weight_redistributed_to: [] }],
+      growth_gaps: [],
       drift: 'Stable',
-      inflationMissing: 0.20,
-      growthMissing: 0,
-      staleHighWeightFound: false,
-      anyDataGaps: true
+      inflation_missing: 0.20,
+      growth_missing: 0,
+      stale_high_weight_found: false,
+      any_data_gaps: true
     });
     expect(score).toBe(82);
   });
@@ -204,27 +204,27 @@ describe('regimePipeline - helpers', () => {
     };
     const input = {
       indicators,
-      priorAssessment: null,
-      portfolioContext: { positions: [], secondary_risks: [] },
+      prior_assessment: null,
+      portfolio_context: { positions: [], secondary_risks: [] },
     };
     const output = runPipeline(input as any);
     const llmInput = buildLLMInput(output, input as any);
     const parsed = JSON.parse(llmInput);
-    expect(parsed.quantitative_assessment.regime_quadrant).toBe(output.regimeQuadrant);
+    expect(parsed.quantitative_assessment.regime_quadrant).toBe(output.regime_quadrant);
     expect(parsed.weighted_raw_indicators.cpi_yoy_pct.value).toBe(3.0);
   });
 
   it('mergePipelineAndLLM correctly adjusts confidence', () => {
     const pipeline = {
       confidence: 80,
-      requiresHumanReview: false,
+      requires_human_review: false,
     } as any;
     const llm = {
-      confidenceAdjustment: 5,
-      requiresHumanReviewOverride: true,
+      confidence_adjustment: 5,
+      requires_human_review_override: true,
     } as any;
     const final = mergePipelineAndLLM(pipeline, llm);
-    expect(final.finalConfidence).toBe(85);
-    expect(final.finalHumanReview).toBe(true);
+    expect(final.final_confidence).toBe(85);
+    expect(final.final_human_review).toBe(true);
   });
 });

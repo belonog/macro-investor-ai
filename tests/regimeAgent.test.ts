@@ -122,29 +122,29 @@ describe('regimeAgent', () => {
     const mockMacroData = { cpi: 3.0, gdp: 3.0 }; // Both at 0.75 normalized -> Inflationary Boom
     
     const mockLLMResponse = {
-      classificationVerdict: 'Confirmed',
-      challengeRationale: null,
-      confidenceAdjustment: 5,
-      keyDrivers: ['Driver 1'],
-      confirmingIndicators: [],
-      contradictingIndicators: [],
-      transitionSignal: 'None',
-      centralThesisConflict: 'No conflict',
-      petrodollarRisk: 'Not Evidenced',
-      petrodollarRationale: 'Stable',
-      fastestPathToBeingWrong: 'Growth slowing',
-      watchNext: [],
-      requiresHumanReviewOverride: false,
-      overrideReason: null
+      classification_verdict: 'Confirmed',
+      challenge_rationale: null,
+      confidence_adjustment: 5,
+      key_drivers: ['Driver 1'],
+      confirming_indicators: [],
+      contradicting_indicators: [],
+      transition_signal: 'None',
+      central_thesis_conflict: 'No conflict',
+      petrodollar_risk: 'Not Evidenced',
+      petrodollar_rationale: 'Stable',
+      fastest_path_to_being_wrong: 'Growth slowing',
+      watch_next: [],
+      requires_human_review_override: false,
+      override_reason: null
     };
 
     mockGenerateAgentResponse.mockResolvedValue(mockLLMResponse);
 
     const result = await runRegimeAgent(mockMacroData);
 
-    expect(result.regimeQuadrant).toBe('Inflationary Boom');
-    expect(result.classificationVerdict).toBe('Confirmed');
-    expect(result.finalConfidence).toBeDefined();
+    expect(result.regime_quadrant).toBe('Inflationary Boom');
+    expect(result.classification_verdict).toBe('Confirmed');
+    expect(result.final_confidence).toBeDefined();
     expect(mockGenerateAgentResponse).toHaveBeenCalledWith(expect.objectContaining({
       agentName: 'regimeAgent',
       systemPrompt: expect.stringContaining('Mock Prompt')
@@ -155,20 +155,20 @@ describe('regimeAgent', () => {
     const mockMacroData = { cpi: 2.0, gdp: 2.0 }; // Both at 0.5 normalized -> Boundary Zone
     
     const mockLLMResponse = {
-      classificationVerdict: 'Confirmed',
-      challengeRationale: null,
-      confidenceAdjustment: 0,
-      keyDrivers: ['Driver 1'],
-      confirmingIndicators: [],
-      contradictingIndicators: [],
-      transitionSignal: 'None',
-      centralThesisConflict: 'None',
-      petrodollarRisk: 'Not Evidenced',
-      petrodollarRationale: 'None',
-      fastestPathToBeingWrong: 'None',
-      watchNext: [],
-      requiresHumanReviewOverride: false,
-      overrideReason: null
+      classification_verdict: 'Confirmed',
+      challenge_rationale: null,
+      confidence_adjustment: 0,
+      key_drivers: ['Driver 1'],
+      confirming_indicators: [],
+      contradicting_indicators: [],
+      transition_signal: 'None',
+      central_thesis_conflict: 'None',
+      petrodollar_risk: 'Not Evidenced',
+      petrodollar_rationale: 'None',
+      fastest_path_to_being_wrong: 'None',
+      watch_next: [],
+      requires_human_review_override: false,
+      override_reason: null
     };
 
     mockGenerateAgentResponse.mockResolvedValue(mockLLMResponse);
@@ -182,7 +182,7 @@ describe('regimeAgent', () => {
     
     expect(fs.writeFileSync).toHaveBeenCalledWith(
       expect.stringContaining('regime_latest.json'),
-      expect.stringContaining('"regimeQuadrant": "Boundary Zone"')
+      expect.stringContaining('"regime_quadrant": "Boundary Zone"')
     );
   });
 
@@ -221,19 +221,19 @@ describe('regimeAgent', () => {
     });
 
     mockGenerateAgentResponse.mockResolvedValue({
-      classificationVerdict: 'Confirmed',
-      confidenceAdjustment: 0,
-      keyDrivers: [],
-      petrodollarRisk: 'Not Evidenced',
-      petrodollarRationale: '',
-      fastestPathToBeingWrong: '',
-      transitionSignal: '',
-      centralThesisConflict: '',
-      confirmingIndicators: [],
-      contradictingIndicators: [],
-      watchNext: [],
-      requiresHumanReviewOverride: false,
-      overrideReason: null
+      classification_verdict: 'Confirmed',
+      confidence_adjustment: 0,
+      key_drivers: [],
+      petrodollar_risk: 'Not Evidenced',
+      petrodollar_rationale: '',
+      fastest_path_to_being_wrong: '',
+      transition_signal: '',
+      central_thesis_conflict: '',
+      confirming_indicators: [],
+      contradicting_indicators: [],
+      watch_next: [],
+      requires_human_review_override: false,
+      override_reason: null
     });
 
     await runRegimeAgent({});

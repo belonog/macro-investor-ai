@@ -92,9 +92,9 @@ describe('dailyDigest', () => {
         if (path.includes('positions.json')) return JSON.stringify({ AAPL: {} });
         if (path.includes('regime_latest.json')) {
           return JSON.stringify({
-            regimeQuadrant: 'Goldilocks',
-            finalConfidence: 80,
-            assessedAt: new Date().toISOString()
+            regime_quadrant: 'Goldilocks',
+            final_confidence: 80,
+            assessed_at: new Date().toISOString()
           });
         }
       }
@@ -113,9 +113,9 @@ describe('dailyDigest', () => {
     vi.mocked(fs.readFileSync).mockImplementation((path) => {
       if (typeof path === 'string' && path.includes('regime_latest.json')) {
         return JSON.stringify({
-          regimeQuadrant: 'Stagflation',
-          finalConfidence: 75,
-          assessedAt: new Date().toISOString()
+          regime_quadrant: 'Stagflation',
+          final_confidence: 75,
+          assessed_at: new Date().toISOString()
         });
       }
       if (typeof path === 'string' && path.includes('positions.json')) {
@@ -134,7 +134,7 @@ describe('dailyDigest', () => {
     });
 
     vi.mocked(getEarningsCalendar).mockResolvedValue([
-      { symbol: 'AAPL', reportDate: '2026-05-19', epsEstimate: 1.5, timeOfDay: 'post' }
+      { symbol: 'AAPL', report_date: '2026-05-19', eps_estimate: 1.5, time_of_day: 'post' }
     ]);
     
     vi.mocked(getLatestValues).mockResolvedValue({

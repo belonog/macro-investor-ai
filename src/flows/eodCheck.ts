@@ -62,7 +62,7 @@ export async function runEodCheck() {
     await sendTelegramAlert({
       level: 'CRITICAL',
       message: `Alert: EOD Check Failed: ${error.message || error}`,
-      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
       symbol: null,
       action: 'Check logs'
     });

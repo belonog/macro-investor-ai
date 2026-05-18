@@ -15,9 +15,9 @@ async function main() {
     const REGIME_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'regime_latest.json');
     if (fs.existsSync(REGIME_PATH)) {
       const regime = JSON.parse(fs.readFileSync(REGIME_PATH, 'utf8'));
-      console.log(`\n🌍 CURRENT REGIME: ${regime.regimeQuadrant} (${regime.finalConfidence}%)`);
-      console.log(`📈 DRIFT:          ${regime.regimeDriftVsPrior}`);
-      console.log(`📅 ASSESSED:       ${regime.assessedAt}`);
+      console.log(`\n🌍 CURRENT REGIME: ${regime.regime_quadrant} (${regime.final_confidence}%)`);
+      console.log(`📈 DRIFT:          ${regime.regime_drift_vs_prior}`);
+      console.log(`📅 ASSESSED:       ${regime.assessed_at}`);
     } else {
       console.log('\n⚠️ No regime assessment found. Run run_regime_check.ts first.');
     }
@@ -25,7 +25,7 @@ async function main() {
     // 2. Run Rebalancing Agent
     console.log('\n🤖 Running Rebalancing Agent (AI)...');
     const report = await generateRebalancingReport();
-    console.log(`✅ ALIGNMENT:      ${report.alignment_grade} (${(report.regime_portfolio_alignment_score * 100).toFixed(1)}%)`);
+    console.log(`✅ ALIGNMENT:      ${report.alignment_grade} (${(report.alignment_score * 100).toFixed(1)}%)`);
 
     console.log('\n📢 PRIORITY ACTIONS:');
     report.priority_actions.forEach((a, i) => console.log(`${i + 1}. ${a}`));

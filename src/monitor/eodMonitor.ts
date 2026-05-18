@@ -35,7 +35,7 @@ export function checkStopProximity(prices: Record<string, number>, config: Portf
           symbol,
           message: `Hard stop breached! Price: ${price}, Hard Stop: ${posConfig.hard_stop}`,
           action: 'EXIT FULL',
-          createdAt: now,
+          created_at: now,
         });
       } else if (posConfig.stop && price <= posConfig.stop * 1.03) {
         alerts.push({
@@ -43,7 +43,7 @@ export function checkStopProximity(prices: Record<string, number>, config: Portf
           symbol,
           message: `Price approaching stop level. Price: ${price}, Stop: ${posConfig.stop}`,
           action: 'REVIEW',
-          createdAt: now,
+          created_at: now,
         });
       }
     }
@@ -71,7 +71,7 @@ export function checkThesisThresholds(indicators: Record<string, number>, config
             symbol,
             message: `Thesis invalidation threshold breached for ${indicator}! Value: ${currentValue}, Hard Exit: ${hard_exit_at}`,
             action: 'EXIT FULL',
-            createdAt: now,
+            created_at: now,
           });
         } else if (currentValue >= warn_at) {
           alerts.push({
@@ -79,7 +79,7 @@ export function checkThesisThresholds(indicators: Record<string, number>, config
             symbol,
             message: `Thesis threshold warning for ${indicator}. Value: ${currentValue}, Warning: ${warn_at}`,
             action: 'REDUCE RISK',
-            createdAt: now,
+            created_at: now,
           });
         }
       }
@@ -107,7 +107,7 @@ export function checkDeadlines(config: PortfolioConfig): Alert[] {
           symbol,
           message: `Speculative deadline reached: ${posConfig.deadline}`,
           action: 'EXIT FULL',
-          createdAt: now,
+          created_at: now,
         });
       } else if (diffDays <= 5) {
         alerts.push({
@@ -115,7 +115,7 @@ export function checkDeadlines(config: PortfolioConfig): Alert[] {
           symbol,
           message: `Speculative deadline approaching in ${diffDays} days: ${posConfig.deadline}`,
           action: 'WATCH',
-          createdAt: now,
+          created_at: now,
         });
       }
     }
@@ -142,7 +142,7 @@ export async function runEodMonitor(): Promise<Alert[]> {
   const latestMacro = await getLatestValues();
   const prices: Record<string, number> = {};
   for (const s of snapshots) {
-    prices[s.symbol] = s.marketPrice;
+    prices[s.symbol] = s.market_price;
   }
 
   const stopAlerts = checkStopProximity(prices, config);

@@ -30,9 +30,9 @@ describe('eventPrebrief flow', () => {
     const mockEvents = [
       {
         symbol: 'AAPL',
-        reportDate: '2026-05-20',
-        epsEstimate: 1.5,
-        timeOfDay: 'post'
+        report_date: '2026-05-20',
+        eps_estimate: 1.5,
+        time_of_day: 'post'
       }
     ];
 

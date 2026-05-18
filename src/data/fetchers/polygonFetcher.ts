@@ -39,9 +39,9 @@ export async function getEarningsCalendar(symbols: string[], daysAhead: number):
     if (symbols.includes(item.ticker)) {
       events.push({
         symbol: item.ticker,
-        reportDate: item.report_date,
-        epsEstimate: item.eps_estimate || null,
-        timeOfDay: item.amc ? 'post' : item.bmo ? 'pre' : 'unknown'
+        report_date: item.report_date,
+        eps_estimate: item.eps_estimate || null,
+        time_of_day: item.amc ? 'post' : item.bmo ? 'pre' : 'unknown'
       });
     }
   }

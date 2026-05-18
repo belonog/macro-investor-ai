@@ -43,12 +43,12 @@ async function backtest() {
       
       results.push({
         date,
-        quadrant: regime.regimeQuadrant,
-        confidence: regime.finalConfidence,
-        drift: regime.regimeDriftVsPrior
+        quadrant: regime.regime_quadrant,
+        confidence: regime.final_confidence,
+        drift: regime.regime_drift_vs_prior
       });
 
-      console.log(`✅ ${regime.regimeQuadrant} (${regime.finalConfidence}%)`);
+      console.log(`✅ ${regime.regime_quadrant} (${regime.final_confidence}%)`);
     }
 
     // 5. Final Report

@@ -18,12 +18,12 @@ describe('PositionSnapshotSchema', () => {
     const validPosition = {
       symbol: 'AAPL',
       quantity: 10,
-      avgCost: 150,
-      marketPrice: 175,
-      marketValue: 1750,
-      unrealizedPnl: 250,
-      unrealizedPnlPct: 16.67,
-      fetchedAt: new Date().toISOString(),
+      avg_cost: 150,
+      market_price: 175,
+      market_value: 1750,
+      unrealized_pnl: 250,
+      unrealized_pnl_pct: 16.67,
+      fetched_at: new Date().toISOString(),
     };
     expect(PositionSnapshotSchema.safeParse(validPosition).success).toBe(true);
   });
@@ -41,20 +41,20 @@ describe('AlertSchema', () => {
       symbol: 'BTC',
       message: 'Volatility high',
       action: 'Check positions',
-      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     };
     expect(AlertSchema.safeParse(validAlert).success).toBe(true);
   });
 
   it('should validate without optional fields', () => {
     // Note: In our schema, symbol and action are nullable but must be present,
-    // and createdAt is mandatory.
+    // and created_at is mandatory.
     const minimalAlert = {
       level: 'INFO',
       symbol: null,
       message: 'System online',
       action: null,
-      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     };
     expect(AlertSchema.safeParse(minimalAlert).success).toBe(true);
   });
@@ -79,7 +79,7 @@ describe('MacroSnapshotSchema', () => {
         'CPI': [{ date: '2024-01-01', value: 3.1 }],
         'GDP': [{ date: '2023-12-31', value: 2.5 }],
       },
-      fetchedAt: {
+      fetched_at: {
         'CPI': new Date().toISOString(),
         'GDP': new Date().toISOString(),
       }
@@ -91,12 +91,12 @@ describe('MacroSnapshotSchema', () => {
 describe('MacroCacheSchema', () => {
   it('should validate a correct macro cache', () => {
     const validCache = {
-      fetchedAt: new Date().toISOString(),
+      fetched_at: new Date().toISOString(),
       data: {
         series: {
           'CPI': [{ date: '2024-01-01', value: 3.1 }],
         },
-        fetchedAt: {
+        fetched_at: {
           'CPI': new Date().toISOString(),
         }
       },
@@ -121,39 +121,39 @@ describe('RegimeQuadrantSchema', () => {
 describe('RegimeAssessmentSchema', () => {
   it('should validate a correct regime assessment', () => {
     const validAssessment = {
-      // PipelineOutput fields (camelCase)
-      inflationScore: 0.3,
-      growthScore: 0.7,
-      regimeQuadrant: 'Goldilocks',
+      // PipelineOutput fields
+      inflation_score: 0.3,
+      growth_score: 0.7,
+      regime_quadrant: 'Goldilocks',
       confidence: 85,
-      requiresHumanReview: false,
-      flagReasons: [],
-      regimeDriftVsPrior: 'Stable',
-      driftDelta: { inflation: 0.05, growth: -0.02 },
-      dataGaps: [],
-      normalizedInflationIndicators: [],
-      normalizedGrowthIndicators: [],
-      assessedAt: new Date().toISOString(),
+      requires_human_review: false,
+      flag_reasons: [],
+      regime_drift_vs_prior: 'Stable',
+      drift_delta: { inflation: 0.05, growth: -0.02 },
+      data_gaps: [],
+      normalized_inflation_indicators: [],
+      normalized_growth_indicators: [],
+      assessed_at: new Date().toISOString(),
 
-      // LLMResponse fields (camelCase)
-      classificationVerdict: 'Confirmed',
-      challengeRationale: null,
-      confidenceAdjustment: 0,
-      keyDrivers: ['Low inflation', 'Moderate growth'],
-      confirmingIndicators: ['CPI stable'],
-      contradictingIndicators: ['PPI rising'],
-      transitionSignal: 'Possible uptick in CPI',
-      centralThesisConflict: 'None',
-      petrodollarRisk: 'Not Evidenced',
-      petrodollarRationale: 'Stable',
-      fastestPathToBeingWrong: 'Growth slowing faster than expected',
-      watchNext: ['NFP'],
-      requiresHumanReviewOverride: false,
-      overrideReason: null,
+      // LLMResponse fields
+      classification_verdict: 'Confirmed',
+      challenge_rationale: null,
+      confidence_adjustment: 0,
+      key_drivers: ['Low inflation', 'Moderate growth'],
+      confirming_indicators: ['CPI stable'],
+      contradicting_indicators: ['PPI rising'],
+      transition_signal: 'Possible uptick in CPI',
+      central_thesis_conflict: 'None',
+      petrodollar_risk: 'Not Evidenced',
+      petrodollar_rationale: 'Stable',
+      fastest_path_to_being_wrong: 'Growth slowing faster than expected',
+      watch_next: ['NFP'],
+      requires_human_review_override: false,
+      override_reason: null,
 
       // FinalAssessment extensions
-      finalConfidence: 85,
-      finalHumanReview: false
+      final_confidence: 85,
+      final_human_review: false
     };
     const result = RegimeAssessmentSchema.safeParse(validAssessment);
     if (!result.success) {
@@ -165,41 +165,41 @@ describe('RegimeAssessmentSchema', () => {
   it('should validate without optional fields if any', () => {
     // Note: All fields in our schema seem to be mandatory except those marked optional
     const validAssessment = {
-      inflationScore: 0.8,
-      growthScore: 0.4,
-      regimeQuadrant: 'Stagflation',
+      inflation_score: 0.8,
+      growth_score: 0.4,
+      regime_quadrant: 'Stagflation',
       confidence: 70,
-      requiresHumanReview: true,
-      flagReasons: ['High inflation'],
-      regimeDriftVsPrior: 'Weakening',
-      driftDelta: null,
-      dataGaps: [{
+      requires_human_review: true,
+      flag_reasons: ['High inflation'],
+      regime_drift_vs_prior: 'Weakening',
+      drift_delta: null,
+      data_gaps: [{
         indicator: 'CPI',
-        originalWeight: 0.2,
+        original_weight: 0.2,
         reason: 'missing',
-        weightRedistributedTo: ['PCE']
+        weight_redistributed_to: ['PCE']
       }],
-      normalizedInflationIndicators: [],
-      normalizedGrowthIndicators: [],
-      assessedAt: new Date().toISOString(),
+      normalized_inflation_indicators: [],
+      normalized_growth_indicators: [],
+      assessed_at: new Date().toISOString(),
 
-      classificationVerdict: 'Nuanced',
-      challengeRationale: 'Inflation might be peaking',
-      confidenceAdjustment: -5,
-      keyDrivers: ['Rising prices', 'Stagnant growth'],
-      confirmingIndicators: [],
-      contradictingIndicators: [],
-      transitionSignal: 'None',
-      centralThesisConflict: 'Conflict here',
-      petrodollarRisk: 'Latent Risk',
-      petrodollarRationale: 'Rising tensions',
-      fastestPathToBeingWrong: 'Deflation spike',
-      watchNext: [],
-      requiresHumanReviewOverride: true,
-      overrideReason: 'High uncertainty',
+      classification_verdict: 'Nuanced',
+      challenge_rationale: 'Inflation might be peaking',
+      confidence_adjustment: -5,
+      key_drivers: ['Rising prices', 'Stagnant growth'],
+      confirming_indicators: [],
+      contradicting_indicators: [],
+      transition_signal: 'None',
+      central_thesis_conflict: 'Conflict here',
+      petrodollar_risk: 'Latent Risk',
+      petrodollar_rationale: 'Rising tensions',
+      fastest_path_to_being_wrong: 'Deflation spike',
+      watch_next: [],
+      requires_human_review_override: true,
+      override_reason: 'High uncertainty',
 
-      finalConfidence: 65,
-      finalHumanReview: true
+      final_confidence: 65,
+      final_human_review: true
     };
     const result = RegimeAssessmentSchema.safeParse(validAssessment);
     if (!result.success) {
@@ -240,24 +240,24 @@ describe('PositionConfigSchema', () => {
 describe('CoherenceOutputSchema', () => {
   it('should validate a correct coherence output', () => {
     const validOutput = {
-      regimeMatch: 'Strong',
-      correlationRisk: 'Low',
-      thesisConflicts: [],
-      sizingNote: 'Standard size',
+      regime_match: 'Strong',
+      correlation_risk: 'Low',
+      thesis_conflicts: [],
+      sizing_note: 'Standard size',
       verdict: 'Proceed',
-      questionsBeforeEntry: ['Q1?', 'Q2?', 'Q3?'],
+      questions_before_entry: ['Q1?', 'Q2?', 'Q3?'],
     };
     expect(CoherenceOutputSchema.safeParse(validOutput).success).toBe(true);
   });
 
-  it('should reject if questionsBeforeEntry does not have exactly 3 items', () => {
+  it('should reject if questions_before_entry does not have exactly 3 items', () => {
     const invalidOutput = {
-      regimeMatch: 'Strong',
-      correlationRisk: 'Low',
-      thesisConflicts: [],
-      sizingNote: 'Standard size',
+      regime_match: 'Strong',
+      correlation_risk: 'Low',
+      thesis_conflicts: [],
+      sizing_note: 'Standard size',
       verdict: 'Proceed',
-      questionsBeforeEntry: ['Q1?', 'Q2?'],
+      questions_before_entry: ['Q1?', 'Q2?'],
     };
     expect(CoherenceOutputSchema.safeParse(invalidOutput).success).toBe(false);
   });
@@ -280,29 +280,29 @@ describe('EarningsEventSchema', () => {
   it('should validate a correct earnings event', () => {
     const validEvent = {
       symbol: 'AAPL',
-      reportDate: '2024-05-01',
-      epsEstimate: 1.5,
-      timeOfDay: 'post',
+      report_date: '2024-05-01',
+      eps_estimate: 1.5,
+      time_of_day: 'post',
     };
     expect(EarningsEventSchema.safeParse(validEvent).success).toBe(true);
   });
 
-  it('should allow null epsEstimate', () => {
+  it('should allow null eps_estimate', () => {
     const event = {
       symbol: 'TSLA',
-      reportDate: '2024-04-20',
-      epsEstimate: null,
-      timeOfDay: 'post',
+      report_date: '2024-04-20',
+      eps_estimate: null,
+      time_of_day: 'post',
     };
     expect(EarningsEventSchema.safeParse(event).success).toBe(true);
   });
 
-  it('should reject invalid timeOfDay', () => {
+  it('should reject invalid time_of_day', () => {
     const invalidEvent = {
       symbol: 'MSFT',
-      reportDate: '2024-04-25',
-      epsEstimate: 2.0,
-      timeOfDay: 'noon',
+      report_date: '2024-04-25',
+      eps_estimate: 2.0,
+      time_of_day: 'noon',
     };
     expect(EarningsEventSchema.safeParse(invalidEvent).success).toBe(false);
   });

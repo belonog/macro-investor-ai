@@ -3,12 +3,12 @@ import { z } from 'zod';
 export const PositionSnapshotSchema = z.object({
   symbol: z.string(),
   quantity: z.number(),
-  avgCost: z.number(),
-  marketPrice: z.number(),
-  marketValue: z.number(),
-  unrealizedPnl: z.number(),
-  unrealizedPnlPct: z.number(),
-  fetchedAt: z.string().datetime(),
+  avg_cost: z.number(),
+  market_price: z.number(),
+  market_value: z.number(),
+  unrealized_pnl: z.number(),
+  unrealized_pnl_pct: z.number(),
+  fetched_at: z.string().datetime(),
 });
 
 export type PositionSnapshot = z.infer<typeof PositionSnapshotSchema>;
@@ -18,7 +18,7 @@ export const AlertSchema = z.object({
   symbol: z.string().nullable(),
   message: z.string(),
   action: z.string().nullable(),
-  createdAt: z.string(),
+  created_at: z.string(),
 });
 
 export type Alert = z.infer<typeof AlertSchema>;
@@ -33,12 +33,12 @@ export type DataPoint = z.infer<typeof DataPointSchema>;
 
 export const MacroSnapshotSchema = z.object({
   series: z.record(z.string(), z.array(DataPointSchema)),
-  fetchedAt: z.record(z.string(), z.string().datetime()),
+  fetched_at: z.record(z.string(), z.string().datetime()),
 });
 export type MacroSnapshot = z.infer<typeof MacroSnapshotSchema>;
 
 export const MacroCacheSchema = z.object({
-  fetchedAt: z.string().datetime(),
+  fetched_at: z.string().datetime(),
   data: MacroSnapshotSchema,
 });
 export type MacroCache = z.infer<typeof MacroCacheSchema>;
@@ -74,71 +74,71 @@ export type PriorAssessment = z.infer<typeof PriorAssessmentSchema>;
 
 export const PipelineInputSchema = z.object({
   indicators:       MacroIndicatorsSchema,
-  priorAssessment:  PriorAssessmentSchema.nullable(),
-  portfolioContext: z.any(), // Can be refined later if needed
-  currentTime:     z.string().optional(),
+  prior_assessment:  PriorAssessmentSchema.nullable(),
+  portfolio_context: z.any(), // Can be refined later if needed
+  current_time:     z.string().optional(),
   trigger:         z.enum(['scheduled', 'manual', 'alert', 'post_release']).optional(),
 });
 export type PipelineInput = z.infer<typeof PipelineInputSchema>;
 
 export const NormalizedIndicatorSchema = z.object({
   key:                 z.string(),
-  rawValue:            z.number(),
+  raw_value:            z.number(),
   unit:                z.string(),
-  normalizedScore:     z.number(),
-  effectiveWeight:     z.number(),
-  originalWeight:      z.number(),
-  weightedContribution: z.number(),
-  asOf:                z.string(),
+  normalized_score:     z.number(),
+  effective_weight:     z.number(),
+  original_weight:      z.number(),
+  weighted_contribution: z.number(),
+  as_of:                z.string(),
 });
 export type NormalizedIndicator = z.infer<typeof NormalizedIndicatorSchema>;
 
 export const DataGapSchema = z.object({
   indicator:              z.string(),
-  originalWeight:         z.number(),
+  original_weight:         z.number(),
   reason:                 z.enum(['missing', 'stale']),
-  weightRedistributedTo:  z.array(z.string()),
+  weight_redistributed_to:  z.array(z.string()),
 });
 export type DataGap = z.infer<typeof DataGapSchema>;
 
 export const PipelineOutputSchema = z.object({
-  inflationScore:  z.number(),
-  growthScore:     z.number(),
-  regimeQuadrant:  RegimeQuadrantSchema,
+  inflation_score:  z.number(),
+  growth_score:     z.number(),
+  regime_quadrant:  RegimeQuadrantSchema,
   confidence:      z.number(),
-  requiresHumanReview: z.boolean(),
-  flagReasons:     z.array(z.string()),
-  regimeDriftVsPrior: z.enum(['Stable', 'Weakening', 'Transitioning', 'Shifted', 'N/A']),
-  driftDelta:      z.object({ inflation: z.number(), growth: z.number() }).nullable(),
-  dataGaps:        z.array(DataGapSchema),
-  normalizedInflationIndicators: z.array(NormalizedIndicatorSchema),
-  normalizedGrowthIndicators:    z.array(NormalizedIndicatorSchema),
-  assessedAt:      z.string()
+  requires_human_review: z.boolean(),
+  flag_reasons:     z.array(z.string()),
+  regime_drift_vs_prior: z.enum(['Stable', 'Weakening', 'Transitioning', 'Shifted', 'N/A']),
+  drift_delta:      z.object({ inflation: z.number(), growth: z.number() }).nullable(),
+  data_gaps:        z.array(DataGapSchema),
+  normalized_inflation_indicators: z.array(NormalizedIndicatorSchema),
+  normalized_growth_indicators:    z.array(NormalizedIndicatorSchema),
+  assessed_at:      z.string()
 });
 
 export const RegimeDriftSchema = z.enum(['Stable', 'Weakening', 'Transitioning', 'Shifted']);
 export type RegimeDrift = z.infer<typeof RegimeDriftSchema>;
 
 export const LLMResponseSchema = z.object({
-  classificationVerdict:       z.enum(['Confirmed', 'Challenged', 'Nuanced']),
-  challengeRationale:          z.string().nullable(),
-  confidenceAdjustment:        z.number(),
-  keyDrivers:                  z.array(z.string()),
-  confirmingIndicators:        z.array(z.any()),
-  contradictingIndicators:     z.array(z.any()),
-  transitionSignal:            z.string(),
-  centralThesisConflict:       z.string(),
-  petrodollarRisk:             z.enum(['Active Risk', 'Latent Risk', 'Not Evidenced']),
-  petrodollarRationale:        z.string(),
-  fastestPathToBeingWrong:     z.string(),
-  watchNext:                   z.array(z.any()),
-  requiresHumanReviewOverride: z.boolean(),
-  overrideReason:              z.string().nullable()
+  classification_verdict:       z.enum(['Confirmed', 'Challenged', 'Nuanced']),
+  challenge_rationale:          z.string().nullable(),
+  confidence_adjustment:        z.number(),
+  key_drivers:                  z.array(z.string()),
+  confirming_indicators:        z.array(z.any()),
+  contradicting_indicators:     z.array(z.any()),
+  transition_signal:            z.string(),
+  central_thesis_conflict:       z.string(),
+  petrodollar_risk:             z.enum(['Active Risk', 'Latent Risk', 'Not Evidenced']),
+  petrodollar_rationale:        z.string(),
+  fastest_path_to_being_wrong:     z.string(),
+  watch_next:                   z.array(z.any()),
+  requires_human_review_override: z.boolean(),
+  override_reason:              z.string().nullable()
 });
 
 export const FinalAssessmentSchema = PipelineOutputSchema.merge(LLMResponseSchema).extend({
-  finalConfidence: z.number(),
-  finalHumanReview: z.boolean()
+  final_confidence: z.number(),
+  final_human_review: z.boolean()
 });
 
 export type PipelineOutput = z.infer<typeof PipelineOutputSchema>;
@@ -169,7 +169,7 @@ export const PositionAssessmentSchema = z.object({
 });
 
 export const RebalancingOutputSchema = z.object({
-  regime_portfolio_alignment_score: z.number().min(0).max(1),
+  alignment_score: z.number().min(0).max(1),
   alignment_grade: z.enum(['A', 'B', 'C', 'D']),
   position_assessments: z.array(PositionAssessmentSchema),
   priority_actions: z.array(z.string()),
@@ -216,7 +216,7 @@ export interface SyncResult {
 export const ManualIndicatorSchema = z.object({
   value: z.number(),
   period: z.string().regex(/^\d{4}-\d{2}$/), // YYYY-MM
-  updatedAt: z.string().datetime(),
+  updated_at: z.string().datetime(),
   source: z.string(),
 });
 export type ManualIndicator = z.infer<typeof ManualIndicatorSchema>;
@@ -250,12 +250,12 @@ export const RegimePipelineConfigSchema = z.object({
 export type RegimePipelineConfig = z.infer<typeof RegimePipelineConfigSchema>;
 
 export const CoherenceOutputSchema = z.object({
-  regimeMatch: z.enum(['Strong', 'Moderate', 'Weak', 'Conflicting']),
-  correlationRisk: z.string(),
-  thesisConflicts: z.array(z.string()),
-  sizingNote: z.string(),
+  regime_match: z.enum(['Strong', 'Moderate', 'Weak', 'Conflicting']),
+  correlation_risk: z.string(),
+  thesis_conflicts: z.array(z.string()),
+  sizing_note: z.string(),
   verdict: z.enum(['Proceed', 'Reduce Size', 'Reconsider', 'Conflicts']),
-  questionsBeforeEntry: z.array(z.string()).length(3),
+  questions_before_entry: z.array(z.string()).length(3),
 });
 export type CoherenceOutput = z.infer<typeof CoherenceOutputSchema>;
 
@@ -278,8 +278,8 @@ export type PrebriefOutput = z.infer<typeof PrebriefOutputSchema>;
 
 export const EarningsEventSchema = z.object({
   symbol: z.string(),
-  reportDate: z.string(),
-  epsEstimate: z.number().nullable(),
-  timeOfDay: z.enum(['pre', 'post', 'unknown']),
+  report_date: z.string(),
+  eps_estimate: z.number().nullable(),
+  time_of_day: z.enum(['pre', 'post', 'unknown']),
 });
 export type EarningsEvent = z.infer<typeof EarningsEventSchema>;

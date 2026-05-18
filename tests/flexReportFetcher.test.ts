@@ -21,13 +21,13 @@ describe('parseFlexXml', () => {
     expect(result[0]).toMatchObject({
       symbol: 'TLT',
       quantity: 100,
-      avgCost: 90,
-      marketPrice: 88,
-      marketValue: 8800,
-      unrealizedPnl: -200,
+      avg_cost: 90,
+      market_price: 88,
+      market_value: 8800,
+      unrealized_pnl: -200,
     });
-    expect(result[0].unrealizedPnlPct).toBeCloseTo(-2.2222, 4);
-    expect(result[0].fetchedAt).toBeDefined();
+    expect(result[0].unrealized_pnl_pct).toBeCloseTo(-2.2222, 4);
+    expect(result[0].fetched_at).toBeDefined();
   });
 });
 

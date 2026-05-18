@@ -31,7 +31,8 @@ export async function runDailyDigest() {
       regimeAssessment = JSON.parse(fs.readFileSync(REGIME_CACHE_PATH, 'utf8'));
     }
 
-    const assessedAt = new Date(regimeAssessment.assessedAt);
+    const assessed_at_raw = regimeAssessment.assessed_at || (regimeAssessment as any).assessedAt;
+    const assessedAt = new Date(assessed_at_raw);
     const now = new Date();
     const diffDays = (now.getTime() - assessedAt.getTime()) / (1000 * 3600 * 24);
 
@@ -59,9 +60,9 @@ export async function runDailyDigest() {
 
     // 4. Format and send Telegram digest
     let message = `🗞 *Daily Macro Digest*\n\n`;
-    message += `*Current Regime:* ${regimeAssessment.regimeQuadrant}\n`;
-    message += `*Confidence:* ${regimeAssessment.finalConfidence}%\n`;
-    message += `*Last Assessed:* ${new Date(regimeAssessment.assessedAt).toLocaleDateString()}\n\n`;
+    message += `*Current Regime:* ${regimeAssessment.regime_quadrant}\n`;
+    message += `*Confidence:* ${regimeAssessment.final_confidence}%\n`;
+    message += `*Last Assessed:* ${new Date(assessed_at_raw).toLocaleDateString()}\n\n`;
 
     message += `*Key Indicators:*\n`;
     const y30 = latestValues['DGS30'];
@@ -76,7 +77,7 @@ export async function runDailyDigest() {
     if (earnings.length > 0) {
       message += `*Upcoming Earnings (24h):*\n`;
       for (const e of earnings) {
-        message += `- ${e.symbol}: ${e.reportDate} (${e.timeOfDay})\n`;
+        message += `- ${e.symbol}: ${e.report_date} (${e.time_of_day})\n`;
       }
       message += `\n`;
     } else {
@@ -86,7 +87,7 @@ export async function runDailyDigest() {
     await sendTelegramAlert({
       level: 'INFO',
       message: message,
-      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
       symbol: null,
       action: null
     });
