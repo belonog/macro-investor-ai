@@ -48,28 +48,53 @@ export const RegimeQuadrantSchema = z.enum([
   'Inflationary Boom',
   'Stagflation',
   'Deflationary Recession',
+  'Boundary Zone'
 ]);
 export type RegimeQuadrant = z.infer<typeof RegimeQuadrantSchema>;
+
+export const PipelineOutputSchema = z.object({
+  inflationScore:  z.number(),
+  growthScore:     z.number(),
+  regimeQuadrant:  RegimeQuadrantSchema,
+  confidence:      z.number(),
+  requiresHumanReview: z.boolean(),
+  flagReasons:     z.array(z.string()),
+  regimeDriftVsPrior: z.enum(['Stable', 'Weakening', 'Transitioning', 'Shifted', 'N/A']),
+  driftDelta:      z.object({ inflation: z.number(), growth: z.number() }).nullable(),
+  dataGaps:        z.array(z.any()), // Simplified for now, can be refined
+  assessedAt:      z.string()
+});
 
 export const RegimeDriftSchema = z.enum(['Stable', 'Weakening', 'Transitioning', 'Shifted']);
 export type RegimeDrift = z.infer<typeof RegimeDriftSchema>;
 
-export const RegimeAssessmentSchema = z.object({
-  regime_quadrant: RegimeQuadrantSchema,
-  confidence: z.number().min(0).max(100),
-  inflation_score: z.number().min(0).max(1),
-  growth_score: z.number().min(0).max(1),
-  regime_drift_vs_prior: RegimeDriftSchema,
-  transition_signal: z.string().optional(),
-  key_drivers: z.array(z.string()),
-  confirming_indicators: z.array(z.string()),
-  contradicting_indicators: z.array(z.string()),
-  central_thesis_conflict: z.string(),
-  fastest_path_to_being_wrong: z.string(),
-  watch_next: z.array(z.string()),
-  assessed_at: z.string().datetime(),
+export const LLMResponseSchema = z.object({
+  classification_verdict:       z.enum(['Confirmed', 'Challenged', 'Nuanced']),
+  challenge_rationale:          z.string().nullable(),
+  confidence_adjustment:        z.number(),
+  key_drivers:                  z.array(z.string()),
+  confirming_indicators:        z.array(z.any()),
+  contradicting_indicators:     z.array(z.any()),
+  transition_signal:            z.string(),
+  central_thesis_conflict:      z.string(),
+  petrodollar_risk:             z.enum(['Active Risk', 'Latent Risk', 'Not Evidenced']),
+  petrodollar_rationale:        z.string(),
+  fastest_path_to_being_wrong:  z.string(),
+  watch_next:                   z.array(z.any()),
+  requires_human_review_override: z.boolean(),
+  override_reason:              z.string().nullable()
 });
-export type RegimeAssessment = z.infer<typeof RegimeAssessmentSchema>;
+
+export const FinalAssessmentSchema = PipelineOutputSchema.merge(LLMResponseSchema).extend({
+  final_confidence: z.number(),
+  final_human_review: z.boolean()
+});
+
+export type PipelineOutput = z.infer<typeof PipelineOutputSchema>;
+export type LLMResponse = z.infer<typeof LLMResponseSchema>;
+export type FinalAssessment = z.infer<typeof FinalAssessmentSchema>;
+export type RegimeAssessment = FinalAssessment; // Alias for compatibility
+export const RegimeAssessmentSchema = FinalAssessmentSchema; // Alias for compatibility
 
 // Alias for backward compatibility during migration
 export type RegimeSnapshot = RegimeAssessment;
@@ -144,6 +169,34 @@ export const ManualIndicatorSchema = z.object({
   source: z.string(),
 });
 export type ManualIndicator = z.infer<typeof ManualIndicatorSchema>;
+
+export const IndicatorBoundsSchema = z.object({
+  low: z.number(),
+  neutral: z.number(),
+  high: z.number(),
+});
+
+export const RegimePipelineConfigSchema = z.object({
+  inflation_bounds: z.record(z.string(), IndicatorBoundsSchema),
+  growth_bounds: z.record(z.string(), IndicatorBoundsSchema),
+  inflation_weights: z.record(z.string(), z.number()),
+  growth_weights: z.record(z.string(), z.number()),
+  regime_thresholds: z.object({
+    inflation_high: z.number(),
+    inflation_low: z.number(),
+    growth_high: z.number(),
+    growth_low: z.number(),
+    boundary_zone: z.number(),
+  }),
+  staleness_limits_days: z.object({
+    daily: z.number(),
+    weekly: z.number(),
+    monthly: z.number(),
+    quarterly: z.number(),
+  }),
+});
+
+export type RegimePipelineConfig = z.infer<typeof RegimePipelineConfigSchema>;
 
 export const CoherenceOutputSchema = z.object({
   regimeMatch: z.enum(['Strong', 'Moderate', 'Weak', 'Conflicting']),
