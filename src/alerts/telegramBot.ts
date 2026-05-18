@@ -1,6 +1,6 @@
 import { Telegraf } from 'telegraf';
 import { Alert, AlertLevel } from '../types/index.js';
-import { dbManager } from '../agents/db.js';
+import { logAlert } from '../db/database.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -18,7 +18,7 @@ export async function sendTelegramAlert(alert: Alert): Promise<void> {
   if (!bot || !chatId) {
     console.warn('Telegram bot not configured. Alert:', alert.message);
     // Even if bot is not configured, we might want to log it to DB
-    dbManager.logAlert(alert);
+    logAlert(alert);
     return;
   }
 
@@ -47,10 +47,10 @@ export async function sendTelegramAlert(alert: Alert): Promise<void> {
   try {
     await bot.telegram.sendMessage(chatId, message, extra);
     // Log alert to DB
-    dbManager.logAlert(alert);
+    logAlert(alert);
   } catch (error) {
     console.error('Failed to send Telegram message:', error);
     // Still try to log to DB if sending failed
-    dbManager.logAlert(alert);
+    logAlert(alert);
   }
 }

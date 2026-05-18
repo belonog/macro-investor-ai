@@ -10,7 +10,7 @@ import {
   PriorAssessment,
   LLMResponseSchema
 } from '../types/index.js';
-import { dbManager } from './db.js';
+import { logRegimeEvaluation } from '../db/database.js';
 import { generateAgentResponse } from './baseAgent.js';
 import { buildPortfolioContext } from '../utils/portfolioContext.js';
 import { runPipeline, buildLLMInput, mergePipelineAndLLM } from './regimePipeline.js';
@@ -123,7 +123,7 @@ export async function runRegimeAgent(
     const finalAssessment = mergePipelineAndLLM(pipelineOutput, llmResponse);
 
     // 8. Persist and Cache
-    dbManager.logRegimeEvaluation({
+    logRegimeEvaluation({
       timestamp: finalAssessment.assessedAt,
       quadrant: finalAssessment.regimeQuadrant,
       confidence: finalAssessment.finalConfidence,

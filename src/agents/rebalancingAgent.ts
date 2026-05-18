@@ -8,7 +8,7 @@ import {
   PortfolioConfig,
   PortfolioConfigSchema
 } from '../types/index.js';
-import { dbManager } from './db.js';
+import { logRebalancingDecision } from '../db/database.js';
 import { generateAgentResponse } from './baseAgent.js';
 import { buildPortfolioContext } from '../utils/portfolioContext.js';
 import { StaleRegimeError } from '../utils/errors.js';
@@ -80,7 +80,7 @@ export async function generateRebalancingReport(): Promise<RebalancingOutput> {
     });
 
     // 4. Persist to SQLite
-    dbManager.logRebalancingDecision({
+    logRebalancingDecision({
       ...validated,
       timestamp: validated.evaluated_at,
       raw_response: validated,
