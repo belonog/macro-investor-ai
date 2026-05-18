@@ -199,7 +199,6 @@ export async function getLatestValues(): Promise<Record<string, number>> {
   try {
     const rawCache = await fs.readFile(CACHE_PATH, 'utf-8');
     const parsed = MacroCacheSchema.safeParse(JSON.parse(rawCache));
-    // We need at least 7 points for 6m average + current, but we guarantee at least 1 year
     if (!parsed.success) {
       console.warn('Invalid macro cache. Re-fetching...');
       snapshot = await updateMacroCache();
@@ -207,40 +206,69 @@ export async function getLatestValues(): Promise<Record<string, number>> {
       snapshot = parsed.data.data;
     }
   } catch (e) {
-    // If no cache or parse error, fetch it
     snapshot = await updateMacroCache();
   }
 
   const latest: Record<string, number> = {};
   
-  // Basic series
-  for (const [series, points] of Object.entries(snapshot.series)) {
-    if (points.length > 0) {
-      latest[series] = points[points.length - 1].value;
-    }
-  }
-
-  // Derived metrics helper
+  // Helpers
   const getSeriesValue = (id: string, offset: number = 0) => {
     const s = snapshot.series[id];
     return s && s.length > offset ? s[s.length - 1 - offset].value : null;
   };
 
-  const getSeriesAvg = (id: string, window: number) => {
+  const getSeriesValueMonthsAgo = (id: string, months: number) => {
     const s = snapshot.series[id];
-    if (!s || s.length < window) return null;
-    const slice = s.slice(-window);
-    return slice.reduce((sum, p) => sum + p.value, 0) / window;
+    if (!s || s.length === 0) return null;
+    
+    const lastPoint = s[s.length - 1];
+    const lastDate = new Date(lastPoint.date);
+    const targetDate = new Date(lastDate);
+    targetDate.setMonth(targetDate.getMonth() - months);
+    const targetStr = targetDate.toISOString().split('T')[0];
+
+    for (let i = s.length - 1; i >= 0; i--) {
+      if (s[i].date <= targetStr) return s[i].value;
+    }
+    return s[0].value;
   };
 
-  // oil_price_3m_change: % change in WTI crude over prior 3 months
-  const oilCurr = getSeriesValue('DCOILWTICO');
-  const oilPrior = getSeriesValue('DCOILWTICO', 3);
-  if (oilCurr !== null && oilPrior !== null && oilPrior !== 0) {
-    latest['oil_price_3m_change'] = (oilCurr - oilPrior) / oilPrior;
+  const calculateYoY = (id: string) => {
+    const curr = getSeriesValue(id, 0);
+    const prior = getSeriesValueMonthsAgo(id, 12);
+    if (curr !== null && prior !== null && prior !== 0) {
+      return ((curr - prior) / prior) * 100;
+    }
+    return null;
+  };
+
+  // 1. Inflation Metrics
+  const cpiYoY = calculateYoY('CPIAUCSL');
+  if (cpiYoY !== null) latest['cpi_yoy_pct'] = cpiYoY;
+
+  const pceYoY = calculateYoY('PCEPI');
+  if (pceYoY !== null) latest['pce_yoy_pct'] = pceYoY;
+
+  const ppiYoY = calculateYoY('PPIACO');
+  if (ppiYoY !== null) latest['ppi_yoy_pct'] = ppiYoY;
+
+  const be5y = getSeriesValue('T5YIE', 0);
+  if (be5y !== null) latest['breakeven_5y_pct'] = be5y;
+
+  const oilCurr = getSeriesValue('DCOILWTICO', 0);
+  const oil3mAgo = getSeriesValueMonthsAgo('DCOILWTICO', 3);
+  if (oilCurr !== null && oil3mAgo !== null && oil3mAgo !== 0) {
+    latest['oil_price_3m_change_pct'] = ((oilCurr - oil3mAgo) / oil3mAgo) * 100;
   }
 
-  // nfp_3m_avg: rolling 3-month average of NFP additions
+  // 2. Growth Metrics
+  const gdpCurr = getSeriesValue('GDPC1', 0);
+  const gdpPrior = getSeriesValue('GDPC1', 1); // Quarterly
+  if (gdpCurr !== null && gdpPrior !== null && gdpPrior !== 0) {
+    const qoq = (gdpCurr - gdpPrior) / gdpPrior;
+    latest['real_gdp_qoq_ann_pct'] = (Math.pow(1 + qoq, 4) - 1) * 100;
+  }
+
   const nfp = snapshot.series['PAYEMS'];
   if (nfp && nfp.length >= 4) {
     const changes = [
@@ -248,41 +276,36 @@ export async function getLatestValues(): Promise<Record<string, number>> {
       nfp[nfp.length - 2].value - nfp[nfp.length - 3].value,
       nfp[nfp.length - 3].value - nfp[nfp.length - 4].value,
     ];
-    latest['nfp_3m_avg'] = changes.reduce((a, b) => a + b, 0) / 3;
+    latest['nfp_3m_avg_k'] = changes.reduce((a, b) => a + b, 0) / 3;
   }
 
-  // real_wages: ECIWAG (wages) - CPIAUCSL (inflation)
-  const wages = getSeriesValue('ECIWAG');
-  const cpi = getSeriesValue('CPIAUCSL');
-  if (wages !== null && cpi !== null) {
-    latest['real_wages'] = wages - cpi;
+  const rsNominalYoY = calculateYoY('RSAFS');
+  if (rsNominalYoY !== null && cpiYoY !== null) {
+    latest['retail_sales_yoy_real_pct'] = rsNominalYoY - cpiYoY;
   }
 
-  // pce_yoy: 12-month change
-  const pceCurr = getSeriesValue('PCEPI');
-  const pcePrior = getSeriesValue('PCEPI', 12);
-  if (pceCurr !== null && pcePrior !== null) {
-    latest['pce_yoy'] = calculateGrowth(pceCurr, pcePrior);
+  // 3. Keep raw series and other legacy derived metrics
+  for (const [series, points] of Object.entries(snapshot.series)) {
+    if (points.length > 0) {
+      latest[series] = points[points.length - 1].value;
+    }
   }
 
-  // real_gdp_qoq: 1-quarter change
-  const gdpCurr = getSeriesValue('GDPC1');
-  const gdpPrior = getSeriesValue('GDPC1', 1);
-  if (gdpCurr !== null && gdpPrior !== null) {
-    latest['real_gdp_qoq'] = calculateGrowth(gdpCurr, gdpPrior);
+  // Legacy derived (keeping for backward compatibility if needed)
+  if (latest['PAYEMS'] && snapshot.series['PAYEMS'].length >= 4) {
+    latest['nfp_3m_avg'] = latest['nfp_3m_avg_k']; // Alias
   }
 
-  // yield_curve_30_2: 30-Year Treasury Yield - 2-Year Treasury Yield
   const y30 = getSeriesValue('DGS30');
   const y2 = getSeriesValue('DGS2');
   if (y30 !== null && y2 !== null) {
     latest['yield_curve_30_2'] = y30 - y2;
   }
 
-  // credit_spread_delta: HY OAS current - 6m average
   const hySpread = getSeriesValue('BAMLH0A0HYM2');
-  const hyAvg6m = getSeriesAvg('BAMLH0A0HYM2', 6);
-  if (hySpread !== null && hyAvg6m !== null) {
+  const s = snapshot.series['BAMLH0A0HYM2'];
+  if (hySpread !== null && s && s.length >= 6) {
+    const hyAvg6m = s.slice(-6).reduce((sum, p) => sum + p.value, 0) / 6;
     latest['credit_spread_delta'] = hySpread - hyAvg6m;
   }
 
