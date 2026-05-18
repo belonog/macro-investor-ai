@@ -263,44 +263,52 @@ IBKR_FLEX_TOKEN=your_flex_token
 IBKR_FLEX_REPORT_ID=your_report_id
 ```
 
-### `config/regime_weights.json`
+### `config/regime_pipeline.json`
 
 ```json
 {
-  "inflation_indicators": {
-    "cpi_yoy":                    0.18,
-    "pce_yoy":                    0.15,
-    "breakeven_5y5y":             0.15,
-    "ppi_yoy":                    0.10,
-    "eci_wages":                  0.12,
-    "tips_real_yield":            0.10,
-    "oil_price_3m_change":        0.10,
-    "fao_food_price_index":       0.05,
-    "fertilizer_index_3m_change": 0.05
+  "inflation_bounds": {
+    "cpi_yoy_pct":                    { "low": 0, "neutral": 2.0, "high": 7.0 },
+    "pce_yoy_pct":                    { "low": 0, "neutral": 2.0, "high": 6.0 },
+    "breakeven_5y_pct":               { "low": 1.5, "neutral": 2.0, "high": 3.5 },
+    "ppi_yoy_pct":                    { "low": -1.0, "neutral": 2.0, "high": 9.0 },
+    "oil_price_3m_change_pct":        { "low": -20, "neutral": 0, "high": 20 },
+    "fertilizer_index_3m_change_pct": { "low": -20, "neutral": 0, "high": 20 }
   },
-  "growth_indicators": {
-    "ism_manufacturing":  0.18,
-    "ism_services":       0.18,
-    "real_gdp_qoq":       0.18,
-    "nfp_3m_avg":         0.12,
-    "credit_spread_hy":   0.12,
-    "consumer_sentiment": 0.08,
-    "industrial_prod":    0.08,
-    "savings_rate":       0.06
+  "growth_bounds": {
+    "ism_manufacturing":         { "low": 44, "neutral": 50, "high": 58 },
+    "ism_services":              { "low": 44, "neutral": 50, "high": 58 },
+    "real_gdp_qoq_ann_pct":      { "low": -2, "neutral": 2.0, "high": 5.0 },
+    "nfp_3m_avg_k":              { "low": 0, "neutral": 150, "high": 300 },
+    "retail_sales_yoy_real_pct": { "low": -3, "neutral": 2.0, "high": 7.0 }
+  },
+  "inflation_weights": {
+    "cpi_yoy_pct":                    0.25,
+    "pce_yoy_pct":                    0.20,
+    "breakeven_5y_pct":               0.20,
+    "ppi_yoy_pct":                    0.15,
+    "oil_price_3m_change_pct":        0.10,
+    "fertilizer_index_3m_change_pct": 0.10
+  },
+  "growth_weights": {
+    "ism_manufacturing":         0.30,
+    "ism_services":              0.20,
+    "real_gdp_qoq_ann_pct":      0.25,
+    "nfp_3m_avg_k":              0.15,
+    "retail_sales_yoy_real_pct": 0.10
   },
   "regime_thresholds": {
     "inflation_high": 0.60,
     "inflation_low":  0.40,
     "growth_high":    0.55,
-    "growth_low":     0.45
+    "growth_low":     0.45,
+    "boundary_zone":  0.05
   },
-  "transition_sensitivity": 0.10,
-  "notes": {
-    "credit_spread_hy": "Inverted for growth scoring — wider spreads = lower growth score",
-    "savings_rate": "Inverted for growth scoring — rising savings = lower growth score",
-    "tips_real_yield": "Higher real yield signals tighter financial conditions; inflationary if negative",
-    "ism_services": "Manual monthly input until API source confirmed",
-    "fao_food_price_index": "Manual monthly input from FAO website"
+  "staleness_limits_days": {
+    "daily":     7,
+    "weekly":    14,
+    "monthly":   45,
+    "quarterly": 95
   }
 }
 ```
@@ -406,24 +414,43 @@ export const RegimeDriftSchema = z.enum([
   'Stable', 'Weakening', 'Transitioning', 'Shifted'
 ]);
 
-export const RegimeAssessmentSchema = z.object({
-  regime_quadrant:             RegimeQuadrantSchema,
-  confidence:                  z.number().min(0).max(1),
-  inflation_score:             z.number(),
-  growth_score:                z.number(),
-  regime_drift_vs_prior:       RegimeDriftSchema,
-  // v1 regression fix: transition_signal (not transition_risk) — matches v1 convention
-  transition_signal:           z.string(),
-  // v1 regression fix: keyDrivers restored — bullet-point explanations of classification
-  // Used in Telegram alerts and decision log for human-readable reasoning
-  key_drivers:                 z.array(z.string()),
-  confirming_indicators:       z.array(z.string()),
-  contradicting_indicators:    z.array(z.string()),
-  central_thesis_conflict:     z.string(),
-  fastest_path_to_being_wrong: z.string(),
-  watch_next:                  z.array(z.string()),
-  assessed_at:                 z.string(),
+export const PipelineOutputSchema = z.object({
+  inflationScore:  z.number(),
+  growthScore:     z.number(),
+  regimeQuadrant:  RegimeQuadrantSchema,
+  confidence:      z.number(),
+  requiresHumanReview: z.boolean(),
+  flagReasons:     z.array(z.string()),
+  regimeDriftVsPrior: RegimeDriftSchema,
+  driftDelta:      z.object({ inflation: z.number(), growth: z.number() }).nullable(),
+  dataGaps:        z.array(z.any()),
+  assessedAt:      z.string()
 });
+
+export const LLMResponseSchema = z.object({
+  classification_verdict:       z.enum(['Confirmed', 'Challenged', 'Nuanced']),
+  challenge_rationale:          z.string().nullable(),
+  confidence_adjustment:        z.number(),
+  key_drivers:                  z.array(z.string()),
+  confirming_indicators:        z.array(z.any()),
+  contradicting_indicators:     z.array(z.any()),
+  transition_signal:            z.string(),
+  central_thesis_conflict:      z.string(),
+  petrodollar_risk:             z.enum(['Active Risk', 'Latent Risk', 'Not Evidenced']),
+  petrodollar_rationale:        z.string(),
+  fastest_path_to_being_wrong:  z.string(),
+  watch_next:                   z.array(z.any()),
+  requires_human_review_override: z.boolean(),
+  override_reason:              z.string().nullable()
+});
+
+export const FinalAssessmentSchema = PipelineOutputSchema.merge(LLMResponseSchema).extend({
+  final_confidence: z.number(),
+  final_human_review: z.boolean()
+});
+
+// For backwards compatibility and core agent routing:
+export const RegimeAssessmentSchema = FinalAssessmentSchema;
 
 // ── Rebalancing output ────────────────────────────────────────────────────────
 
@@ -561,11 +588,15 @@ function getLatestValues(snapshot: MacroSnapshot): MacroFlatSnapshot
 
 **Computed / derived fields** (calculated inside `getLatestValues()` from historical arrays):
 ```typescript
-// Trend indicators — require DataPoint[] history to compute:
-oil_price_3m_change:  // % change in WTI crude over prior 3 months (from EIA series)
-nfp_3m_avg:           // rolling 3-month average of NFP additions (000s)
-real_wages:           // eci_wages_yoy minus cpi_yoy  — negative = stagflation signal
-yield_curve_30_2:     // yield_30y minus yield_2y     — term premium / Treasury context
+// Trend and Rate indicators — require DataPoint[] history to compute:
+// CRITICAL: ALL values passed to the regime pipeline must be rates or percentages — NOT raw index levels.
+cpi_yoy_pct:          // (current_CPI_level / prior_year_same_month_CPI_level - 1) * 100
+ppi_yoy_pct:          // (current_PPI_level / prior_year_same_month_PPI_level - 1) * 100
+real_gdp_qoq_ann_pct: // ((gdp_q / gdp_q_minus_1)^4 - 1) * 100
+oil_price_3m_change_pct: // (wti_today / wti_90_days_ago - 1) * 100
+nfp_3m_avg_k:         // rolling 3-month average of NFP additions (000s)
+real_wages_yoy_pct:   // eci_wages_yoy minus cpi_yoy  — negative = stagflation signal
+yield_curve_30_2_bps: // yield_30y minus yield_2y     — term premium / Treasury context
 credit_spread_delta:  // HY OAS current minus 6m average — spread widening signal
 ```
 
@@ -692,43 +723,45 @@ attached for debugging. Never return partial/unvalidated data downstream.
 ```typescript
 interface RegimeAgentInput {
   macroSnapshot:   MacroFlatSnapshot;       // from fredFetcher.getLatestValues(snapshot)
-  regimeWeights:   RegimeWeights;           // config/regime_weights.json
-  priorAssessment: RegimeAssessment | null; // null on first run
-  recentReleases:  string[];               // brief descriptions of recent BLS/EIA releases
+  regimePipeline:  RegimePipelineConfig;    // config/regime_pipeline.json
+  priorAssessment: FinalAssessment | null;  // null on first run
+  recentReleases:  string[];                // brief descriptions of recent BLS/EIA releases
+  positionsConfig: PositionsConfig;
 }
 
-export async function runRegimeAgent(input: RegimeAgentInput): Promise<RegimeAssessment>
+export async function runRegimeAgent(input: RegimeAgentInput): Promise<FinalAssessment>
 ```
 
 **Flow:**
-1. Load system prompt template from `src/prompts/regime_system.txt`
-2. Call `buildPortfolioContext(positionsConfig)` → structured portfolio summary string
-3. Inject into template: `systemPrompt.replace('{{PORTFOLIO_CONTEXT}}', portfolioContext)`
-4. Build structured user message from `input` macro data
-5. Call `baseAgent.generateAgentResponse()`
-6. Parse JSON response → validate with `RegimeAssessmentSchema`
-7. Write to `src/data/cache/regime_latest.json`
-8. Insert row into `regime_history.db`
-9. Log full run to `agent_runs.db`
-10. Return `RegimeAssessment`
+1. Run deterministic `runPipeline()` logic over `input.macroSnapshot` to pre-calculate `inflationScore`, `growthScore`, `confidence`, and `regimeQuadrant` using the piecewise bounds and weights defined in `regime_pipeline.json`.
+2. Generate `PipelineOutput`.
+3. Load system prompt template from `src/prompts/regime_system.txt`.
+4. Call `buildPortfolioContext(positionsConfig)` → structured portfolio summary string.
+5. Serialize `PipelineOutput` + `macroSnapshot` + `portfolioContext` into the user message for the LLM.
+6. Call `baseAgent.generateAgentResponse()`.
+7. Parse JSON response → validate with `LLMResponseSchema`.
+8. Call `mergePipelineAndLLM(pipelineOutput, llmResponse)` to create `FinalAssessment`.
+9. Write to `src/data/cache/regime_latest.json`.
+10. Insert row into `regime_history.db`.
+11. Log full run to `agent_runs.db`.
+12. Return `FinalAssessment`.
 
 **System prompt template** (`src/prompts/regime_system.txt`):
 
 ```
-You are a macro regime analyst. Classify the current macroeconomic environment
-using a four-quadrant growth/inflation framework.
+You are a macro-regime analyst and portfolio strategist.
 
-QUADRANT DEFINITIONS:
-- Goldilocks:             growth above trend, inflation below target
-- Inflationary Boom:      growth above trend, inflation above target
-- Stagflation:            growth below trend, inflation above target
-- Deflationary Recession: growth below trend, inflation below target
+A quantitative pipeline has already done the following:
+- Normalized each economic indicator to a 0.0–1.0 scale
+- Applied category weights to compute inflation_score and growth_score
+- Classified the regime quadrant against fixed thresholds
+- Detected drift vs. the prior assessment
+- Flagged data gaps, boundary proximity, and review triggers
 
-CRITICAL — CONTRADICTING INDICATORS:
-You must be equally rigorous identifying what CONTRADICTS the dominant regime
-reading as what confirms it. The "fastest_path_to_being_wrong" field is
-mandatory and must name the single most plausible scenario invalidating the
-current classification within 60 days.
+Your job is NOT to recompute these scores. Your job is to:
+1. Validate or challenge the quantitative classification using qualitative judgment
+2. Identify what the numbers cannot capture — geopolitical context, structural breaks, policy lags
+3. Assess portfolio thesis conflicts against the validated regime
 
 {{PORTFOLIO_CONTEXT}}
 
