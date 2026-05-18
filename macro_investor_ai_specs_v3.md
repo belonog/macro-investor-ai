@@ -179,13 +179,14 @@ macro-investor-ai/
 │   │       ├── positions_snapshot.json
 │   │       └── regime_latest.json
 │   │
-│   ├── agents/
-│   │   ├── baseAgent.ts              # AI Provider API wrapper + run logger
-│   │   ├── regimeAgent.ts            # ★ Agent 1: Regime Detection
-│   │   ├── rebalancingAgent.ts       # ★ Agent 2: Portfolio Rebalancing
-│   │   ├── coherenceAgent.ts         # Agent 3: Thesis Coherence
-│   │   └── interpreterAgent.ts       # Agent 4: Primary Data Interpreter
-│   │
+    │   ├── agents/
+    │   │   ├── baseAgent.ts              # AI Provider API wrapper + run logger
+    │   │   ├── regimeAgent.ts            # ★ Agent 1: Regime Detection
+    │   │   ├── regimePipeline.ts         # Quantamental pipeline logic
+    │   │   ├── rebalancingAgent.ts       # ★ Agent 2: Portfolio Rebalancing
+    │   │   ├── coherenceAgent.ts         # Agent 3: Thesis Coherence
+    │   │   └── interpreterAgent.ts       # Agent 4: Primary Data Interpreter
+    │   │
 │   ├── monitor/
 │   │   └── eodMonitor.ts             # EOD stop proximity + threshold checks
 │   │
@@ -1368,6 +1369,9 @@ npx tsx src/cli.ts interpret --release NFP --file ./data/releases/nfp_2026_05.tx
 
 # Force regime cycle (e.g. after a major release)
 npx tsx src/cli.ts regime --trigger post_release
+
+# Run EOD Check manually
+npx tsx src/cli.ts eod
 
 # Scaffold a new position entry in positions.json
 # Prompts interactively for: position_type, thesis, stop, targets, thesis_invalidation
