@@ -5,6 +5,9 @@ export interface RegimeEvaluationRecord {
   timestamp: string;
   quadrant: RegimeQuadrant;
   confidence: number;
+  inflation_score: number;
+  growth_score: number;
+  regime_drift_vs_prior: string;
   data_inputs: Record<string, any>;
   raw_response: Record<string, any>;
 }
@@ -26,6 +29,9 @@ class DatabaseManager {
       newDb.insertRegimeHistory({
         regime_quadrant: evaluation.quadrant,
         confidence: evaluation.confidence,
+        inflation_score: evaluation.inflation_score,
+        growth_score: evaluation.growth_score,
+        regime_drift_vs_prior: evaluation.regime_drift_vs_prior,
         assessed_at: evaluation.timestamp,
         data_inputs: evaluation.data_inputs,
         raw_response: evaluation.raw_response

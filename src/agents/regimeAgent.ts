@@ -127,6 +127,9 @@ export async function runRegimeAgent(
       timestamp: finalAssessment.assessedAt,
       quadrant: finalAssessment.regimeQuadrant,
       confidence: finalAssessment.finalConfidence,
+      inflation_score: finalAssessment.inflationScore,
+      growth_score: finalAssessment.growthScore,
+      regime_drift_vs_prior: finalAssessment.regimeDriftVsPrior,
       data_inputs: macroData,
       raw_response: finalAssessment,
     });
