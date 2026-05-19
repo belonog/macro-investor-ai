@@ -38,6 +38,7 @@ describe('manualIndicators utility', () => {
     const indicator = {
       value: 51.6,
       period: '2026-05',
+      description: 'ISM Services PMI',
       updated_at: '2026-05-19T12:00:00.000Z',
       source: 'ismworld.org',
     };
@@ -59,8 +60,8 @@ describe('manualIndicators utility', () => {
   });
 
   it('should handle multiple indicators', () => {
-    const ind1 = { value: 51.6, period: '2026-05', updated_at: '2026-05-19T12:00:00.000Z', source: 's1' };
-    const ind2 = { value: 128.3, period: '2026-04', updated_at: '2026-05-19T12:00:00.000Z', source: 's2' };
+    const ind1 = { value: 51.6, period: '2026-05', description: 'ISM Services PMI', updated_at: '2026-05-19T12:00:00.000Z', source: 's1' };
+    const ind2 = { value: 128.3, period: '2026-04', description: 'FAO Food Price Index', updated_at: '2026-05-19T12:00:00.000Z', source: 's2' };
     
     vi.mocked(fs.existsSync).mockImplementation((path) => {
       try {

@@ -35,6 +35,7 @@ describe('polygonFetcher', () => {
     const indicator = await getGoldSpotPrice();
     expect(indicator.value).toBe(2350.5);
     expect(indicator.unit).toBe('USD per troy oz');
+    expect(indicator.description).toBe('Gold Spot Price (XAU/USD)');
     expect(indicator.as_of).toBe('2024-05-14');
   });
 });

@@ -172,7 +172,7 @@ describe('fredFetcher', () => {
       };
       vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(mockCache));
       vi.mocked(getManualIndicators).mockReturnValue({
-        'MANUAL_TEST': { value: 99.9, period: '2023-05', updated_at: new Date().toISOString(), source: 'test' }
+        'MANUAL_TEST': { value: 99.9, period: '2023-05', description: 'Test Description', updated_at: new Date().toISOString(), source: 'test' }
       });
 
       const latest = await getLatestValues();
@@ -180,6 +180,7 @@ describe('fredFetcher', () => {
       // Basic values
       expect(latest['CPIAUCSL'].value).toBe(103.0);
       expect(latest['CPIAUCSL'].unit).toBe('% YoY');
+      expect(latest['CPIAUCSL'].description).toBe('Consumer Price Index (CPI) YoY');
       expect(latest['CPIAUCSL'].as_of).toBe('2023-01-01');
 
       expect(latest['PAYEMS'].value).toBe(1450);
@@ -187,9 +188,11 @@ describe('fredFetcher', () => {
       // Derived: oil_price_3m_change_pct ( (120 - 100) / 100 * 100 = 20 )
       expect(latest['oil_price_3m_change_pct'].value).toBeCloseTo(20);
       expect(latest['oil_price_3m_change_pct'].unit).toBe('% change over prior 90 days');
+      expect(latest['oil_price_3m_change_pct'].description).toBe('WTI Crude Oil Price 3-Month % Change');
       
       // Derived: nfp_3m_avg_k ( (200 + 150 + 100) / 3 = 150 )
       expect(latest['nfp_3m_avg_k'].value).toBeCloseTo(150);
+      expect(latest['nfp_3m_avg_k'].description).toBe('Nonfarm Payrolls 3-Month Rolling Average Change (Thousands)');
       
       // Derived: real_wages_yoy_pct ( 4.5 - 3.0 = 1.5 )
       expect(latest['real_wages_yoy_pct'].value).toBe(1.5);
@@ -205,6 +208,7 @@ describe('fredFetcher', () => {
       // Manual indicator
       expect(latest['MANUAL_TEST'].value).toBe(99.9);
       expect(latest['MANUAL_TEST'].as_of).toBe('2023-05');
+      expect(latest['MANUAL_TEST'].description).toBe('Test Description');
     });
 
     it('should fetch and update cache if cache is missing', async () => {

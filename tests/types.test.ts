@@ -10,7 +10,9 @@ import {
   PositionConfigSchema,
   CoherenceOutputSchema,
   InterpreterOutputSchema,
-  EarningsEventSchema
+  EarningsEventSchema,
+  RawIndicatorSchema,
+  ManualIndicatorSchema
 } from '../src/types/index.js';
 
 describe('PositionSnapshotSchema', () => {
@@ -115,6 +117,42 @@ describe('RegimeQuadrantSchema', () => {
 
   it('should reject invalid quadrants', () => {
     expect(RegimeQuadrantSchema.safeParse('Utopia').success).toBe(false);
+  });
+});
+
+describe('RawIndicatorSchema', () => {
+  it('should validate a correct raw indicator', () => {
+    const validIndicator = {
+      value: 3.1,
+      unit: '% YoY',
+      description: 'Consumer Price Index',
+      as_of: '2024-01-01',
+      source: 'BLS',
+    };
+    expect(RawIndicatorSchema.safeParse(validIndicator).success).toBe(true);
+  });
+
+  it('should reject if description is missing', () => {
+    const invalidIndicator = {
+      value: 3.1,
+      unit: '% YoY',
+      as_of: '2024-01-01',
+      source: 'BLS',
+    };
+    expect(RawIndicatorSchema.safeParse(invalidIndicator).success).toBe(false);
+  });
+});
+
+describe('ManualIndicatorSchema', () => {
+  it('should validate a correct manual indicator', () => {
+    const validIndicator = {
+      value: 150,
+      period: '2024-05',
+      description: 'NFP Forecast',
+      updated_at: new Date().toISOString(),
+      source: 'manual',
+    };
+    expect(ManualIndicatorSchema.safeParse(validIndicator).success).toBe(true);
   });
 });
 
