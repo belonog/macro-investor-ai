@@ -192,7 +192,7 @@ describe('regimePipeline - computeConfidence', () => {
 describe('regimePipeline - helpers', () => {
   it('isStale correctly identifies stale data', () => {
     const currentDate = new Date('2026-05-15T12:00:00Z');
-    const staleDate = '2026-03-01'; 
+    const staleDate = '2026-01-01'; // ~134 days old, stale for monthly (90d)
     const freshDate = '2026-05-10'; 
     
     expect(isStale(staleDate, 'cpi_yoy_pct', currentDate)).toBe(true);

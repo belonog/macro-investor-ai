@@ -40,9 +40,9 @@
     "boundary_zone":  0.05
   },
   "staleness_limits_days": {
-    "daily":     7,
-    "weekly":    14,
-    "monthly":   45,
-    "quarterly": 95
+    "daily":     14,
+    "weekly":    21,
+    "monthly":   90,
+    "quarterly": 150
   }
 }
