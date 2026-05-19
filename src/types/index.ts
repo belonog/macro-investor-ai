@@ -55,6 +55,7 @@ export type RegimeQuadrant = z.infer<typeof RegimeQuadrantSchema>;
 export const RawIndicatorSchema = z.object({
   value: z.number(),
   unit: z.string(),
+  description: z.string(),
   as_of: z.string(),
   source: z.string(),
 });
@@ -216,6 +217,7 @@ export interface SyncResult {
 export const ManualIndicatorSchema = z.object({
   value: z.number(),
   period: z.string().regex(/^\d{4}-\d{2}$/), // YYYY-MM
+  description: z.string(),
   updated_at: z.string().datetime(),
   source: z.string(),
 });
