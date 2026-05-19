@@ -10,6 +10,7 @@ import {
   buildLLMInput,
   mergePipelineAndLLM
 } from '../src/agents/regimePipeline.js';
+import { RegimeQuadrant, PipelineInput, PipelineOutput, LLMResponse } from '../src/types/index.js';
 
 describe('regimePipeline - normalization', () => {
   const bounds = { low: 0, neutral: 2.0, high: 7.0 };
@@ -40,14 +41,14 @@ describe('regimePipeline - weight redistribution', () => {
 
   it('returns original weights when all indicators present', () => {
     const indicators = { a: 1, b: 2, c: 3 };
-    const { effectiveWeights, gaps } = redistributeWeights(weights, indicators as any, new Date());
+    const { effectiveWeights, gaps } = redistributeWeights(weights, indicators as Record<string, unknown>, new Date());
     expect(effectiveWeights).toEqual(weights);
     expect(gaps).toHaveLength(0);
   });
 
   it('redistributes weights when an indicator is missing', () => {
     const indicators = { a: 1, c: 3 }; // b is missing
-    const { effectiveWeights, gaps } = redistributeWeights(weights, indicators as any, new Date());
+    const { effectiveWeights, gaps } = redistributeWeights(weights, indicators as Record<string, unknown>, new Date());
     
     expect(effectiveWeights.a).toBeCloseTo(0.5 / 0.7);
     expect(effectiveWeights.c).toBeCloseTo(0.2 / 0.7);
@@ -112,7 +113,7 @@ describe('regimePipeline - runPipeline', () => {
       current_time: '2026-05-16T12:00:00Z'
     };
     
-    const output = runPipeline(input as any);
+    const output = runPipeline(input as PipelineInput);
     
     expect(output.inflation_score).toBeDefined();
     expect(output.growth_score).toBeDefined();
@@ -124,7 +125,7 @@ describe('regimePipeline - runPipeline', () => {
 
 describe('regimePipeline - detectDrift', () => {
   const prior = {
-    regime_quadrant: 'Goldilocks' as any,
+    regime_quadrant: 'Goldilocks' as RegimeQuadrant,
     inflation_score: 0.3,
     growth_score: 0.6,
     confidence: 90,
@@ -207,8 +208,8 @@ describe('regimePipeline - helpers', () => {
       prior_assessment: null,
       portfolio_context: { positions: [], secondary_risks: [] },
     };
-    const output = runPipeline(input as any);
-    const llmInput = buildLLMInput(output, input as any);
+    const output = runPipeline(input as PipelineInput);
+    const llmInput = buildLLMInput(output, input as PipelineInput);
     const parsed = JSON.parse(llmInput);
     expect(parsed.quantitative_assessment.regime_quadrant).toBe(output.regime_quadrant);
     expect(parsed.weighted_raw_indicators.cpi_yoy_pct.value).toBe(3.0);
@@ -218,11 +219,11 @@ describe('regimePipeline - helpers', () => {
     const pipeline = {
       confidence: 80,
       requires_human_review: false,
-    } as any;
+    } as unknown as PipelineOutput;
     const llm = {
       confidence_adjustment: 5,
       requires_human_review_override: true,
-    } as any;
+    } as unknown as LLMResponse;
     const final = mergePipelineAndLLM(pipeline, llm);
     expect(final.final_confidence).toBe(85);
     expect(final.final_human_review).toBe(true);

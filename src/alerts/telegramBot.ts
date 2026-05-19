@@ -30,7 +30,10 @@ export async function sendTelegramAlert(alert: Alert): Promise<void> {
 
   const message = `${emoji} *${alert.level}* ${alert.symbol ? `— ${alert.symbol}` : ''}\n${alert.message}${alert.action ? `\n\n*Action:* ${alert.action}` : ''}`;
 
-  const extra: any = { parse_mode: 'Markdown' };
+  const extra: { 
+    parse_mode: 'Markdown', 
+    reply_markup?: { inline_keyboard: { text: string; callback_data: string }[][] } 
+  } = { parse_mode: 'Markdown' };
 
   // Spec 6.9: Add basic inline keyboard support for CRITICAL alerts
   if (alert.level === 'CRITICAL') {

@@ -2,7 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import { 
   RegimeAssessment, 
-  RegimeAssessmentSchema, 
   PortfolioConfigSchema,
   PipelineInput,
   MacroIndicators,
@@ -31,7 +30,7 @@ const PROMPT_PATH = path.join(process.cwd(), 'src', 'prompts', 'regime_system.tx
  */
 export async function runRegimeAgent(
   macroData: Record<string, number | RawIndicator>,
-  additionalContext: Record<string, any> = {},
+  additionalContext: Record<string, unknown> = {},
   trigger: 'manual' | 'post_release' | 'scheduled' | 'alert' = 'manual'
 ): Promise<RegimeAssessment> {
   try {

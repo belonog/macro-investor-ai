@@ -10,7 +10,7 @@ import { setManualIndicator } from './utils/manualIndicators.js';
 import { runCoherenceAgent } from './agents/coherenceAgent.js';
 import { runInterpreterAgent } from './agents/interpreterAgent.js';
 import { db } from './db/database.js';
-import { PortfolioConfigSchema, PositionType } from './types/index.js';
+import { PortfolioConfigSchema, PositionType, PortfolioConfig } from './types/index.js';
 
 const program = new Command();
 
@@ -143,7 +143,7 @@ program
       }
 
       const positionsPath = path.join(process.cwd(), 'config', 'positions.json');
-      let positionsConfig: any = {};
+      let positionsConfig: PortfolioConfig = {};
       if (fs.existsSync(positionsPath)) {
         positionsConfig = JSON.parse(fs.readFileSync(positionsPath, 'utf8'));
       }

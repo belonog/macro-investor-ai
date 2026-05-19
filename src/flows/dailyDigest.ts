@@ -25,13 +25,13 @@ export async function runDailyDigest() {
     let regimeAssessment: RegimeAssessment;
     try {
       regimeAssessment = JSON.parse(fs.readFileSync(REGIME_CACHE_PATH, 'utf8'));
-    } catch (err) {
+    } catch {
       console.error('Failed to parse regime assessment. Running regime cycle...');
       await runRegimeCycle('scheduled');
       regimeAssessment = JSON.parse(fs.readFileSync(REGIME_CACHE_PATH, 'utf8'));
     }
 
-    const assessed_at_raw = regimeAssessment.assessed_at || (regimeAssessment as any).assessedAt;
+    const assessed_at_raw = regimeAssessment.assessed_at;
     const assessedAt = new Date(assessed_at_raw);
     const now = new Date();
     const diffDays = (now.getTime() - assessedAt.getTime()) / (1000 * 3600 * 24);

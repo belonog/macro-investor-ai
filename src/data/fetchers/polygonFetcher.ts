@@ -26,10 +26,10 @@ export async function getEodPrices(symbols: string[]): Promise<Record<string, nu
 /**
  * Gets the earnings calendar for a list of symbols.
  * @param symbols The stock symbols
- * @param daysAhead Number of days ahead to search
+ * @param _daysAhead Number of days ahead to search
  * @returns Promise<EarningsEvent[]>
  */
-export async function getEarningsCalendar(symbols: string[], daysAhead: number): Promise<EarningsEvent[]> {
+export async function getEarningsCalendar(symbols: string[], _daysAhead: number): Promise<EarningsEvent[]> {
   const response = await axios.get(`${POLYGON_BASE}/vX/reference/tickers/earnings`, {
     params: { apiKey: process.env.POLYGON_API_KEY }
   });

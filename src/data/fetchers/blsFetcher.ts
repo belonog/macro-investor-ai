@@ -1,17 +1,23 @@
 import axios from 'axios';
-import { DataPoint } from '../../types/index.js';
 
 const BLS_BASE = 'https://api.bls.gov/publicAPI/v2/timeseries/data/';
+
+interface BLSPayload {
+  seriesid: string[];
+  startyear: string;
+  endyear: string;
+  registrationkey?: string;
+}
 
 /**
  * Fetches multiple series from BLS.
  * @param seriesIds The BLS series IDs
  * @param startYear Start year for the data
  * @param endYear End year for the data
- * @returns Promise<any[]>
+ * @returns Promise<unknown[]>
  */
-export async function fetchSeries(seriesIds: string[], startYear: string, endYear: string): Promise<any[]> {
-  const payload: any = {
+export async function fetchSeries(seriesIds: string[], startYear: string, endYear: string): Promise<unknown[]> {
+  const payload: BLSPayload = {
     seriesid: seriesIds,
     startyear: startYear,
     endyear: endYear,
@@ -33,7 +39,7 @@ export async function fetchSeries(seriesIds: string[], startYear: string, endYea
 /**
  * Gets the latest releases from BLS.
  */
-export async function getLatestReleases(): Promise<any[]> {
+export async function getLatestReleases(): Promise<unknown[]> {
   const currentYear = new Date().getFullYear().toString();
   const BLS_SERIES = {
     nfp_total: 'CES0000000001',
@@ -41,7 +47,7 @@ export async function getLatestReleases(): Promise<any[]> {
     ppi_final_demand: 'WPSFD4',
   };
   try {
-    const seriesData = await fetchSeries(Object.values(BLS_SERIES), currentYear, currentYear);
+    const seriesData = await fetchSeries(Object.values(BLS_SERIES), currentYear, currentYear) as { seriesID: string, data: { value: string, periodName: string, year: string }[] }[];
     return seriesData.map(s => {
       if (s.data && s.data.length > 0) {
         const latest = s.data[0];

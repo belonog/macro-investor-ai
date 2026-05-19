@@ -41,10 +41,10 @@ describe('baseAgent', () => {
 
   it('should call generateObject and log the run', async () => {
     const { generateObject } = await import('ai');
-    (generateObject as any).mockResolvedValue({
+    vi.mocked(generateObject).mockResolvedValue({
       object: { test: 'value' },
       usage: { totalTokens: 100 },
-    });
+    } as unknown as Awaited<ReturnType<typeof generateObject>>);
 
     const schema = z.object({ test: z.string() });
     const result = await generateAgentResponse({
@@ -66,12 +66,12 @@ describe('baseAgent', () => {
 
   it('should retry on failure and eventually succeed', async () => {
     const { generateObject } = await import('ai');
-    (generateObject as any)
+    vi.mocked(generateObject)
       .mockRejectedValueOnce(new Error('Fail 1'))
       .mockResolvedValueOnce({
         object: { test: 'success' },
         usage: { totalTokens: 50 },
-      });
+      } as unknown as Awaited<ReturnType<typeof generateObject>>);
 
     const schema = z.object({ test: z.string() });
     
@@ -90,7 +90,7 @@ describe('baseAgent', () => {
 
   it('should throw after max retries', async () => {
     const { generateObject } = await import('ai');
-    (generateObject as any).mockRejectedValue(new Error('Permanent Fail'));
+    vi.mocked(generateObject).mockRejectedValue(new Error('Permanent Fail'));
 
     const schema = z.object({ test: z.string() });
     
@@ -111,10 +111,10 @@ describe('baseAgent', () => {
     const { anthropic } = await import('@ai-sdk/anthropic');
     const { generateObject } = await import('ai');
     
-    (generateObject as any).mockResolvedValue({
+    vi.mocked(generateObject).mockResolvedValue({
       object: { test: 'value' },
       usage: { totalTokens: 10 },
-    });
+    } as unknown as Awaited<ReturnType<typeof generateObject>>);
 
     // Test Anthropic
     process.env.AI_PROVIDER = 'anthropic';

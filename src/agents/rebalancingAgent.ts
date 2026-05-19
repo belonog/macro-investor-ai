@@ -40,7 +40,7 @@ export async function generateRebalancingReport(): Promise<RebalancingOutput> {
     const regimeSnapshot: RegimeAssessment = JSON.parse(fs.readFileSync(REGIME_CACHE_PATH, 'utf8'));
 
     // Stale-data guard
-    const assessed_at_raw = regimeSnapshot.assessed_at || (regimeSnapshot as any).assessedAt;
+    const assessed_at_raw = regimeSnapshot.assessed_at;
     const assessedAt = new Date(assessed_at_raw);
     const now = new Date();
     const diffDays = (now.getTime() - assessedAt.getTime()) / (1000 * 3600 * 24);

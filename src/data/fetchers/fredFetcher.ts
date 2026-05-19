@@ -4,13 +4,6 @@ import path from 'path';
 import { DataPoint, DataPointSchema, MacroSnapshot, MacroCacheSchema } from '../../types/index.js';
 import { getManualIndicators } from '../../utils/manualIndicators.js';
 
-/**
- * Helper for calculating percentage change.
- */ 
-function calculateGrowth(current: number, past: number): number {
-  return past === 0 ? 0 : (current - past) / past;
-}
-
 const FRED_BASE_URL = 'https://api.stlouisfed.org/fred';
 
 export const TARGET_SERIES: Record<string, string> = {
@@ -108,8 +101,8 @@ export async function fetchAll(): Promise<MacroSnapshot> {
       const data = await fetchSeries(seriesId);
       snapshot.series[seriesId] = data;
       snapshot.fetched_at[seriesId] = new Date().toISOString();
-    } catch (error) {
-      console.error(`Failed to fetch ${seriesId} (${TARGET_SERIES[seriesId]}):`, error);
+    } catch {
+      console.error(`Failed to fetch ${seriesId} (${TARGET_SERIES[seriesId]}):`);
       snapshot.series[seriesId] = []; // Ensure the key exists even on failure
       snapshot.fetched_at[seriesId] = new Date().toISOString();
     }
@@ -134,7 +127,7 @@ export async function updateMacroCache(): Promise<MacroSnapshot> {
     if (parsed.success) {
       existingSnapshot = parsed.data.data;
     }
-  } catch (e) {
+  } catch {
     // No cache or invalid cache, ignore
   }
 
@@ -324,7 +317,7 @@ export async function getLatestValues(): Promise<Record<string, number>> {
     } else {
       snapshot = parsed.data.data;
     }
-  } catch (e) {
+  } catch {
     snapshot = await updateMacroCache();
   }
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { syncPositions } from '../src/utils/positionsSync.js';
-import { PositionSnapshot, PortfolioConfig } from '../src/types.js';
+import { PositionSnapshot, PortfolioConfig } from '../src/types/index.js';
 import fs from 'fs';
 import path from 'path';
 

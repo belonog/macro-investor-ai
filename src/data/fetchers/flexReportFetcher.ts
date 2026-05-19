@@ -17,7 +17,16 @@ export function parseFlexXml(xml: string): PositionSnapshot[] {
 
   const fetchedAt = new Date().toISOString();
 
-  return positions.filter((p: any) => p !== undefined).map((p: any) => {
+interface OpenPosition {
+  symbol: string;
+  position: string;
+  costBasisPrice: string;
+  fifoPnlUnrealized: string;
+  markPrice: string;
+  positionValue: string;
+}
+
+  return positions.filter((p: OpenPosition) => p !== undefined).map((p: OpenPosition) => {
     const quantity = parseFloat(p.position);
     const avgCost = parseFloat(p.costBasisPrice);
     const unrealizedPnl = parseFloat(p.fifoPnlUnrealized);

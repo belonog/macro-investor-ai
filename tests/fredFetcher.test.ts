@@ -62,8 +62,8 @@ describe('fredFetcher', () => {
 
     it('should handle failures for individual series', async () => {
       const mockedAxios = vi.mocked(axios);
-      mockedAxios.get.mockImplementation((url: string, config: any) => {
-        if (config.params.series_id === 'T10Y2Y') {
+      mockedAxios.get.mockImplementation((_url: string, config?: { params?: { series_id?: string } }) => {
+        if (config?.params?.series_id === 'T10Y2Y') {
           return Promise.reject(new Error('FRED failure'));
         }
         return Promise.resolve({

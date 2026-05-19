@@ -18,7 +18,6 @@ const configPath = path.join(process.cwd(), 'config', 'regime_pipeline.json');
 const CONFIG: RegimePipelineConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
 
 type IndicatorFrequency = 'daily' | 'weekly' | 'monthly' | 'quarterly';
-type DataGapReason = 'missing' | 'stale';
 export type DriftStatus = 'N/A' | 'Stable' | 'Weakening' | 'Transitioning' | 'Shifted';
 
 const INDICATOR_FREQUENCY: Partial<Record<keyof MacroIndicators, IndicatorFrequency>> = {
@@ -84,7 +83,7 @@ interface RedistributionResult {
 
 export function redistributeWeights(
   weights:      Record<string, number>,
-  indicators:   MacroIndicators | Record<string, any>,
+  indicators:   MacroIndicators | Record<string, unknown>,
   currentDate:  Date
 ): RedistributionResult {
   const gaps: DataGap[] = [];
@@ -92,10 +91,10 @@ export function redistributeWeights(
   let staleHighWeight   = false;
 
   for (const key of Object.keys(weights)) {
-    const indicator = (indicators as any)[key];
+    const indicator = (indicators as Record<string, unknown>)[key];
 
     if (!indicator || typeof indicator === 'number') {
-      const val = typeof indicator === 'number' ? indicator : indicator?.value;
+      const val = typeof indicator === 'number' ? indicator : (indicator as RawIndicator | undefined)?.value;
       if (val === undefined || val === null) {
         gaps.push({
           indicator:             key,
@@ -108,16 +107,19 @@ export function redistributeWeights(
       }
     }
 
-    if (indicator && typeof indicator === 'object' && indicator.asOf) {
-      if (isStale(indicator.asOf, key, currentDate)) {
-        if (weights[key] >= 0.15) staleHighWeight = true;
-        gaps.push({
-          indicator:             key,
-          original_weight:        weights[key],
-          reason:                'stale',
-          weight_redistributed_to: [],
-        });
-        excluded.add(key);
+    if (indicator && typeof indicator === 'object') {
+      const ind = indicator as RawIndicator;
+      if (ind.asOf) {
+        if (isStale(ind.asOf, key, currentDate)) {
+          if (weights[key] >= 0.15) staleHighWeight = true;
+          gaps.push({
+            indicator:             key,
+            original_weight:        weights[key],
+            reason:                'stale',
+            weight_redistributed_to: [],
+          });
+          excluded.add(key);
+        }
       }
     }
   }
@@ -235,7 +237,7 @@ export function detectDrift(
   growth_score:     number,
   currentQuadrant: RegimeQuadrant,
   prior:           PriorAssessment | null
-): { status: DriftStatus; delta: PipelineOutput['driftDelta'] } {
+): { status: DriftStatus; delta: PipelineOutput['drift_delta'] } {
   if (!prior) return { status: 'N/A', delta: null };
 
   const prior_inflation = prior.inflation_score;
@@ -405,7 +407,7 @@ export function runPipeline(input: PipelineInput): PipelineOutput {
 
   const regime_quadrant = classifyQuadrant(inflation.score, growth.score);
 
-  const { status: driftStatus, delta: driftDelta } = detectDrift(
+  const { status: driftStatus, delta: drift_delta } = detectDrift(
     inflation.score, growth.score, regime_quadrant, input.prior_assessment
   );
 
@@ -431,8 +433,8 @@ export function runPipeline(input: PipelineInput): PipelineOutput {
     confidence,
     requires_human_review,
     flag_reasons,
-    regime_drift_vs_prior:             driftStatus as any,
-    drift_delta:      driftDelta,
+    regime_drift_vs_prior:             driftStatus as PipelineOutput['regime_drift_vs_prior'],
+    drift_delta,
     normalized_inflation_indicators:  inflation.normalized_indicators,
     normalized_growth_indicators:     growth.normalized_indicators,
     data_gaps:                       allGaps,

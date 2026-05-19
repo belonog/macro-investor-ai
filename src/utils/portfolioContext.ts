@@ -22,13 +22,9 @@ export function buildPortfolioContext(positionsConfig: PortfolioConfig): string 
       const config = positionsConfig[symbol];
       const prefix = i === 0 ? `${type}:`.padEnd(15) : ' '.repeat(15);
       
-      let detail = '';
-      if (config.regime_match.length === 4) {
-        detail = `(${config.thesis})`;
-      } else {
-        const regimes = config.regime_match.join(', ');
-        detail = `${regimes} — ${config.thesis}`;
-      }
+      let detail = config.regime_match.length === 4
+        ? `(${config.thesis})`
+        : `${config.regime_match.join(', ')} — ${config.thesis}`;
 
       if (type === 'speculative' && config.deadline) {
         const deadlineDate = new Date(config.deadline);

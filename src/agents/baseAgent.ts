@@ -47,7 +47,7 @@ export async function generateAgentResponse<T>(
     model = anthropic(modelName);
   }
 
-  let lastError: any;
+  let lastError: unknown;
   const maxRetries = 3;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -83,5 +83,6 @@ export async function generateAgentResponse<T>(
     }
   }
 
-  throw new Error(`Failed to generate agent response for ${options.agentName} after ${maxRetries} attempts. Last error: ${lastError?.message}`);
+  const lastErrorMessage = lastError instanceof Error ? lastError.message : String(lastError);
+  throw new Error(`Failed to generate agent response for ${options.agentName} after ${maxRetries} attempts. Last error: ${lastErrorMessage}`);
 }

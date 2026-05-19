@@ -3,7 +3,10 @@ import path from 'path';
 import fs from 'fs';
 import { 
   RegimeAssessment, 
-  Alert
+  Alert,
+  RebalancingOutput,
+  PipelineOutput,
+  RegimeQuadrant
 } from '../types/index.js';
 
 const LOGS_DIR = path.join(process.cwd(), 'logs');
@@ -135,7 +138,7 @@ export class DatabaseManager {
     );
   }
 
-  public insertRegimeHistory(assessment: any) {
+  public insertRegimeHistory(assessment: RegimeAssessment) {
     console.log('insertRegimeHistory assessment:', JSON.stringify(assessment, null, 2));
     const stmt = this.regimeHistoryDb.prepare(`
       INSERT INTO regime_history (quadrant, confidence, inflation_score, growth_score, drift, full_output, assessed_at)
@@ -143,17 +146,17 @@ export class DatabaseManager {
     `);
     
     // Support snake_case as primary, camelCase as fallback for legacy
-    const quadrant = assessment.regime_quadrant ?? assessment.regimeQuadrant;
-    const inflation_score = assessment.inflation_score ?? assessment.inflationScore;
-    const growth_score = assessment.growth_score ?? assessment.growthScore;
-    const drift = assessment.regime_drift_vs_prior ?? assessment.regimeDriftVsPrior;
-    const assessed_at = assessment.assessed_at ?? assessment.assessedAt;
+    const quadrant = assessment.regime_quadrant ?? (assessment as Record<string, unknown>).regimeQuadrant;
+    const inflation_score = assessment.inflation_score ?? (assessment as Record<string, unknown>).inflationScore;
+    const growth_score = assessment.growth_score ?? (assessment as Record<string, unknown>).growthScore;
+    const drift = assessment.regime_drift_vs_prior ?? (assessment as Record<string, unknown>).regimeDriftVsPrior;
+    const assessed_at = assessment.assessed_at ?? (assessment as Record<string, unknown>).assessedAt;
 
     return stmt.run(
       quadrant || null,
       assessment.confidence,
-      inflation_score !== undefined ? inflation_score : null,
-      growth_score !== undefined ? growth_score : null,
+      inflation_score !== undefined ? (inflation_score as number) : null,
+      growth_score !== undefined ? (growth_score as number) : null,
       drift || null,
       JSON.stringify(assessment),
       assessed_at || null
@@ -188,13 +191,13 @@ export class DatabaseManager {
     );
   }
 
-  public insertRebalancingHistory(output: any) {
+  public insertRebalancingHistory(output: RebalancingOutput) {
     const stmt = this.rebalancingHistoryDb.prepare(`
       INSERT INTO rebalancing_history (alignment_score, alignment_grade, full_output)
       VALUES (?, ?, ?)
     `);
 
-    const alignment_score = output.alignment_score ?? output.regime_portfolio_alignment_score;
+    const alignment_score = output.alignment_score ?? (output as Record<string, unknown>).regime_portfolio_alignment_score;
 
     return stmt.run(
       alignment_score,
@@ -212,11 +215,11 @@ export class DatabaseManager {
     return row ? JSON.parse(row.full_output) : null;
   }
 
-  public getRegimeHistory(limit: number = 10): any[] {
+  public getRegimeHistory(limit: number = 10): RegimeAssessment[] {
     const stmt = this.regimeHistoryDb.prepare(`
       SELECT assessed_at, full_output FROM regime_history ORDER BY assessed_at DESC LIMIT ?
     `);
-    return stmt.all(limit).map((row: any) => ({
+    return (stmt.all(limit) as { assessed_at: string; full_output: string }[]).map((row) => ({
       ...JSON.parse(row.full_output),
       assessed_at: row.assessed_at
     }));
@@ -229,11 +232,11 @@ export class DatabaseManager {
     return stmt.run(id);
   }
 
-  public getAlerts(limit: number = 10): any[] {
+  public getAlerts(limit: number = 10): (Alert & { id: number; acknowledged: number })[] {
     const stmt = this.alertsSentDb.prepare(`
       SELECT * FROM alerts_sent ORDER BY sent_at DESC LIMIT ?
     `);
-    return stmt.all(limit);
+    return stmt.all(limit) as (Alert & { id: number; acknowledged: number })[];
   }
 
   public clearRegimeHistory() {
@@ -252,8 +255,6 @@ export class DatabaseManager {
 
 export const db = new DatabaseManager();
 
-import { RegimeQuadrant, RebalancingOutput } from '../types/index.js';
-
 export interface RegimeEvaluationRecord {
   timestamp: string;
   quadrant: RegimeQuadrant;
@@ -261,8 +262,8 @@ export interface RegimeEvaluationRecord {
   inflation_score: number;
   growth_score: number;
   regime_drift_vs_prior: string;
-  data_inputs: Record<string, any>;
-  raw_response: Record<string, any>;
+  data_inputs: Record<string, unknown>;
+  raw_response: Record<string, unknown>;
 }
 
 export function logRegimeEvaluation(evaluation: RegimeEvaluationRecord) {
@@ -272,11 +273,17 @@ export function logRegimeEvaluation(evaluation: RegimeEvaluationRecord) {
       confidence: evaluation.confidence,
       inflation_score: evaluation.inflation_score,
       growth_score: evaluation.growth_score,
-      regime_drift_vs_prior: evaluation.regime_drift_vs_prior,
+      regime_drift_vs_prior: evaluation.regime_drift_vs_prior as PipelineOutput['regime_drift_vs_prior'],
       assessed_at: evaluation.timestamp,
       data_inputs: evaluation.data_inputs,
-      raw_response: evaluation.raw_response
-    });
+      raw_response: evaluation.raw_response,
+      requires_human_review: false, // Default or derived
+      flag_reasons: [],
+      drift_delta: null,
+      data_gaps: [],
+      normalized_inflation_indicators: [],
+      normalized_growth_indicators: []
+    } as unknown as RegimeAssessment);
     
     db.insertAgentRun({
       agent: 'regimeAgent',
@@ -289,7 +296,7 @@ export function logRegimeEvaluation(evaluation: RegimeEvaluationRecord) {
   }
 }
 
-export function logRebalancingDecision(decision: RebalancingOutput & { timestamp: string, raw_response?: any }) {
+export function logRebalancingDecision(decision: RebalancingOutput & { timestamp: string, raw_response?: unknown }) {
   try {
     db.insertRebalancingHistory(decision);
 
@@ -323,7 +330,7 @@ export function logAlert(alert: Alert) {
   }
 }
 
-export function getRecentAlerts(limit: number = 10): any[] {
+export function getRecentAlerts(limit: number = 10): (Alert & { id: number; acknowledged: number })[] {
   try {
     return db.getAlerts(limit);
   } catch (error) {
@@ -332,14 +339,14 @@ export function getRecentAlerts(limit: number = 10): any[] {
   }
 }
 
-export function getRecentEvaluations(limit: number = 10): any[] {
+export function getRecentEvaluations(limit: number = 10): (RegimeAssessment & { timestamp: string; quadrant: RegimeQuadrant; data_inputs: Record<string, unknown>; raw_response: Record<string, unknown> })[] {
   try {
     return db.getRegimeHistory(limit).map(assessment => ({
+      ...assessment,
       timestamp: assessment.assessed_at,
       quadrant: assessment.regime_quadrant,
-      confidence: assessment.confidence,
-      data_inputs: assessment.data_inputs || {}, 
-      raw_response: assessment.raw_response || assessment
+      data_inputs: (assessment as Record<string, unknown>).data_inputs as Record<string, unknown> || {}, 
+      raw_response: (assessment as Record<string, unknown>).raw_response as Record<string, unknown> || assessment
     }));
   } catch (error) {
     console.error('Failed to get recent evaluations:', error);

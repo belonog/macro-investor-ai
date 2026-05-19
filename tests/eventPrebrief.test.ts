@@ -4,6 +4,7 @@ import { runEventPrebrief } from '../src/flows/eventPrebrief.js';
 import * as polygonFetcher from '../src/data/fetchers/polygonFetcher.js';
 import * as interpreterAgent from '../src/agents/interpreterAgent.js';
 import * as telegramBot from '../src/alerts/telegramBot.js';
+import { EarningsEvent } from '../src/types/index.js';
 
 vi.mock('fs');
 vi.mock('../src/data/fetchers/polygonFetcher.js');
@@ -45,7 +46,7 @@ describe('eventPrebrief flow', () => {
 
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(mockConfig));
-    vi.mocked(polygonFetcher.getEarningsCalendar).mockResolvedValue(mockEvents as any);
+    vi.mocked(polygonFetcher.getEarningsCalendar).mockResolvedValue(mockEvents as EarningsEvent[]);
     vi.mocked(interpreterAgent.generatePrebrief).mockResolvedValue(mockPrebrief);
 
     await runEventPrebrief();

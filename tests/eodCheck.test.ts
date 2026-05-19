@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import fs from 'fs';
 import { runEodCheck } from '../src/flows/eodCheck.js';
 import * as flexReportFetcher from '../src/data/fetchers/flexReportFetcher.js';

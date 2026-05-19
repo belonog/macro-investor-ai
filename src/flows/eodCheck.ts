@@ -57,11 +57,12 @@ export async function runEodCheck() {
     }
     
     console.log('EOD Check Completed Successfully.');
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error('EOD Check Failed:', error);
     await sendTelegramAlert({
       level: 'CRITICAL',
-      message: `Alert: EOD Check Failed: ${error.message || error}`,
+      message: `Alert: EOD Check Failed: ${message}`,
       created_at: new Date().toISOString(),
       symbol: null,
       action: 'Check logs'

@@ -38,7 +38,7 @@ export async function runRegimeCycle(trigger: 'manual' | 'post_release' | 'sched
           const snapshots: PositionSnapshot[] = raw.trim() ? JSON.parse(raw) : [];
           
           if (snapshots.length > 0) {
-            const fetched_at_raw = snapshots[0].fetched_at || (snapshots[0] as any).fetchedAt;
+            const fetched_at_raw = snapshots[0].fetched_at;
             const fetchedAt = new Date(fetched_at_raw);
             const now = new Date();
             const diffHours = (now.getTime() - fetchedAt.getTime()) / (1000 * 3600);
@@ -73,11 +73,12 @@ export async function runRegimeCycle(trigger: 'manual' | 'post_release' | 'sched
         action: null
       });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error('Regime Cycle Failed:', error);
     await sendTelegramAlert({
       level: 'CRITICAL',
-      message: `Alert: Regime Cycle Failed: ${error.message || error}`,
+      message: `Alert: Regime Cycle Failed: ${message}`,
       created_at: new Date().toISOString(),
       symbol: null,
       action: 'Check logs'
