@@ -178,31 +178,33 @@ describe('fredFetcher', () => {
       const latest = await getLatestValues();
       
       // Basic values
-      expect(latest['CPIAUCSL']).toBe(103.0);
-      expect(latest['PAYEMS']).toBe(1450);
+      expect(latest['CPIAUCSL'].value).toBe(103.0);
+      expect(latest['CPIAUCSL'].unit).toBe('% YoY');
+      expect(latest['CPIAUCSL'].as_of).toBe('2023-01-01');
+
+      expect(latest['PAYEMS'].value).toBe(1450);
       
       // Derived: oil_price_3m_change_pct ( (120 - 100) / 100 * 100 = 20 )
-      expect(latest['oil_price_3m_change_pct']).toBeCloseTo(20);
+      expect(latest['oil_price_3m_change_pct'].value).toBeCloseTo(20);
+      expect(latest['oil_price_3m_change_pct'].unit).toBe('% change over prior 90 days');
       
       // Derived: nfp_3m_avg_k ( (200 + 150 + 100) / 3 = 150 )
-      expect(latest['nfp_3m_avg_k']).toBeCloseTo(150);
-      
-      // Derived: nfp_3m_avg (Alias)
-      expect(latest['nfp_3m_avg']).toBeCloseTo(150);
+      expect(latest['nfp_3m_avg_k'].value).toBeCloseTo(150);
       
       // Derived: real_wages_yoy_pct ( 4.5 - 3.0 = 1.5 )
-      expect(latest['real_wages_yoy_pct']).toBe(1.5);
+      expect(latest['real_wages_yoy_pct'].value).toBe(1.5);
       
       // Derived: yield_curve_30_2 ( 4.0 - 4.5 = -0.5 )
-      expect(latest['yield_curve_30_2']).toBe(-0.5);
+      expect(latest['yield_curve_30_2'].value).toBe(-0.5);
       
       // Derived: credit_spread_delta ( 4.6 - avg(4.1, 4.2, 4.3, 4.4, 4.6, 4.6) )
       // avg = 26.2 / 6 = 4.3666...
       // delta = 4.6 - 4.3666 = 0.2333...
-      expect(latest['credit_spread_delta']).toBeCloseTo(0.2333, 4);
+      expect(latest['credit_spread_delta'].value).toBeCloseTo(0.2333, 4);
 
       // Manual indicator
-      expect(latest['MANUAL_TEST']).toBe(99.9);
+      expect(latest['MANUAL_TEST'].value).toBe(99.9);
+      expect(latest['MANUAL_TEST'].as_of).toBe('2023-05');
     });
 
     it('should fetch and update cache if cache is missing', async () => {
@@ -216,7 +218,7 @@ describe('fredFetcher', () => {
       });
 
       const latest = await getLatestValues();
-      expect(latest['CPIAUCSL']).toBe(110.0);
+      expect(latest['CPIAUCSL'].value).toBe(110.0);
       expect(fs.writeFile).toHaveBeenCalled();
     });
   });

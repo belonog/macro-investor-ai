@@ -5,8 +5,8 @@ import { runEodMonitor } from '../src/monitor/eodMonitor.js';
 vi.mock('fs');
 vi.mock('../src/data/fetchers/fredFetcher', () => ({
   getLatestValues: vi.fn().mockResolvedValue({
-    'DGS30': 5.2, // Above hard exit 5.1
-    'DGS10': 4.0
+    'DGS30': { value: 5.2, unit: '%', as_of: '2026-05-15', source: 'fred' }, // Above hard exit 5.1
+    'DGS10': { value: 4.0, unit: '%', as_of: '2026-05-15', source: 'fred' }
   }),
   TARGET_SERIES: {}
 }));

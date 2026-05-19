@@ -80,10 +80,11 @@ export async function runRegimeAgent(
     const indicators: MacroIndicators = {};
     for (const [key, val] of Object.entries(macroData)) {
       if (typeof val === 'number') {
+        // Fallback for any legacy number-only data, but ideally fetchers provide RawIndicator
         indicators[key] = {
           value: val,
           unit: 'N/A',
-          asOf: new Date().toISOString(),
+          as_of: new Date().toISOString().split('T')[0],
           source: 'unknown',
         };
       } else {

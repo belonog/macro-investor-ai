@@ -55,7 +55,7 @@ export type RegimeQuadrant = z.infer<typeof RegimeQuadrantSchema>;
 export const RawIndicatorSchema = z.object({
   value: z.number(),
   unit: z.string(),
-  asOf: z.string(),
+  as_of: z.string(),
   source: z.string(),
 });
 export type RawIndicator = z.infer<typeof RawIndicatorSchema>;

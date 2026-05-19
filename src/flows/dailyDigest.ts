@@ -69,9 +69,9 @@ export async function runDailyDigest() {
     const be5y = latestValues['T5YIE'];
     const nfp = latestValues['nfp_3m_avg_k'];
 
-    if (y30 !== undefined) message += `- 30Y Yield: ${y30.toFixed(2)}%\n`;
-    if (be5y !== undefined) message += `- 5Y Breakeven: ${be5y.toFixed(2)}%\n`;
-    if (nfp !== undefined) message += `- NFP (3m Avg): ${nfp.toFixed(0)}k\n`;
+    if (y30 !== undefined) message += `- 30Y Yield: ${y30.value.toFixed(2)}%\n`;
+    if (be5y !== undefined) message += `- 5Y Breakeven: ${be5y.value.toFixed(2)}%\n`;
+    if (nfp !== undefined) message += `- NFP (3m Avg): ${nfp.value.toFixed(0)}k\n`;
     message += `\n`;
 
     if (earnings.length > 0) {

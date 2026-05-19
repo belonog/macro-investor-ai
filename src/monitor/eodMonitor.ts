@@ -4,6 +4,7 @@ import {
   PositionSnapshot, 
   PortfolioConfig, 
   Alert, 
+  MacroIndicators,
 } from '../types/index.js';
 import { getLatestValues } from '../data/fetchers/fredFetcher.js';
 
@@ -54,7 +55,7 @@ export function checkStopProximity(prices: Record<string, number>, config: Portf
 /**
  * Checks if macro indicators have crossed thesis invalidation thresholds.
  */
-export function checkThesisThresholds(indicators: Record<string, number>, config: PortfolioConfig): Alert[] {
+export function checkThesisThresholds(indicators: MacroIndicators, config: PortfolioConfig): Alert[] {
   const alerts: Alert[] = [];
   const now = new Date().toISOString();
 
@@ -62,7 +63,8 @@ export function checkThesisThresholds(indicators: Record<string, number>, config
     if (posConfig.threshold_monitor) {
       const { indicator, warn_at, hard_exit_at } = posConfig.threshold_monitor;
       const fredId = INDICATOR_MAP[indicator];
-      const currentValue = indicators[fredId];
+      const indicatorObj = indicators[fredId];
+      const currentValue = indicatorObj?.value;
 
       if (currentValue !== undefined) {
         if (currentValue >= hard_exit_at) {

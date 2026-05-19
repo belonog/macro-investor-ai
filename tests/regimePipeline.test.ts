@@ -93,17 +93,17 @@ describe('regimePipeline - classifyQuadrant', () => {
 describe('regimePipeline - runPipeline', () => {
   it('runs the full pipeline successfully', () => {
     const indicators = {
-      cpi_yoy_pct: { value: 3.0, unit: '%', asOf: '2026-05-15', source: 'fred' },
-      pce_yoy_pct: { value: 2.5, unit: '%', asOf: '2026-05-15', source: 'fred' },
-      breakeven_5y_pct: { value: 2.2, unit: '%', asOf: '2026-05-15', source: 'fred' },
-      ppi_yoy_pct: { value: 2.1, unit: '%', asOf: '2026-05-15', source: 'fred' },
-      oil_price_3m_change_pct: { value: 5.0, unit: '%', asOf: '2026-05-15', source: 'eia' },
-      fertilizer_index_3m_change_pct: { value: 2.0, unit: '%', asOf: '2026-05-15', source: 'bls' },
-      ism_manufacturing: { value: 52.0, unit: 'index', asOf: '2026-05-15', source: 'ism' },
-      ism_services: { value: 54.0, unit: 'index', asOf: '2026-05-15', source: 'ism' },
-      real_gdp_qoq_ann_pct: { value: 2.1, unit: '%', asOf: '2026-05-15', source: 'bea' },
-      nfp_3m_avg_k: { value: 200, unit: 'k', asOf: '2026-05-15', source: 'bls' },
-      retail_sales_yoy_real_pct: { value: 2.5, unit: '%', asOf: '2026-05-15', source: 'census' },
+      cpi_yoy_pct: { value: 3.0, unit: '%', as_of: '2026-05-15', source: 'fred' },
+      pce_yoy_pct: { value: 2.5, unit: '%', as_of: '2026-05-15', source: 'fred' },
+      breakeven_5y_pct: { value: 2.2, unit: '%', as_of: '2026-05-15', source: 'fred' },
+      ppi_yoy_pct: { value: 2.1, unit: '%', as_of: '2026-05-15', source: 'fred' },
+      oil_price_3m_change_pct: { value: 5.0, unit: '%', as_of: '2026-05-15', source: 'eia' },
+      fertilizer_index_3m_change_pct: { value: 2.0, unit: '%', as_of: '2026-05-15', source: 'bls' },
+      ism_manufacturing: { value: 52.0, unit: 'index', as_of: '2026-05-15', source: 'ism' },
+      ism_services: { value: 54.0, unit: 'index', as_of: '2026-05-15', source: 'ism' },
+      real_gdp_qoq_ann_pct: { value: 2.1, unit: '%', as_of: '2026-05-15', source: 'bea' },
+      nfp_3m_avg_k: { value: 200, unit: 'k', as_of: '2026-05-15', source: 'bls' },
+      retail_sales_yoy_real_pct: { value: 2.5, unit: '%', as_of: '2026-05-15', source: 'census' },
     };
     
     const input = {
@@ -201,7 +201,7 @@ describe('regimePipeline - helpers', () => {
 
   it('buildLLMInput produces valid JSON', () => {
     const indicators = {
-      cpi_yoy_pct: { value: 3.0, unit: '%', asOf: '2026-05-15', source: 'fred' },
+      cpi_yoy_pct: { value: 3.0, unit: '%', as_of: '2026-05-15', source: 'fred' },
     };
     const input = {
       indicators,

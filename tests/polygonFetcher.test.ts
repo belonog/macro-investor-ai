@@ -30,9 +30,11 @@ describe('polygonFetcher', () => {
 
   it('fetches gold spot price', async () => {
     vi.mocked(axios.get).mockResolvedValueOnce({
-      data: { results: [{ c: 2350.5 }] }
+      data: { results: [{ c: 2350.5, t: 1715644800000 }] }
     });
-    const price = await getGoldSpotPrice();
-    expect(price).toBe(2350.5);
+    const indicator = await getGoldSpotPrice();
+    expect(indicator.value).toBe(2350.5);
+    expect(indicator.unit).toBe('USD per troy oz');
+    expect(indicator.as_of).toBe('2024-05-14');
   });
 });

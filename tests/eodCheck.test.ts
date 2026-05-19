@@ -47,7 +47,7 @@ describe('eodCheck flow', () => {
 
     vi.mocked(flexReportFetcher.fetchPortfolioSnapshot).mockResolvedValue(mockSnapshot);
     vi.mocked(fredFetcher.getLatestValues).mockResolvedValue({
-      'DGS30': 4.5
+      'DGS30': { value: 4.5, unit: '%', as_of: '2026-05-15', source: 'fred' }
     });
     vi.mocked(polygonFetcher.getEodPrices).mockResolvedValue({
       'AAPL': 140

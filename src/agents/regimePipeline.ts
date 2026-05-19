@@ -110,8 +110,8 @@ export function redistributeWeights(
       }
     }
 
-    if (indicator && typeof indicator === 'object' && 'asOf' in indicator && typeof indicator.asOf === 'string') {
-      if (isStale(indicator.asOf, key, currentDate)) {
+    if (indicator && typeof indicator === 'object' && 'as_of' in indicator && typeof indicator.as_of === 'string') {
+      if (isStale(indicator.as_of, key, currentDate)) {
         if (weights[key] >= 0.15) staleHighWeight = true;
         gaps.push({
           indicator:             key,
@@ -178,7 +178,7 @@ export function computeCategoryScore(
       effective_weight:      round(effectiveWeight,      3),
       original_weight:       round(weights[key],         3),
       weighted_contribution: round(weightedContribution, 3),
-      as_of:                 indicator.asOf,
+      as_of:                 indicator.as_of,
     });
   }
 
@@ -458,11 +458,11 @@ const SUPPLEMENTARY_KEYS: string[] = [
 function extractRaw(
   indicators: MacroIndicators,
   keys: Iterable<string>
-): Record<string, { value: number; unit: string; asOf: string }> {
-  const result: Record<string, { value: number; unit: string; asOf: string }> = {};
+): Record<string, { value: number; unit: string; as_of: string }> {
+  const result: Record<string, { value: number; unit: string; as_of: string }> = {};
   for (const key of keys) {
     const ind = indicators[key];
-    if (ind) result[key] = { value: ind.value, unit: ind.unit, asOf: ind.asOf };
+    if (ind) result[key] = { value: ind.value, unit: ind.unit, as_of: ind.as_of };
   }
   return result;
 }

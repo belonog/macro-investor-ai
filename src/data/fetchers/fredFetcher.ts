@@ -1,42 +1,152 @@
 import axios from 'axios';
 import fs from 'fs/promises';
 import path from 'path';
-import { DataPoint, DataPointSchema, MacroSnapshot, MacroCacheSchema } from '../../types/index.js';
+import { DataPoint, DataPointSchema, MacroSnapshot, MacroCacheSchema, MacroIndicators, RawIndicator } from '../../types/index.js';
 import { getManualIndicators } from '../../utils/manualIndicators.js';
 
 const FRED_BASE_URL = 'https://api.stlouisfed.org/fred';
 
-export const TARGET_SERIES: Record<string, string> = {
+export interface SeriesMetadata {
+  description: string;
+  unit: string;
+  source: string;
+}
+
+export const TARGET_SERIES: Record<string, SeriesMetadata> = {
   // Inflation
-  'CPIAUCSL': 'Consumer Price Index (CPI) YoY',
-  'PCEPI': 'Personal Consumption Expenditures (PCE) YoY',
-  'PPIACO': 'Producer Price Index (PPI) YoY',
-  'T5YIE': '5-Year Breakeven Inflation Rate',
-  'T5YIFR': '5-Year, 5-Year Forward Inflation Expectation Rate',
-  'ECIWAG': 'Employment Cost Index: Wages and Salaries (ECI)',
-  'DFII5': '5-Year Treasury Inflation-Indexed Security, Constant Maturity (TIPS Real Yield)',
+  'CPIAUCSL': {
+    description: 'Consumer Price Index (CPI) YoY',
+    unit: '% YoY',
+    source: 'BLS CUUR0000SA0'
+  },
+  'PCEPI': {
+    description: 'Personal Consumption Expenditures (PCE) YoY',
+    unit: '% YoY',
+    source: 'BEA'
+  },
+  'PPIACO': {
+    description: 'Producer Price Index (PPI) YoY',
+    unit: '% YoY',
+    source: 'BLS WPSFD4'
+  },
+  'T5YIE': {
+    description: '5-Year Breakeven Inflation Rate',
+    unit: '% implied annual inflation',
+    source: 'FRED T5YIE'
+  },
+  'T5YIFR': {
+    description: '5-Year, 5-Year Forward Inflation Expectation Rate',
+    unit: '% implied annual inflation (5yr fwd, 5yr tenor)',
+    source: 'FRED T5YIFR'
+  },
+  'ECIWAG': {
+    description: 'Employment Cost Index: Wages and Salaries (ECI)',
+    unit: '% YoY',
+    source: 'BLS ECI'
+  },
+  'DFII5': {
+    description: '5-Year Treasury Inflation-Indexed Security, Constant Maturity (TIPS Real Yield)',
+    unit: '% real yield',
+    source: 'FRED DFII5'
+  },
   // Growth
-  'GDPC1': 'Real Gross Domestic Product (GDP)',
-  'RSAFS': 'Advance Real Retail and Food Services Sales',
-  'RSXFS': 'Advance Retail Sales: Retail Trade and Food Services (Excl Motor Vehicle & Parts)',
-  'PAYEMS': 'Nonfarm Payrolls (NFP)',
-  'INDPRO': 'Industrial Production Index',
-  'CAPUTLG211S': 'Capacity Utilization: Total Industry',
-  'BAMLH0A0HYM2': 'ICE BofA US High Yield Index Option-Adjusted Spread',
-  'BAMLC0A0CM': 'ICE BofA US Corporate Index Option-Adjusted Spread',
-  'UMCSENT': 'University of Michigan: Consumer Sentiment',
-  'PSAVERT': 'Personal Saving Rate',
-  'DCOILWTICO': 'Crude Oil Prices: West Texas Intermediate (WTI)',
-  'DHHNGSP': 'Henry Hub Natural Gas Spot Price',
+  'GDPC1': {
+    description: 'Real Gross Domestic Product (GDP)',
+    unit: '% annualized QoQ',
+    source: 'BEA advance estimate'
+  },
+  'RSAFS': {
+    description: 'Advance Real Retail and Food Services Sales',
+    unit: '% YoY real (CPI-deflated)',
+    source: 'Census / FRED RSAFS deflated by CPI'
+  },
+  'RSXFS': {
+    description: 'Advance Retail Sales: Retail Trade and Food Services (Excl Motor Vehicle & Parts)',
+    unit: '% YoY',
+    source: 'Census'
+  },
+  'PAYEMS': {
+    description: 'Nonfarm Payrolls (NFP)',
+    unit: 'thousands (3-month rolling average)',
+    source: 'BLS CES0000000001'
+  },
+  'INDPRO': {
+    description: 'Industrial Production Index',
+    unit: 'index',
+    source: 'Federal Reserve G.17'
+  },
+  'CAPUTLG211S': {
+    description: 'Capacity Utilization: Total Industry',
+    unit: '% of capacity',
+    source: 'Federal Reserve G.17'
+  },
+  'BAMLH0A0HYM2': {
+    description: 'ICE BofA US High Yield Index Option-Adjusted Spread',
+    unit: 'basis points OAS',
+    source: 'ICE BofA US HY / FRED BAMLH0A0HYM2'
+  },
+  'BAMLC0A0CM': {
+    description: 'ICE BofA US Corporate Index Option-Adjusted Spread',
+    unit: 'basis points OAS',
+    source: 'ICE BofA IG / FRED BAMLC0A0CM'
+  },
+  'UMCSENT': {
+    description: 'University of Michigan: Consumer Sentiment',
+    unit: 'index',
+    source: 'University of Michigan'
+  },
+  'PSAVERT': {
+    description: 'Personal Saving Rate',
+    unit: '% of disposable income',
+    source: 'BEA'
+  },
+  'DCOILWTICO': {
+    description: 'Crude Oil Prices: West Texas Intermediate (WTI)',
+    unit: 'USD per barrel',
+    source: 'EIA'
+  },
+  'DHHNGSP': {
+    description: 'Henry Hub Natural Gas Spot Price',
+    unit: 'USD per MMBtu',
+    source: 'EIA'
+  },
   // Rates & Yield Curve
-  'FEDFUNDS': 'Effective Federal Funds Rate',
-  'DGS2': '2-Year Treasury Yield',
-  'DGS10': '10-Year Treasury Yield',
-  'DGS30': '30-Year Treasury Yield',
-  'T10Y2Y': '10-Year to 2-Year Treasury Spread (Yield Curve)',
+  'FEDFUNDS': {
+    description: 'Effective Federal Funds Rate',
+    unit: '% effective rate',
+    source: 'FRED EFFR'
+  },
+  'DGS2': {
+    description: '2-Year Treasury Yield',
+    unit: '% nominal',
+    source: 'FRED DGS2'
+  },
+  'DGS10': {
+    description: '10-Year Treasury Yield',
+    unit: '% nominal',
+    source: 'FRED DGS10'
+  },
+  'DGS30': {
+    description: '30-Year Treasury Yield',
+    unit: '% nominal',
+    source: 'FRED DGS30'
+  },
+  'T10Y2Y': {
+    description: '10-Year to 2-Year Treasury Spread (Yield Curve)',
+    unit: 'basis points (10Y minus 2Y)',
+    source: 'FRED T10Y2Y'
+  },
   // Dollar & Liquidity
-  'DTWEXBGS': 'Trade Weighted U.S. Dollar Index (DXY Proxy)',
-  'M2SL': 'M2 Money Supply'
+  'DTWEXBGS': {
+    description: 'Trade Weighted U.S. Dollar Index (DXY Proxy)',
+    unit: 'index (trade-weighted)',
+    source: 'FRED DTWEXBGS'
+  },
+  'M2SL': {
+    description: 'M2 Money Supply',
+    unit: 'billions of dollars',
+    source: 'Federal Reserve H.6'
+  }
 };
 
 /**
@@ -185,10 +295,15 @@ export async function updateMacroCache(): Promise<MacroSnapshot> {
  * Derives metrics from a macro snapshot for a given base date.
  * This function is used both for the latest data and for backtesting.
  */
-export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Date().toISOString()): Record<string, number> {
-  const latest: Record<string, number> = {};
+export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Date().toISOString()): MacroIndicators {
+  const indicators: MacroIndicators = {};
   
   // Helpers
+  const getSeriesLatestPoint = (id: string) => {
+    const s = snapshot.series[id]?.filter(p => p.date <= baseDate);
+    return s && s.length > 0 ? s[s.length - 1] : null;
+  };
+
   const getSeriesValue = (id: string, offset: number = 0) => {
     const s = snapshot.series[id]?.filter(p => p.date <= baseDate);
     return s && s.length > offset ? s[s.length - 1 - offset].value : null;
@@ -219,23 +334,52 @@ export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Da
     return null;
   };
 
+  const wrap = (key: string, value: number | null, overrideMetadata?: Partial<RawIndicator>): RawIndicator | null => {
+    if (value === null) return null;
+    
+    // Default metadata from TARGET_SERIES if available
+    const metadata = TARGET_SERIES[key] || { description: key, unit: 'N/A', source: 'unknown' };
+    const latestPoint = getSeriesLatestPoint(key);
+    
+    return {
+      value,
+      unit: overrideMetadata?.unit ?? metadata.unit,
+      source: overrideMetadata?.source ?? metadata.source,
+      as_of: overrideMetadata?.as_of ?? latestPoint?.date ?? baseDate.split('T')[0],
+    };
+  };
+
   // 1. Inflation Metrics
   const cpiYoY = calculateYoY('CPIAUCSL');
-  if (cpiYoY !== null) latest['cpi_yoy_pct'] = cpiYoY;
+  if (cpiYoY !== null) {
+    const w = wrap('CPIAUCSL', cpiYoY);
+    if (w) indicators['cpi_yoy_pct'] = w;
+  }
 
   const pceYoY = calculateYoY('PCEPI');
-  if (pceYoY !== null) latest['pce_yoy_pct'] = pceYoY;
+  if (pceYoY !== null) {
+    const w = wrap('PCEPI', pceYoY);
+    if (w) indicators['pce_yoy_pct'] = w;
+  }
 
   const ppiYoY = calculateYoY('PPIACO');
-  if (ppiYoY !== null) latest['ppi_yoy_pct'] = ppiYoY;
+  if (ppiYoY !== null) {
+    const w = wrap('PPIACO', ppiYoY);
+    if (w) indicators['ppi_yoy_pct'] = w;
+  }
 
   const be5y = getSeriesValue('T5YIE', 0);
-  if (be5y !== null) latest['breakeven_5y_pct'] = be5y;
+  if (be5y !== null) {
+    const w = wrap('T5YIE', be5y);
+    if (w) indicators['breakeven_5y_pct'] = w;
+  }
 
   const oilCurr = getSeriesValue('DCOILWTICO', 0);
   const oil3mAgo = getSeriesValueMonthsAgo('DCOILWTICO', 3);
   if (oilCurr !== null && oil3mAgo !== null && oil3mAgo !== 0) {
-    latest['oil_price_3m_change_pct'] = ((oilCurr - oil3mAgo) / oil3mAgo) * 100;
+    const val = ((oilCurr - oil3mAgo) / oil3mAgo) * 100;
+    const w = wrap('DCOILWTICO', val, { unit: '% change over prior 90 days' });
+    if (w) indicators['oil_price_3m_change_pct'] = w;
   }
 
   // 2. Growth Metrics
@@ -243,7 +387,9 @@ export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Da
   const gdpPrior = getSeriesValue('GDPC1', 1); // Quarterly
   if (gdpCurr !== null && gdpPrior !== null && gdpPrior !== 0) {
     const qoq = (gdpCurr - gdpPrior) / gdpPrior;
-    latest['real_gdp_qoq_ann_pct'] = (Math.pow(1 + qoq, 4) - 1) * 100;
+    const val = (Math.pow(1 + qoq, 4) - 1) * 100;
+    const w = wrap('GDPC1', val);
+    if (w) indicators['real_gdp_qoq_ann_pct'] = w;
   }
 
   const nfpSeries = snapshot.series['PAYEMS']?.filter(p => p.date <= baseDate);
@@ -253,39 +399,55 @@ export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Da
       nfpSeries[nfpSeries.length - 2].value - nfpSeries[nfpSeries.length - 3].value,
       nfpSeries[nfpSeries.length - 3].value - nfpSeries[nfpSeries.length - 4].value,
     ];
-    latest['nfp_3m_avg_k'] = changes.reduce((a, b) => a + b, 0) / 3;
-    latest['nfp_3m_avg'] = latest['nfp_3m_avg_k'];
+    const val = changes.reduce((a, b) => a + b, 0) / 3;
+    const w = wrap('PAYEMS', val, { unit: 'thousands (3-month rolling average of monthly NFP)' });
+    if (w) indicators['nfp_3m_avg_k'] = w;
   }
 
   const rsNominalYoY = calculateYoY('RSAFS');
   if (rsNominalYoY !== null && cpiYoY !== null) {
-    latest['retail_sales_yoy_real_pct'] = rsNominalYoY - cpiYoY;
+    const val = rsNominalYoY - cpiYoY;
+    const w = wrap('RSAFS', val);
+    if (w) indicators['retail_sales_yoy_real_pct'] = w;
   }
 
   const eciYoY = calculateYoY('ECIWAG');
   if (eciYoY !== null && cpiYoY !== null) {
-    latest['real_wages_yoy_pct'] = eciYoY - cpiYoY;
+    const val = eciYoY - cpiYoY;
+    const w = wrap('ECIWAG', val, { unit: '% YoY (ECI wages YoY minus CPI YoY)' });
+    if (w) indicators['real_wages_yoy_pct'] = w;
   }
 
   // 3. Keep raw series and other legacy derived metrics
   for (const seriesId of Object.keys(snapshot.series)) {
     const val = getSeriesValue(seriesId, 0);
     if (val !== null) {
-      latest[seriesId] = val;
+      const w = wrap(seriesId, val);
+      if (w) indicators[seriesId] = w;
     }
   }
 
   const y30 = getSeriesValue('DGS30');
   const y2 = getSeriesValue('DGS2');
   if (y30 !== null && y2 !== null) {
-    latest['yield_curve_30_2'] = y30 - y2;
+    const val = y30 - y2;
+    const w = wrap('DGS30', val, { 
+      unit: 'percentage points (30Y minus 2Y)',
+      source: 'Calculated from FRED DGS30, DGS2'
+    });
+    if (w) indicators['yield_curve_30_2'] = w;
   }
 
   const hySpread = getSeriesValue('BAMLH0A0HYM2');
   const s = snapshot.series['BAMLH0A0HYM2']?.filter(p => p.date <= baseDate);
   if (hySpread !== null && s && s.length >= 6) {
     const hyAvg6m = s.slice(-6).reduce((sum, p) => sum + p.value, 0) / 6;
-    latest['credit_spread_delta'] = hySpread - hyAvg6m;
+    const val = hySpread - hyAvg6m;
+    const w = wrap('BAMLH0A0HYM2', val, {
+      unit: 'basis points (OAS minus 6-month moving average)',
+      source: 'Calculated from FRED BAMLH0A0HYM2'
+    });
+    if (w) indicators['credit_spread_delta'] = w;
   }
 
   // Merge manual indicators (if baseDate is now, or if we have historical manual data)
@@ -293,20 +455,25 @@ export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Da
   for (const [key, indicator] of Object.entries(manual)) {
     // Only use manual indicators if they are not newer than baseDate
     if (indicator.updated_at <= baseDate) {
-      latest[key] = indicator.value;
+      indicators[key] = {
+        value: indicator.value,
+        unit: 'manual',
+        source: indicator.source,
+        as_of: indicator.period,
+      };
     }
   }
 
-  return latest;
+  return indicators;
 }
 
 /**
  * Returns the latest single value for each series in the target basket,
  * along with derived trend and spread metrics.
  * Attempts to read from cache first, falls back to fetching.
- * @returns Promise<Record<string, number>>
+ * @returns Promise<MacroIndicators>
  */
-export async function getLatestValues(): Promise<Record<string, number>> {
+export async function getLatestValues(): Promise<MacroIndicators> {
   let snapshot: MacroSnapshot;
   try {
     const rawCache = await fs.readFile(CACHE_PATH, 'utf-8');

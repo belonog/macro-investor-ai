@@ -138,9 +138,9 @@ describe('dailyDigest', () => {
     ]);
     
     vi.mocked(getLatestValues).mockResolvedValue({
-      DGS30: 4.5,
-      T5YIE: 2.3,
-      nfp_3m_avg_k: 150
+      DGS30: { value: 4.5, unit: '%', as_of: '2026-05-15', source: 'fred' },
+      T5YIE: { value: 2.3, unit: '%', as_of: '2026-05-15', source: 'fred' },
+      nfp_3m_avg_k: { value: 150, unit: 'k', as_of: '2026-05-15', source: 'fred' }
     });
 
     await runDailyDigest();

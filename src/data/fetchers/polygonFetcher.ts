@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { EarningsEvent } from '../../types/index.js';
+import { EarningsEvent, RawIndicator } from '../../types/index.js';
 
 const POLYGON_BASE = 'https://api.polygon.io';
 
@@ -50,14 +50,28 @@ export async function getEarningsCalendar(symbols: string[], _daysAhead: number)
 
 /**
  * Gets the gold spot price.
- * @returns Promise<number>
+ * @returns Promise<RawIndicator>
  */
-export async function getGoldSpotPrice(): Promise<number> {
+export async function getGoldSpotPrice(): Promise<RawIndicator> {
   const response = await axios.get(`${POLYGON_BASE}/v2/aggs/ticker/C:XAUUSD/prev`, {
     params: { adjusted: true, apiKey: process.env.POLYGON_API_KEY }
   });
+  
+  let value = 0;
+  let asOf = new Date().toISOString().split('T')[0];
+  
   if (response.data && response.data.results && response.data.results.length > 0) {
-    return response.data.results[0].c;
+    value = response.data.results[0].c;
+    // Polygon timestamp is in ms
+    if (response.data.results[0].t) {
+      asOf = new Date(response.data.results[0].t).toISOString().split('T')[0];
+    }
   }
-  return 0;
+  
+  return {
+    value,
+    unit: 'USD per troy oz',
+    source: 'COMEX spot',
+    as_of: asOf,
+  };
 }
