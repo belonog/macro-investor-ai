@@ -334,7 +334,7 @@ export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Da
     return null;
   };
 
-  const wrap = (key: string, value: number | null, overrideMetadata?: Partial<RawIndicator>): RawIndicator | null => {
+  const wrap = (key: string, value: number | null, overrideMetadata?: Partial<RawIndicator> & { description?: string }): RawIndicator | null => {
     if (value === null) return null;
     
     // Default metadata from TARGET_SERIES if available
@@ -344,6 +344,7 @@ export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Da
     return {
       value,
       unit: overrideMetadata?.unit ?? metadata.unit,
+      description: overrideMetadata?.description ?? metadata.description,
       source: overrideMetadata?.source ?? metadata.source,
       as_of: overrideMetadata?.as_of ?? latestPoint?.date ?? baseDate.split('T')[0],
     };
@@ -352,25 +353,25 @@ export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Da
   // 1. Inflation Metrics
   const cpiYoY = calculateYoY('CPIAUCSL');
   if (cpiYoY !== null) {
-    const w = wrap('CPIAUCSL', cpiYoY);
+    const w = wrap('CPIAUCSL', cpiYoY, { description: 'Consumer Price Index (CPI) Year-over-Year % Change' });
     if (w) indicators['cpi_yoy_pct'] = w;
   }
 
   const pceYoY = calculateYoY('PCEPI');
   if (pceYoY !== null) {
-    const w = wrap('PCEPI', pceYoY);
+    const w = wrap('PCEPI', pceYoY, { description: 'Personal Consumption Expenditures (PCE) Year-over-Year % Change' });
     if (w) indicators['pce_yoy_pct'] = w;
   }
 
   const ppiYoY = calculateYoY('PPIACO');
   if (ppiYoY !== null) {
-    const w = wrap('PPIACO', ppiYoY);
+    const w = wrap('PPIACO', ppiYoY, { description: 'Producer Price Index (PPI) Year-over-Year % Change' });
     if (w) indicators['ppi_yoy_pct'] = w;
   }
 
   const be5y = getSeriesValue('T5YIE', 0);
   if (be5y !== null) {
-    const w = wrap('T5YIE', be5y);
+    const w = wrap('T5YIE', be5y, { description: '5-Year Breakeven Inflation Rate (%)' });
     if (w) indicators['breakeven_5y_pct'] = w;
   }
 
@@ -378,7 +379,10 @@ export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Da
   const oil3mAgo = getSeriesValueMonthsAgo('DCOILWTICO', 3);
   if (oilCurr !== null && oil3mAgo !== null && oil3mAgo !== 0) {
     const val = ((oilCurr - oil3mAgo) / oil3mAgo) * 100;
-    const w = wrap('DCOILWTICO', val, { unit: '% change over prior 90 days' });
+    const w = wrap('DCOILWTICO', val, { 
+      unit: '% change over prior 90 days',
+      description: 'WTI Crude Oil Price 3-Month % Change'
+    });
     if (w) indicators['oil_price_3m_change_pct'] = w;
   }
 
@@ -388,7 +392,7 @@ export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Da
   if (gdpCurr !== null && gdpPrior !== null && gdpPrior !== 0) {
     const qoq = (gdpCurr - gdpPrior) / gdpPrior;
     const val = (Math.pow(1 + qoq, 4) - 1) * 100;
-    const w = wrap('GDPC1', val);
+    const w = wrap('GDPC1', val, { description: 'Real GDP Quarter-over-Quarter Annualized % Change' });
     if (w) indicators['real_gdp_qoq_ann_pct'] = w;
   }
 
@@ -400,21 +404,27 @@ export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Da
       nfpSeries[nfpSeries.length - 3].value - nfpSeries[nfpSeries.length - 4].value,
     ];
     const val = changes.reduce((a, b) => a + b, 0) / 3;
-    const w = wrap('PAYEMS', val, { unit: 'thousands (3-month rolling average of monthly NFP)' });
+    const w = wrap('PAYEMS', val, { 
+      unit: 'thousands (3-month rolling average of monthly NFP)',
+      description: 'Nonfarm Payrolls 3-Month Rolling Average Change (Thousands)'
+    });
     if (w) indicators['nfp_3m_avg_k'] = w;
   }
 
   const rsNominalYoY = calculateYoY('RSAFS');
   if (rsNominalYoY !== null && cpiYoY !== null) {
     const val = rsNominalYoY - cpiYoY;
-    const w = wrap('RSAFS', val);
+    const w = wrap('RSAFS', val, { description: 'Real Retail Sales Year-over-Year % Change (CPI-Adjusted)' });
     if (w) indicators['retail_sales_yoy_real_pct'] = w;
   }
 
   const eciYoY = calculateYoY('ECIWAG');
   if (eciYoY !== null && cpiYoY !== null) {
     const val = eciYoY - cpiYoY;
-    const w = wrap('ECIWAG', val, { unit: '% YoY (ECI wages YoY minus CPI YoY)' });
+    const w = wrap('ECIWAG', val, { 
+      unit: '% YoY (ECI wages YoY minus CPI YoY)',
+      description: 'Real Wages Year-over-Year % Change (ECI Wages minus CPI)'
+    });
     if (w) indicators['real_wages_yoy_pct'] = w;
   }
 
@@ -433,6 +443,7 @@ export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Da
     const val = y30 - y2;
     const w = wrap('DGS30', val, { 
       unit: 'percentage points (30Y minus 2Y)',
+      description: 'Yield Curve Spread: 30Y minus 2Y (Percentage Points)',
       source: 'Calculated from FRED DGS30, DGS2'
     });
     if (w) indicators['yield_curve_30_2'] = w;
@@ -445,6 +456,7 @@ export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Da
     const val = hySpread - hyAvg6m;
     const w = wrap('BAMLH0A0HYM2', val, {
       unit: 'basis points (OAS minus 6-month moving average)',
+      description: 'High Yield Credit Spread Delta (OAS minus 6-Month Moving Average)',
       source: 'Calculated from FRED BAMLH0A0HYM2'
     });
     if (w) indicators['credit_spread_delta'] = w;
@@ -458,6 +470,7 @@ export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Da
       indicators[key] = {
         value: indicator.value,
         unit: 'manual',
+        description: indicator.description,
         source: indicator.source,
         as_of: indicator.period,
       };
