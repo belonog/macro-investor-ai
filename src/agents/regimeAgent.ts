@@ -84,6 +84,7 @@ export async function runRegimeAgent(
         indicators[key] = {
           value: val,
           unit: 'N/A',
+          description: key,
           as_of: new Date().toISOString().split('T')[0],
           source: 'unknown',
         };

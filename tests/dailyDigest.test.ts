@@ -138,9 +138,9 @@ describe('dailyDigest', () => {
     ]);
     
     vi.mocked(getLatestValues).mockResolvedValue({
-      DGS30: { value: 4.5, unit: '%', as_of: '2026-05-15', source: 'fred' },
-      T5YIE: { value: 2.3, unit: '%', as_of: '2026-05-15', source: 'fred' },
-      nfp_3m_avg_k: { value: 150, unit: 'k', as_of: '2026-05-15', source: 'fred' }
+      DGS30: { value: 4.5, unit: '%', description: '30Y Yield', as_of: '2026-05-15', source: 'fred' },
+      T5YIE: { value: 2.3, unit: '%', description: '5Y Breakeven', as_of: '2026-05-15', source: 'fred' },
+      nfp_3m_avg_k: { value: 150, unit: 'k', description: 'NFP 3M Avg', as_of: '2026-05-15', source: 'fred' }
     });
 
     await runDailyDigest();
