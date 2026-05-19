@@ -154,7 +154,6 @@ describe('fredFetcher', () => {
             'T5YIE': Array(7).fill({ date: '2023-01-01', value: 0 }),
             'T5YIFR': Array(7).fill({ date: '2023-01-01', value: 0 }),
             'DFII5': Array(7).fill({ date: '2023-01-01', value: 0 }),
-            'GDPC1': Array(7).fill({ date: '2023-01-01', value: 0 }),
             'RSAFS': Array(7).fill({ date: '2023-01-01', value: 0 }),
             'RSXFS': Array(7).fill({ date: '2023-01-01', value: 0 }),
             'INDPRO': Array(7).fill({ date: '2023-01-01', value: 0 }),

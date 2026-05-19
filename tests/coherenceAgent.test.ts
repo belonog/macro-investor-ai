@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import fs from 'fs';
 import { runCoherenceAgent, CoherenceInput } from '../src/agents/coherenceAgent.js';
+import { RegimeAssessment } from '../src/types/index.js';
 
 const { mockGenerateAgentResponse } = vi.hoisted(() => ({
   mockGenerateAgentResponse: vi.fn()
@@ -45,7 +46,7 @@ describe('coherenceAgent', () => {
         fastest_path_to_being_wrong: 'Inflation spike',
         watch_next: [],
         assessed_at: new Date().toISOString()
-      }
+      } as unknown as RegimeAssessment
     };
 
     vi.mocked(fs.readFileSync).mockReturnValue('Mock Prompt: {{PORTFOLIO_CONTEXT}}');

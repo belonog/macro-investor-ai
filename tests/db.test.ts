@@ -61,11 +61,11 @@ describe('DatabaseManager', () => {
 
   it('should log an alert and retrieve it', () => {
     const alert = {
-      level: 'CRITICAL',
+      level: 'CRITICAL' as const,
       symbol: 'AAPL',
       message: 'Significant price drop',
       action: 'Check position',
-      createdAt: new Date().toISOString()
+      created_at: new Date().toISOString()
     };
 
     logAlert(alert);

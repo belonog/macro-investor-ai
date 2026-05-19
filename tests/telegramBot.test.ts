@@ -39,7 +39,7 @@ describe('telegramBot', () => {
       message: 'Test message',
       symbol: null,
       action: null,
-      createdAt: new Date().toISOString()
+      created_at: new Date().toISOString()
     });
 
     expect(mockSendMessage).not.toHaveBeenCalled();
@@ -61,7 +61,7 @@ describe('telegramBot', () => {
       symbol: 'BTC',
       message: 'Crash imminent',
       action: 'Sell all',
-      createdAt: new Date().toISOString()
+      created_at: new Date().toISOString()
     });
 
     expect(mockSendMessage).toHaveBeenCalled();

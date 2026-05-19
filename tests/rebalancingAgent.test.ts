@@ -110,7 +110,7 @@ describe('rebalancingAgent', () => {
     });
 
     mockGenerateAgentResponse.mockResolvedValue({
-      regime_portfolio_alignment_score: 0.65,
+      alignment_score: 0.65,
       alignment_grade: 'B',
       position_assessments: [
         {
@@ -135,7 +135,7 @@ describe('rebalancingAgent', () => {
     const result = await generateRebalancingReport();
 
     expect(result.alignment_grade).toBe('B');
-    expect(result.regime_portfolio_alignment_score).toBe(0.65);
+    expect(result.alignment_score).toBe(0.65);
     expect(result.position_assessments[0].symbol).toBe('TLT');
     expect(result.evaluated_at).toBeDefined();
     
