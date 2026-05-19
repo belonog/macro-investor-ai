@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { Alert } from '../src/types/index.js';
 import { logRegimeEvaluation, getRecentEvaluations, clearEvaluations, logAlert, getRecentAlerts, RegimeEvaluationRecord } from '../src/db/database.js';
 
 describe('DatabaseManager', () => {
@@ -61,12 +62,12 @@ describe('DatabaseManager', () => {
 
   it('should log an alert and retrieve it', () => {
     const alert = {
-      level: 'CRITICAL' as const,
+      level: 'CRITICAL',
       symbol: 'AAPL',
       message: 'Significant price drop',
       action: 'Check position',
       created_at: new Date().toISOString()
-    };
+    } satisfies Alert;
 
     logAlert(alert);
 

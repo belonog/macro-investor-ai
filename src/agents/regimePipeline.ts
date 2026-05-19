@@ -20,7 +20,7 @@ const CONFIG: RegimePipelineConfig = JSON.parse(fs.readFileSync(configPath, 'utf
 type IndicatorFrequency = 'daily' | 'weekly' | 'monthly' | 'quarterly';
 export type DriftStatus = 'N/A' | 'Stable' | 'Weakening' | 'Transitioning' | 'Shifted';
 
-const INDICATOR_FREQUENCY: Partial<Record<keyof MacroIndicators, IndicatorFrequency>> = {
+const INDICATOR_FREQUENCY: Record<string, IndicatorFrequency> = {
   cpi_yoy_pct:                    'monthly',
   pce_yoy_pct:                    'monthly',
   breakeven_5y_pct:               'daily',
@@ -67,7 +67,7 @@ export function isStale(
   currentDate: Date
 ): boolean {
   const frequency: IndicatorFrequency =
-    INDICATOR_FREQUENCY[indicatorKey as keyof MacroIndicators] ?? 'monthly';
+    INDICATOR_FREQUENCY[indicatorKey] ?? 'monthly';
   const limitDays = CONFIG.staleness_limits_days[frequency];
   const dataDate  = new Date(asOf);
   const ageDays   = (currentDate.getTime() - dataDate.getTime()) / 86_400_000;
@@ -91,10 +91,14 @@ export function redistributeWeights(
   let staleHighWeight   = false;
 
   for (const key of Object.keys(weights)) {
-    const indicator = (indicators as Record<string, unknown>)[key];
+    const indicator = indicators[key];
 
     if (!indicator || typeof indicator === 'number') {
-      const val = typeof indicator === 'number' ? indicator : (indicator as RawIndicator | undefined)?.value;
+      const val = typeof indicator === 'number' 
+        ? indicator 
+        : (indicator && typeof indicator === 'object' && 'value' in indicator) 
+          ? (indicator as { value: number }).value 
+          : undefined;
       if (val === undefined || val === null) {
         gaps.push({
           indicator:             key,
@@ -107,19 +111,16 @@ export function redistributeWeights(
       }
     }
 
-    if (indicator && typeof indicator === 'object') {
-      const ind = indicator as RawIndicator;
-      if (ind.asOf) {
-        if (isStale(ind.asOf, key, currentDate)) {
-          if (weights[key] >= 0.15) staleHighWeight = true;
-          gaps.push({
-            indicator:             key,
-            original_weight:        weights[key],
-            reason:                'stale',
-            weight_redistributed_to: [],
-          });
-          excluded.add(key);
-        }
+    if (indicator && typeof indicator === 'object' && 'asOf' in indicator && typeof indicator.asOf === 'string') {
+      if (isStale(indicator.asOf, key, currentDate)) {
+        if (weights[key] >= 0.15) staleHighWeight = true;
+        gaps.push({
+          indicator:             key,
+          original_weight:        weights[key],
+          reason:                'stale',
+          weight_redistributed_to: [],
+        });
+        excluded.add(key);
       }
     }
   }
@@ -163,7 +164,7 @@ export function computeCategoryScore(
   let score = 0;
 
   for (const [key, effectiveWeight] of Object.entries(effectiveWeights)) {
-    const indicator = (indicators as Record<string, RawIndicator | undefined>)[key];
+    const indicator = indicators[key];
     if (!indicator) continue;
 
     const normalizedScore     = normalize(indicator.value, bounds[key]);
@@ -433,7 +434,7 @@ export function runPipeline(input: PipelineInput): PipelineOutput {
     confidence,
     requires_human_review,
     flag_reasons,
-    regime_drift_vs_prior:             driftStatus as PipelineOutput['regime_drift_vs_prior'],
+    regime_drift_vs_prior:             driftStatus,
     drift_delta,
     normalized_inflation_indicators:  inflation.normalized_indicators,
     normalized_growth_indicators:     growth.normalized_indicators,
@@ -461,7 +462,7 @@ function extractRaw(
 ): Record<string, { value: number; unit: string; asOf: string }> {
   const result: Record<string, { value: number; unit: string; asOf: string }> = {};
   for (const key of keys) {
-    const ind = (indicators as Record<string, RawIndicator | undefined>)[key];
+    const ind = indicators[key];
     if (ind) result[key] = { value: ind.value, unit: ind.unit, asOf: ind.asOf };
   }
   return result;

@@ -4,7 +4,7 @@ import { runEventPrebrief } from '../src/flows/eventPrebrief.js';
 import * as polygonFetcher from '../src/data/fetchers/polygonFetcher.js';
 import * as interpreterAgent from '../src/agents/interpreterAgent.js';
 import * as telegramBot from '../src/alerts/telegramBot.js';
-import { EarningsEvent } from '../src/types/index.js';
+import { EarningsEvent, PortfolioConfig } from '../src/types/index.js';
 
 vi.mock('fs');
 vi.mock('../src/data/fetchers/polygonFetcher.js');
@@ -65,12 +65,12 @@ describe('eventPrebrief flow', () => {
       AAPL: {
         shares: 10,
         avg_cost: 150,
-        position_type: 'equity_single' as const,
+        position_type: 'equity_single',
         thesis: 'Growth thesis',
-        regime_match: ['Goldilocks' as const],
+        regime_match: ['Goldilocks'],
         thesis_invalidation: 'Slowdown'
       }
-    };
+    } satisfies PortfolioConfig;
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(mockConfig));
     vi.mocked(polygonFetcher.getEarningsCalendar).mockResolvedValue([]);

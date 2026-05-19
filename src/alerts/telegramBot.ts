@@ -26,7 +26,7 @@ export async function sendTelegramAlert(alert: Alert): Promise<void> {
     'INFO': '🟢',
     'WARNING': '🟡',
     'CRITICAL': '🔴'
-  }[alert.level as AlertLevel];
+  }[alert.level];
 
   const message = `${emoji} *${alert.level}* ${alert.symbol ? `— ${alert.symbol}` : ''}\n${alert.message}${alert.action ? `\n\n*Action:* ${alert.action}` : ''}`;
 

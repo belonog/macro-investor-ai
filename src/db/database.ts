@@ -138,28 +138,21 @@ export class DatabaseManager {
     );
   }
 
-  public insertRegimeHistory(assessment: RegimeAssessment) {
+  public insertRegimeHistory(assessment: RegimeAssessment & { data_inputs?: Record<string, unknown>; raw_response?: Record<string, unknown> }) {
     console.log('insertRegimeHistory assessment:', JSON.stringify(assessment, null, 2));
     const stmt = this.regimeHistoryDb.prepare(`
       INSERT INTO regime_history (quadrant, confidence, inflation_score, growth_score, drift, full_output, assessed_at)
       VALUES (?, ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))
     `);
-    
-    // Support snake_case as primary, camelCase as fallback for legacy
-    const quadrant = assessment.regime_quadrant ?? (assessment as Record<string, unknown>).regimeQuadrant;
-    const inflation_score = assessment.inflation_score ?? (assessment as Record<string, unknown>).inflationScore;
-    const growth_score = assessment.growth_score ?? (assessment as Record<string, unknown>).growthScore;
-    const drift = assessment.regime_drift_vs_prior ?? (assessment as Record<string, unknown>).regimeDriftVsPrior;
-    const assessed_at = assessment.assessed_at ?? (assessment as Record<string, unknown>).assessedAt;
 
     return stmt.run(
-      quadrant || null,
+      assessment.regime_quadrant || null,
       assessment.confidence,
-      inflation_score !== undefined ? (inflation_score as number) : null,
-      growth_score !== undefined ? (growth_score as number) : null,
-      drift || null,
+      assessment.inflation_score !== undefined ? assessment.inflation_score : null,
+      assessment.growth_score !== undefined ? assessment.growth_score : null,
+      assessment.regime_drift_vs_prior || null,
       JSON.stringify(assessment),
-      assessed_at || null
+      assessment.assessed_at || null
     );
   }
 
@@ -197,10 +190,8 @@ export class DatabaseManager {
       VALUES (?, ?, ?)
     `);
 
-    const alignment_score = output.alignment_score ?? (output as Record<string, unknown>).regime_portfolio_alignment_score;
-
     return stmt.run(
-      alignment_score,
+      output.alignment_score,
       output.alignment_grade,
       JSON.stringify(output)
     );
@@ -261,7 +252,7 @@ export interface RegimeEvaluationRecord {
   confidence: number;
   inflation_score: number;
   growth_score: number;
-  regime_drift_vs_prior: string;
+  regime_drift_vs_prior: PipelineOutput['regime_drift_vs_prior'];
   data_inputs: Record<string, unknown>;
   raw_response: Record<string, unknown>;
 }
@@ -273,17 +264,33 @@ export function logRegimeEvaluation(evaluation: RegimeEvaluationRecord) {
       confidence: evaluation.confidence,
       inflation_score: evaluation.inflation_score,
       growth_score: evaluation.growth_score,
-      regime_drift_vs_prior: evaluation.regime_drift_vs_prior as PipelineOutput['regime_drift_vs_prior'],
+      regime_drift_vs_prior: evaluation.regime_drift_vs_prior,
       assessed_at: evaluation.timestamp,
       data_inputs: evaluation.data_inputs,
       raw_response: evaluation.raw_response,
-      requires_human_review: false, // Default or derived
+      requires_human_review: false,
       flag_reasons: [],
       drift_delta: null,
       data_gaps: [],
       normalized_inflation_indicators: [],
-      normalized_growth_indicators: []
-    } as unknown as RegimeAssessment);
+      normalized_growth_indicators: [],
+      classification_verdict: 'Confirmed',
+      challenge_rationale: null,
+      confidence_adjustment: 0,
+      key_drivers: [],
+      confirming_indicators: [],
+      contradicting_indicators: [],
+      transition_signal: 'None',
+      central_thesis_conflict: 'None',
+      petrodollar_risk: 'Not Evidenced',
+      petrodollar_rationale: 'None',
+      fastest_path_to_being_wrong: 'Nothing',
+      watch_next: [],
+      requires_human_review_override: false,
+      override_reason: null,
+      final_confidence: evaluation.confidence,
+      final_human_review: false
+    } satisfies RegimeAssessment & { data_inputs: Record<string, unknown>; raw_response: Record<string, unknown> });
     
     db.insertAgentRun({
       agent: 'regimeAgent',
@@ -341,13 +348,16 @@ export function getRecentAlerts(limit: number = 10): (Alert & { id: number; ackn
 
 export function getRecentEvaluations(limit: number = 10): (RegimeAssessment & { timestamp: string; quadrant: RegimeQuadrant; data_inputs: Record<string, unknown>; raw_response: Record<string, unknown> })[] {
   try {
-    return db.getRegimeHistory(limit).map(assessment => ({
-      ...assessment,
-      timestamp: assessment.assessed_at,
-      quadrant: assessment.regime_quadrant,
-      data_inputs: (assessment as Record<string, unknown>).data_inputs as Record<string, unknown> || {}, 
-      raw_response: (assessment as Record<string, unknown>).raw_response as Record<string, unknown> || assessment
-    }));
+    return db.getRegimeHistory(limit).map(assessment => {
+      const parsed = assessment as RegimeAssessment & { data_inputs?: Record<string, unknown>; raw_response?: Record<string, unknown> };
+      return {
+        ...parsed,
+        timestamp: parsed.assessed_at,
+        quadrant: parsed.regime_quadrant,
+        data_inputs: parsed.data_inputs || {}, 
+        raw_response: parsed.raw_response || parsed
+      };
+    });
   } catch (error) {
     console.error('Failed to get recent evaluations:', error);
     return [];

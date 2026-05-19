@@ -29,7 +29,7 @@ describe('blsFetcher', () => {
 
       vi.mocked(axios.post).mockResolvedValueOnce(mockResponse);
 
-      const result = await fetchSeries(['CES0000000001'], '2026', '2026') as { seriesID: string, data: { value: string }[] }[];
+      const result = await fetchSeries(['CES0000000001'], '2026', '2026');
 
       expect(axios.post).toHaveBeenCalledWith(
         'https://api.bls.gov/publicAPI/v2/timeseries/data/',

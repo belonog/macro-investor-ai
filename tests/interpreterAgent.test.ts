@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import fs from 'fs';
+import { PortfolioConfig } from '../src/types/index.js';
 
 const { mockGenerateAgentResponse } = vi.hoisted(() => ({
   mockGenerateAgentResponse: vi.fn()
@@ -69,12 +70,12 @@ describe('InterpreterAgent', () => {
       'AAPL': {
         shares: 10,
         avg_cost: 150,
-        position_type: 'equity_single' as const,
+        position_type: 'equity_single',
         thesis: 'Good company',
-        regime_match: ['Goldilocks' as const],
+        regime_match: ['Goldilocks'],
         thesis_invalidation: 'Bad earnings'
       }
-    };
+    } satisfies PortfolioConfig;
 
     await runInterpreterAgent('Test Release', 'Test Data', mockPositions);
 

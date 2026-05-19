@@ -45,8 +45,24 @@ describe('coherenceAgent', () => {
         central_thesis_conflict: 'None',
         fastest_path_to_being_wrong: 'Inflation spike',
         watch_next: [],
-        assessed_at: new Date().toISOString()
-      } as unknown as RegimeAssessment
+        assessed_at: new Date().toISOString(),
+        requires_human_review: false,
+        flag_reasons: [],
+        drift_delta: null,
+        data_gaps: [],
+        normalized_inflation_indicators: [],
+        normalized_growth_indicators: [],
+        classification_verdict: 'Confirmed',
+        challenge_rationale: null,
+        confidence_adjustment: 0,
+        transition_signal: 'None',
+        petrodollar_risk: 'Not Evidenced',
+        petrodollar_rationale: 'None',
+        requires_human_review_override: false,
+        override_reason: null,
+        final_confidence: 85,
+        final_human_review: false
+      } satisfies RegimeAssessment
     };
 
     vi.mocked(fs.readFileSync).mockReturnValue('Mock Prompt: {{PORTFOLIO_CONTEXT}}');

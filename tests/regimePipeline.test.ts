@@ -10,7 +10,7 @@ import {
   buildLLMInput,
   mergePipelineAndLLM
 } from '../src/agents/regimePipeline.js';
-import { RegimeQuadrant, PipelineInput, PipelineOutput, LLMResponse } from '../src/types/index.js';
+import { RegimeQuadrant, PipelineInput, PipelineOutput, LLMResponse, RegimeAssessment } from '../src/types/index.js';
 
 describe('regimePipeline - normalization', () => {
   const bounds = { low: 0, neutral: 2.0, high: 7.0 };
@@ -41,14 +41,14 @@ describe('regimePipeline - weight redistribution', () => {
 
   it('returns original weights when all indicators present', () => {
     const indicators = { a: 1, b: 2, c: 3 };
-    const { effectiveWeights, gaps } = redistributeWeights(weights, indicators as Record<string, unknown>, new Date());
+    const { effectiveWeights, gaps } = redistributeWeights(weights, indicators, new Date());
     expect(effectiveWeights).toEqual(weights);
     expect(gaps).toHaveLength(0);
   });
 
   it('redistributes weights when an indicator is missing', () => {
     const indicators = { a: 1, c: 3 }; // b is missing
-    const { effectiveWeights, gaps } = redistributeWeights(weights, indicators as Record<string, unknown>, new Date());
+    const { effectiveWeights, gaps } = redistributeWeights(weights, indicators, new Date());
     
     expect(effectiveWeights.a).toBeCloseTo(0.5 / 0.7);
     expect(effectiveWeights.c).toBeCloseTo(0.2 / 0.7);
@@ -113,7 +113,7 @@ describe('regimePipeline - runPipeline', () => {
       current_time: '2026-05-16T12:00:00Z'
     };
     
-    const output = runPipeline(input as PipelineInput);
+    const output = runPipeline(input);
     
     expect(output.inflation_score).toBeDefined();
     expect(output.growth_score).toBeDefined();
@@ -125,12 +125,12 @@ describe('regimePipeline - runPipeline', () => {
 
 describe('regimePipeline - detectDrift', () => {
   const prior = {
-    regime_quadrant: 'Goldilocks' as RegimeQuadrant,
+    regime_quadrant: 'Goldilocks',
     inflation_score: 0.3,
     growth_score: 0.6,
     confidence: 90,
     assessed_at: '2026-05-10T12:00:00Z'
-  };
+  } satisfies Partial<RegimeAssessment>;
 
   it('returns Stable when scores are similar', () => {
     const { status } = detectDrift(0.32, 0.62, 'Goldilocks', prior);
@@ -208,8 +208,8 @@ describe('regimePipeline - helpers', () => {
       prior_assessment: null,
       portfolio_context: { positions: [], secondary_risks: [] },
     };
-    const output = runPipeline(input as PipelineInput);
-    const llmInput = buildLLMInput(output, input as PipelineInput);
+    const output = runPipeline(input);
+    const llmInput = buildLLMInput(output, input);
     const parsed = JSON.parse(llmInput);
     expect(parsed.quantitative_assessment.regime_quadrant).toBe(output.regime_quadrant);
     expect(parsed.weighted_raw_indicators.cpi_yoy_pct.value).toBe(3.0);
@@ -217,13 +217,35 @@ describe('regimePipeline - helpers', () => {
 
   it('mergePipelineAndLLM correctly adjusts confidence', () => {
     const pipeline = {
+      inflation_score: 0.5,
+      growth_score: 0.5,
+      regime_quadrant: 'Goldilocks',
       confidence: 80,
       requires_human_review: false,
-    } as unknown as PipelineOutput;
+      flag_reasons: [],
+      regime_drift_vs_prior: 'Stable',
+      drift_delta: null,
+      data_gaps: [],
+      normalized_inflation_indicators: [],
+      normalized_growth_indicators: [],
+      assessed_at: '2026-05-15T12:00:00Z',
+    } satisfies PipelineOutput;
     const llm = {
+      classification_verdict: 'Confirmed',
+      challenge_rationale: null,
       confidence_adjustment: 5,
       requires_human_review_override: true,
-    } as unknown as LLMResponse;
+      key_drivers: [],
+      confirming_indicators: [],
+      contradicting_indicators: [],
+      transition_signal: 'None',
+      central_thesis_conflict: 'None',
+      petrodollar_risk: 'Not Evidenced',
+      petrodollar_rationale: 'None',
+      fastest_path_to_being_wrong: 'Nothing',
+      watch_next: [],
+      override_reason: null
+    } satisfies LLMResponse;
     const final = mergePipelineAndLLM(pipeline, llm);
     expect(final.final_confidence).toBe(85);
     expect(final.final_human_review).toBe(true);

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { z } from 'zod';
 
 const BLS_BASE = 'https://api.bls.gov/publicAPI/v2/timeseries/data/';
 
@@ -9,14 +10,31 @@ interface BLSPayload {
   registrationkey?: string;
 }
 
+export const BLSSeriesDataSchema = z.object({
+  year: z.string(),
+  period: z.string().optional(),
+  periodName: z.string(),
+  value: z.string(),
+  footnotes: z.array(z.any()).optional()
+}).passthrough();
+
+export const BLSSeriesSchema = z.object({
+  seriesID: z.string(),
+  data: z.array(BLSSeriesDataSchema)
+}).passthrough();
+
+export const BLSResponseSchema = z.array(BLSSeriesSchema);
+
+export type BLSSeries = z.infer<typeof BLSSeriesSchema>;
+
 /**
  * Fetches multiple series from BLS.
  * @param seriesIds The BLS series IDs
  * @param startYear Start year for the data
  * @param endYear End year for the data
- * @returns Promise<unknown[]>
+ * @returns Promise<BLSSeries[]>
  */
-export async function fetchSeries(seriesIds: string[], startYear: string, endYear: string): Promise<unknown[]> {
+export async function fetchSeries(seriesIds: string[], startYear: string, endYear: string): Promise<BLSSeries[]> {
   const payload: BLSPayload = {
     seriesid: seriesIds,
     startyear: startYear,
@@ -33,7 +51,7 @@ export async function fetchSeries(seriesIds: string[], startYear: string, endYea
     throw new Error(`BLS API Error: ${response.data.status}`);
   }
 
-  return response.data.Results.series;
+  return BLSResponseSchema.parse(response.data.Results.series);
 }
 
 /**
@@ -47,7 +65,7 @@ export async function getLatestReleases(): Promise<unknown[]> {
     ppi_final_demand: 'WPSFD4',
   };
   try {
-    const seriesData = await fetchSeries(Object.values(BLS_SERIES), currentYear, currentYear) as { seriesID: string, data: { value: string, periodName: string, year: string }[] }[];
+    const seriesData = await fetchSeries(Object.values(BLS_SERIES), currentYear, currentYear);
     return seriesData.map(s => {
       if (s.data && s.data.length > 0) {
         const latest = s.data[0];
