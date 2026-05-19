@@ -1,25 +1,35 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getManualIndicators, setManualIndicator } from '../src/utils/manualIndicators.js';
 import fs from 'fs';
-import path from 'path';
 
-const CACHE_DIR = path.join(process.cwd(), 'src/data/cache');
-const CACHE_FILE = path.join(CACHE_DIR, 'manual_indicators.json');
+vi.mock('fs', () => {
+  let mockFiles: Record<string, string> = {};
+  const mockFs = {
+    existsSync: vi.fn((path) => !!mockFiles[path]),
+    readFileSync: vi.fn((path) => {
+      if (mockFiles[path]) return mockFiles[path];
+      throw new Error(`File not found: ${path}`);
+    }),
+    writeFileSync: vi.fn((path, data) => {
+      mockFiles[path] = data.toString();
+    }),
+    mkdirSync: vi.fn(),
+    __resetMockFiles: () => { mockFiles = {}; }
+  };
+  return {
+    ...mockFs,
+    default: mockFs
+  };
+});
 
 describe('manualIndicators utility', () => {
   beforeEach(() => {
-    if (fs.existsSync(CACHE_FILE)) {
-      fs.unlinkSync(CACHE_FILE);
-    }
-  });
-
-  afterEach(() => {
-    if (fs.existsSync(CACHE_FILE)) {
-      fs.unlinkSync(CACHE_FILE);
-    }
+    vi.clearAllMocks();
+    (fs as unknown as { __resetMockFiles: () => void }).__resetMockFiles();
   });
 
   it('should return an empty object if cache file does not exist', () => {
+    vi.mocked(fs.existsSync).mockReturnValue(false);
     const indicators = getManualIndicators();
     expect(indicators).toEqual({});
   });
@@ -28,9 +38,20 @@ describe('manualIndicators utility', () => {
     const indicator = {
       value: 51.6,
       period: '2026-05',
-      updated_at: new Date().toISOString(),
+      updated_at: '2026-05-19T12:00:00.000Z',
       source: 'ismworld.org',
     };
+    
+    // Setup existsSync to return true once the file is written
+    vi.mocked(fs.existsSync).mockImplementation((path) => {
+      try {
+        fs.readFileSync(path);
+        return true;
+      } catch {
+        return false;
+      }
+    });
+
     setManualIndicator('ism_services', indicator);
     
     const indicators = getManualIndicators();
@@ -38,9 +59,18 @@ describe('manualIndicators utility', () => {
   });
 
   it('should handle multiple indicators', () => {
-    const ind1 = { value: 51.6, period: '2026-05', updated_at: new Date().toISOString(), source: 's1' };
-    const ind2 = { value: 128.3, period: '2026-04', updated_at: new Date().toISOString(), source: 's2' };
+    const ind1 = { value: 51.6, period: '2026-05', updated_at: '2026-05-19T12:00:00.000Z', source: 's1' };
+    const ind2 = { value: 128.3, period: '2026-04', updated_at: '2026-05-19T12:00:00.000Z', source: 's2' };
     
+    vi.mocked(fs.existsSync).mockImplementation((path) => {
+      try {
+        fs.readFileSync(path);
+        return true;
+      } catch {
+        return false;
+      }
+    });
+
     setManualIndicator('ism_services', ind1);
     setManualIndicator('fao_food_price_index', ind2);
     
