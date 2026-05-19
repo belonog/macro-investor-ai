@@ -10,7 +10,7 @@ import {
   buildLLMInput,
   mergePipelineAndLLM
 } from '../src/agents/regimePipeline.js';
-import { RegimeQuadrant, PipelineInput, PipelineOutput, LLMResponse, RegimeAssessment } from '../src/types/index.js';
+import { PipelineOutput, LLMResponse, RegimeAssessment } from '../src/types/index.js';
 
 describe('regimePipeline - normalization', () => {
   const bounds = { low: 0, neutral: 2.0, high: 7.0 };

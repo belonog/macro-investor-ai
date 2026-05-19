@@ -12,7 +12,13 @@
     "dev": "tsx src/cli.ts",
     "lint": "eslint src tests",
     "test": "tsc --noEmit && vitest",
-    "cli": "tsx src/cli.ts"
+    "cli": "tsx src/cli.ts",
+    "prepare": "husky",
+    "lint-staged": "lint-staged"
+  },
+  "lint-staged": {
+    "*.{js,ts}": "eslint --fix",
+    "*.ts": "bash -c 'tsc --noEmit'"
   },
   "keywords": [],
   "author": "",
@@ -37,6 +43,8 @@
     "@types/node": "^25.8.0",
     "eslint": "^10.4.0",
     "globals": "^17.6.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.5",
     "ts-node": "^10.9.2",
     "tsx": "^4.22.0",
     "typescript": "^6.0.3",

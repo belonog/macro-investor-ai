@@ -1,5 +1,5 @@
 import { Telegraf } from 'telegraf';
-import { Alert, AlertLevel } from '../types/index.js';
+import { Alert } from '../types/index.js';
 import { logAlert } from '../db/database.js';
 import dotenv from 'dotenv';
 

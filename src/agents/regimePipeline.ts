@@ -10,7 +10,6 @@ import {
   FinalAssessment,
   PriorAssessment,
   MacroIndicators,
-  RawIndicator,
   RegimePipelineConfig
 } from '../types/index.js';
 

@@ -26,7 +26,16 @@ Use the unified CLI for all manual and on-demand operations:
 - **Backtesting**: Use `examples/backtest_regime_engine.ts` to verify model accuracy against historical FRED data.
 - **Tests**: Maintain 100% pass rate in `vitest` suite.
 - **Linting**: Maintain 0 errors in ESLint suite via `pnpm run lint` after any code change.
+- **Type Safety**: Maintain 0 errors in `tsc --noEmit`.
 - **Zod**: Every data boundary (fetchers, agent outputs, config) must be validated via Zod.
+
+## Definition of Done (DoD)
+No task is considered complete until the following "Iron Law" of verification is met and evidenced:
+1. **Linter Clean**: `pnpm run lint` passes with 0 errors.
+2. **Type-Safe**: `tsc --noEmit` passes with 0 errors.
+3. **Tests Passing**: `pnpm test` passes with 100% success rate.
+4. **No Hacks**: No `@ts-ignore`, `any` casts, or suppressed linter warnings.
+5. **Evidence Provided**: The CLI output of these commands must be shown in the final turn of the task.
 
 ## Project Configuration
 - **Package Manager**: `pnpm` (managed via `packageManager` field in `package.json`).
