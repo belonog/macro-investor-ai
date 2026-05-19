@@ -1,4 +1,6 @@
 {
+  "_CONFIG_": "Edit this section for backtesting calibration. No other code should change between calibration runs.",
+  "_comment_bounds": "Piecewise normalization bounds. The neutral point does NOT have to be the arithmetic midpoint of [low, high]. This lets you express asymmetric inflation expectations: e.g. CPI neutral at 2% (Fed target) even though the range is 0–7%.",
   "inflation_bounds": {
     "cpi_yoy_pct":                    { "low": 0, "neutral": 2.0, "high": 7.0 },
     "pce_yoy_pct":                    { "low": 0, "neutral": 2.0, "high": 6.0 },
@@ -29,6 +31,7 @@
     "nfp_3m_avg_k":              0.15,
     "retail_sales_yoy_real_pct": 0.10
   },
+  "_comment_thresholds": "boundary_zone: within ±this of any threshold → flag boundary proximity",
   "regime_thresholds": {
     "inflation_high": 0.60,
     "inflation_low":  0.40,

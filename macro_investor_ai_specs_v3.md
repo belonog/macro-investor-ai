@@ -161,7 +161,7 @@ macro-investor-ai/
 │
 ├── config/
 │   ├── positions.json                # Portfolio state + types (manually maintained)
-│   └── regime_weights.json           # Indicator weights for regime scoring
+│   └── regime_pipeline.json           # Indicator weights for regime scoring
 │
 ├── src/
 │   ├── types/
@@ -1488,7 +1488,7 @@ The regime engine will alert if a manual indicator is stale (> 35 days) before a
 **Phase 1 note:** Build and backtest the regime engine before connecting any live
 portfolio data. Feed 12 months of historical FRED data sequentially through
 `regimeAgent.ts` and verify quadrant classifications match your own prior
-readings. Tune `regime_weights.json` until scoring aligns with your framework
+readings. Tune `regime_pipeline.json` until scoring aligns with your framework
 on known historical regimes (e.g. 2022 stagflation, late 2023 soft-landing)
 before connecting Flex Reports or running against live data.
 
@@ -1523,7 +1523,7 @@ Before using regime output to inform real portfolio decisions:
 1. Feed 12 months of historical FRED data through `regimeAgent.ts` in sequence
 2. Compare quadrant classifications against your own prior readings for the same periods
 3. Verify `central_thesis_conflict` correctly identifies the stagflation vs. deflation tension across different data environments
-4. Tune `regime_weights.json` until scoring matches your framework intuition on known historical regimes
+4. Tune `regime_pipeline.json` until scoring matches your framework intuition on known historical regimes
 
 ---
 

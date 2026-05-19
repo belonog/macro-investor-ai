@@ -57,7 +57,7 @@ It utilizes a series of independent intelligent agents:
    ```
 
 4. **Initialize configurations:**
-   Ensure `config/positions.json`, `config/regime_pipeline.json`, and `config/regime_weights.json` are properly set up based on the provided examples.
+   Ensure `config/positions.json` and `config/regime_pipeline.json` are properly set up based on the provided examples.
 
 ## Usage
 

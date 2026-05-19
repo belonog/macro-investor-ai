@@ -146,74 +146,18 @@ export interface PipelineOutput {
   assessedAt: string;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CONFIG
-// Edit this section for backtesting calibration.
-// No other code should change between calibration runs.
-// ─────────────────────────────────────────────────────────────────────────────
+import fs from 'fs';
+import path from 'path';
 
-interface IndicatorBounds {
-  low:     number; // → normalized 0.0
-  neutral: number; // → normalized 0.5 (piecewise inflection point)
-  high:    number; // → normalized 1.0
-}
+const configPath = path.join(process.cwd(), 'config', 'regime_pipeline.json');
+const CONFIG = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
 
-/**
- * Piecewise normalization bounds.
- * The neutral point does NOT have to be the arithmetic midpoint of [low, high].
- * This lets you express asymmetric inflation expectations:
- * e.g. CPI neutral at 2% (Fed target) even though the range is 0–7%.
- */
-const INFLATION_BOUNDS: Record<string, IndicatorBounds> = {
-  cpi_yoy_pct:                    { low: 0,    neutral: 2.0, high: 7.0  },
-  pce_yoy_pct:                    { low: 0,    neutral: 2.0, high: 6.0  },
-  breakeven_5y_pct:               { low: 1.5,  neutral: 2.0, high: 3.5  },
-  forward_5y5y_pct:               { low: 1.5,  neutral: 2.0, high: 3.5  },
-  ppi_yoy_pct:                    { low: -1.0, neutral: 2.0, high: 9.0  },
-  oil_price_3m_change_pct:        { low: -20,  neutral: 0,   high: 20   },
-  fertilizer_index_3m_change_pct: { low: -20,  neutral: 0,   high: 20   },
-};
-
-const GROWTH_BOUNDS: Record<string, IndicatorBounds> = {
-  ism_manufacturing:              { low: 44,  neutral: 50,  high: 58   },
-  ism_services:                   { low: 44,  neutral: 50,  high: 58   },
-  real_gdp_qoq_ann_pct:           { low: -2,  neutral: 2.0, high: 5.0  },
-  nfp_3m_avg_k:                   { low: 0,   neutral: 150, high: 300  },
-  retail_sales_yoy_real_pct:      { low: -3,  neutral: 2.0, high: 7.0  },
-};
-
-const INFLATION_WEIGHTS: Record<string, number> = {
-  cpi_yoy_pct:                    0.25,
-  pce_yoy_pct:                    0.20,
-  breakeven_5y_pct:               0.20,
-  ppi_yoy_pct:                    0.15,
-  forward_5y5y_pct:               0.10,
-  oil_price_3m_change_pct:        0.05,
-  fertilizer_index_3m_change_pct: 0.05,
-};
-
-const GROWTH_WEIGHTS: Record<string, number> = {
-  ism_manufacturing:         0.30,
-  ism_services:              0.20,
-  real_gdp_qoq_ann_pct:      0.25,
-  nfp_3m_avg_k:              0.15,
-  retail_sales_yoy_real_pct: 0.10,
-};
-
-const REGIME_THRESHOLDS = {
-  inflationHigh:  0.60,
-  inflationLow:   0.40,
-  growthHigh:     0.55,
-  growthLow:      0.45,
-  boundaryZone:   0.05, // within ±this of any threshold → flag boundary proximity
-};
-
-const STALENESS_LIMITS_DAYS: Record<IndicatorFrequency, number> = {
-  daily:     7,
-  weekly:    14,
-  monthly:   45,
-  quarterly: 95,
-};
+const INFLATION_BOUNDS = CONFIG.inflation_bounds;
+const GROWTH_BOUNDS = CONFIG.growth_bounds;
+const INFLATION_WEIGHTS = CONFIG.inflation_weights;
+const GROWTH_WEIGHTS = CONFIG.growth_weights;
+const REGIME_THRESHOLDS = CONFIG.regime_thresholds;
+const STALENESS_LIMITS_DAYS = CONFIG.staleness_limits_days;
 
 const INDICATOR_FREQUENCY: Partial<Record<keyof MacroIndicators, IndicatorFrequency>> = {
   cpi_yoy_pct:                    'monthly',
