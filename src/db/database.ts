@@ -1,8 +1,8 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
-import { 
-  RegimeAssessment, 
+import {
+  RegimeAssessment,
   Alert,
   RebalancingOutput,
   PipelineOutput,
@@ -45,7 +45,7 @@ export class DatabaseManager {
 
   constructor() {
     const isTest = process.env.NODE_ENV === 'test';
-    
+
     this.agentRunsDb = new Database(isTest ? ':memory:' : path.join(LOGS_DIR, 'agent_runs.db'));
     this.regimeHistoryDb = new Database(isTest ? ':memory:' : path.join(LOGS_DIR, 'regime_history.db'));
     this.alertsSentDb = new Database(isTest ? ':memory:' : path.join(LOGS_DIR, 'alerts_sent.db'));
@@ -291,13 +291,6 @@ export function logRegimeEvaluation(evaluation: RegimeEvaluationRecord) {
       final_confidence: evaluation.confidence,
       final_human_review: false
     } satisfies RegimeAssessment & { data_inputs: Record<string, unknown>; raw_response: Record<string, unknown> });
-    
-    db.insertAgentRun({
-      agent: 'regimeAgent',
-      input_json: JSON.stringify(evaluation.data_inputs),
-      output_json: JSON.stringify(evaluation.raw_response),
-      run_at: evaluation.timestamp
-    });
   } catch (error) {
     console.error('Failed to log regime evaluation:', error);
   }
@@ -318,12 +311,6 @@ export function logRebalancingDecision(decision: RebalancingOutput & { timestamp
         });
       }
     }
-
-    db.insertAgentRun({
-      agent: 'rebalancingAgent',
-      output_json: JSON.stringify(decision.raw_response || decision),
-      run_at: decision.timestamp
-    });
   } catch (error) {
     console.error('Failed to log rebalancing decision:', error);
   }
@@ -354,7 +341,7 @@ export function getRecentEvaluations(limit: number = 10): (RegimeAssessment & { 
         ...parsed,
         timestamp: parsed.assessed_at,
         quadrant: parsed.regime_quadrant,
-        data_inputs: parsed.data_inputs || {}, 
+        data_inputs: parsed.data_inputs || {},
         raw_response: parsed.raw_response || parsed
       };
     });
