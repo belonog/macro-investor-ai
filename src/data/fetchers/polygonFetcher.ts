@@ -71,6 +71,7 @@ export async function getGoldSpotPrice(): Promise<RawIndicator> {
   return {
     value,
     unit: 'USD per troy oz',
+    description: 'Gold Spot Price (XAU/USD)',
     source: 'COMEX spot',
     as_of: asOf,
   };
