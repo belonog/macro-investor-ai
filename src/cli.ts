@@ -175,21 +175,22 @@ program
   .argument('<value>', 'Numeric value')
   .option('-p, --period <YYYY-MM>', 'Period for the indicator', new Date().toISOString().slice(0, 7))
   .option('-s, --source <string>', 'Source of the data', 'manual')
+  .option('-d, --description <string>', 'Description of the indicator', 'Manual entry')
   .action((key, value, options) => {
     const val = parseFloat(value);
     if (isNaN(val)) {
       console.error('Value must be a number');
       process.exit(1);
     }
-    
+
     setManualIndicator(key, {
       value: val,
       period: options.period,
+      description: options.description,
       updated_at: new Date().toISOString(),
       source: options.source,
     });
-    
+
     console.log(`Manual indicator ${key} set to ${val} for period ${options.period}.`);
   });
-
 program.parse();
