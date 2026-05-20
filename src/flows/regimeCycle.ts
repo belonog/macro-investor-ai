@@ -6,6 +6,7 @@ import { getGoldSpotPrice } from '../data/fetchers/polygonFetcher.js';
 import { runRegimeAgent } from '../agents/regimeAgent.js';
 import { generateRebalancingReport } from '../agents/rebalancingAgent.js';
 import { sendTelegramAlert } from '../alerts/telegramBot.js';
+import { formatRegimeSummary, formatRegimeNarrative } from '../utils/alertFormatter.js';
 import { PositionSnapshot } from '../types/index.js';
 import { logger } from '../utils/logger.js';
 import { POSITIONS_CACHE_PATH } from '../config/paths.js';
@@ -28,7 +29,34 @@ export async function runRegimeCycle(trigger: 'manual' | 'post_release' | 'sched
     // 3. Run Regime Agent
     const assessment = await runRegimeAgent(flatSnapshot, { bls: blsData, eia: eiaData }, trigger);
     
-    // 4. Conditional Rebalancing
+    // 4. Send Narrative Alerts
+    const summaryMsg = formatRegimeSummary(assessment);
+    const narrativeMsg = formatRegimeNarrative(assessment);
+
+    // Determine alert level based on drift
+    const level = assessment.regime_drift_vs_prior === 'Shifted' 
+      ? 'CRITICAL' 
+      : (assessment.regime_drift_vs_prior === 'Transitioning' ? 'WARNING' : 'INFO');
+
+    // Send Summary Message
+    await sendTelegramAlert({
+      level,
+      message: summaryMsg,
+      action: assessment.regime_drift_vs_prior === 'Shifted' ? 'Review Rebalancing Report' : null,
+      created_at: new Date().toISOString(),
+      symbol: null
+    });
+
+    // Send Narrative Message
+    await sendTelegramAlert({
+      level: 'INFO',
+      message: narrativeMsg,
+      action: null,
+      created_at: new Date().toISOString(),
+      symbol: null
+    });
+
+    // 5. Conditional Rebalancing Logic (Stays for logging/background info)
     if (['Transitioning', 'Shifted'].includes(assessment.regime_drift_vs_prior)) {
       // Verify fetched_at < 26h for portfolio snapshot (Spec v3 Flow 1 Step 6)
       if (fs.existsSync(POSITIONS_CACHE_PATH)) {
@@ -55,22 +83,7 @@ export async function runRegimeCycle(trigger: 'manual' | 'post_release' | 'sched
         logger.warn('Portfolio snapshot not found. Rebalancing report will be incomplete.');
       }
 
-      const report = await generateRebalancingReport();
-      await sendTelegramAlert({
-        level: assessment.regime_drift_vs_prior === 'Shifted' ? 'CRITICAL' : 'WARNING',
-        message: `Regime ${assessment.regime_drift_vs_prior}: ${assessment.regime_quadrant}\nAlignment: ${report.alignment_grade} (${(report.alignment_score * 100).toFixed(0)}%)`,
-        action: 'Review Rebalancing Report',
-        created_at: new Date().toISOString(),
-        symbol: null
-      });
-    } else {
-      await sendTelegramAlert({
-        level: 'INFO',
-        message: `Regime Stable: ${assessment.regime_quadrant} (Confidence: ${assessment.final_confidence}%)`,
-        created_at: new Date().toISOString(),
-        symbol: null,
-        action: null
-      });
+      await generateRebalancingReport();
     }
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);

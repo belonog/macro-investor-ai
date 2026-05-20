@@ -93,7 +93,7 @@ describe('fredFetcher', () => {
       const result = await updateMacroCache();
       expect(fs.mkdir).toHaveBeenCalled();
       expect(fs.writeFile).toHaveBeenCalledWith(
-        expect.stringContaining('macroSnapshot.json'),
+        expect.stringContaining('macro_snapshot.json'),
         expect.stringContaining('"CPIAUCSL":')
       );
       expect(result.series['CPIAUCSL']).toEqual([{ date: '2023-01-01', value: 100.0 }]);

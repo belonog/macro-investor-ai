@@ -146,7 +146,7 @@ describe('rebalancingAgent', () => {
     
     expect(logRebalancingDecision).toHaveBeenCalled();
     expect(fs.writeFileSync).toHaveBeenCalledWith(
-      expect.stringContaining('rebalancingLatest.json'),
+      expect.stringContaining('rebalancing_latest.json'),
       expect.stringContaining('"alignment_grade": "B"')
     );
   });

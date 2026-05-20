@@ -20,10 +20,10 @@ export const POSITIONS_CONFIG_PATH = path.join(CONFIG_DIR, 'positions.json');
 export const REGIME_PIPELINE_CONFIG_PATH = path.join(CONFIG_DIR, 'regime_pipeline.json');
 
 // Cache Files
-export const MACRO_SNAPSHOT_CACHE_PATH = path.join(CACHE_DIR, 'macroSnapshot.json');
+export const MACRO_SNAPSHOT_CACHE_PATH = path.join(CACHE_DIR, 'macro_snapshot.json');
 export const REGIME_CACHE_PATH = path.join(CACHE_DIR, 'regime_latest.json');
 export const POSITIONS_CACHE_PATH = path.join(CACHE_DIR, 'positions_snapshot.json');
-export const REBALANCING_CACHE_PATH = path.join(CACHE_DIR, 'rebalancingLatest.json');
+export const REBALANCING_CACHE_PATH = path.join(CACHE_DIR, 'rebalancing_latest.json');
 export const MANUAL_INDICATORS_CACHE_PATH = path.join(CACHE_DIR, 'manual_indicators.json');
 
 // Database
