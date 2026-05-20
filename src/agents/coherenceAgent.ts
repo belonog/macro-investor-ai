@@ -1,5 +1,4 @@
 import fs from 'fs';
-import path from 'path';
 import { generateAgentResponse } from './baseAgent.js';
 import { 
   CoherenceOutput, 
@@ -8,6 +7,7 @@ import {
   RegimeAssessment 
 } from '../types/index.js';
 import { buildPortfolioContext } from '../utils/portfolioContext.js';
+import { COHERENCE_PROMPT_PATH } from '../config/paths.js';
 
 export interface CoherenceInput {
   symbol: string;
@@ -18,8 +18,7 @@ export interface CoherenceInput {
 }
 
 export async function runCoherenceAgent(input: CoherenceInput): Promise<CoherenceOutput> {
-  const templatePath = path.join(process.cwd(), 'src/prompts/coherence_system.txt');
-  const template = fs.readFileSync(templatePath, 'utf-8');
+  const template = fs.readFileSync(COHERENCE_PROMPT_PATH, 'utf-8');
   
   const portfolioContext = buildPortfolioContext(input.currentBook);
   const systemPrompt = template.replace('{{PORTFOLIO_CONTEXT}}', portfolioContext);

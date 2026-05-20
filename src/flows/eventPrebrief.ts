@@ -1,12 +1,10 @@
 import fs from 'fs';
-import path from 'path';
 import { getEarningsCalendar } from '../data/fetchers/polygonFetcher.js';
 import { generatePrebrief } from '../agents/interpreterAgent.js';
 import { sendTelegramAlert } from '../alerts/telegramBot.js';
 import { PortfolioConfigSchema } from '../types/index.js';
 import { logger } from '../utils/logger.js';
-
-const POSITIONS_CONFIG_PATH = path.join(process.cwd(), 'config', 'positions.json');
+import { POSITIONS_CONFIG_PATH } from '../config/paths.js';
 
 /**
  * Event Pre-Brief flow: checks for upcoming earnings events and generates AI pre-briefs.

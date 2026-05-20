@@ -5,12 +5,9 @@ import { getEodPrices } from '../data/fetchers/polygonFetcher.js';
 import { checkStopProximity, checkThesisThresholds, checkDeadlines } from '../monitor/eodMonitor.js';
 import { sendTelegramAlert } from '../alerts/telegramBot.js';
 import fs from 'fs';
-import path from 'path';
 import { PortfolioConfigSchema } from '../types/index.js';
 import { logger } from '../utils/logger.js';
-
-const POSITIONS_CONFIG_PATH = path.join(process.cwd(), 'config', 'positions.json');
-const POSITIONS_CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'positions_snapshot.json');
+import { POSITIONS_CONFIG_PATH, POSITIONS_CACHE_PATH, CACHE_DIR } from '../config/paths.js';
 
 export async function runEodCheck() {
   try {
@@ -27,8 +24,8 @@ export async function runEodCheck() {
     const snapshot = await fetchPortfolioSnapshot(token, queryId);
     
     // Cache the snapshot (Spec v3 requirement)
-    if (!fs.existsSync(path.dirname(POSITIONS_CACHE_PATH))) {
-      fs.mkdirSync(path.dirname(POSITIONS_CACHE_PATH), { recursive: true });
+    if (!fs.existsSync(CACHE_DIR)) {
+      fs.mkdirSync(CACHE_DIR, { recursive: true });
     }
     fs.writeFileSync(POSITIONS_CACHE_PATH, JSON.stringify(snapshot, null, 2));
     

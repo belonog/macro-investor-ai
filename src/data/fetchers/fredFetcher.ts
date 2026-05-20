@@ -1,13 +1,12 @@
 import axios from 'axios';
 import fs from 'fs/promises';
-import path from 'path';
 import { DataPoint, DataPointSchema, MacroSnapshot, MacroCacheSchema, MacroIndicators } from '../../types/index.js';
 import { RAW_FRED_SERIES_IDS, RAW_FRED_METADATA } from '../indicators/registry.js';
 import { deriveMetrics } from '../indicators/derivation.js';
 import { logger } from '../../utils/logger.js';
+import { MACRO_SNAPSHOT_CACHE_PATH, CACHE_DIR } from '../../config/paths.js';
 
 const FRED_BASE_URL = 'https://api.stlouisfed.org/fred';
-const CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'macroSnapshot.json');
 
 /**
  * Fetches a series from FRED and returns it as an array of DataPoints.
@@ -89,7 +88,7 @@ export async function updateMacroCache(): Promise<MacroSnapshot> {
   let existingSnapshot: MacroSnapshot = { series: {}, fetched_at: {} };
   
   try {
-    const rawCache = await fs.readFile(CACHE_PATH, 'utf-8');
+    const rawCache = await fs.readFile(MACRO_SNAPSHOT_CACHE_PATH, 'utf-8');
     const parsed = MacroCacheSchema.safeParse(JSON.parse(rawCache));
     if (parsed.success) {
       existingSnapshot = parsed.data.data;
@@ -136,14 +135,14 @@ export async function updateMacroCache(): Promise<MacroSnapshot> {
   await Promise.all(promises);
   
   // Ensure directory exists
-  await fs.mkdir(path.dirname(CACHE_PATH), { recursive: true });
+  await fs.mkdir(CACHE_DIR, { recursive: true });
   
   const cacheData = {
     fetched_at: new Date().toISOString(),
     data: snapshot
   };
   
-  await fs.writeFile(CACHE_PATH, JSON.stringify(cacheData, null, 2));
+  await fs.writeFile(MACRO_SNAPSHOT_CACHE_PATH, JSON.stringify(cacheData, null, 2));
   return snapshot;
 }
 
@@ -156,7 +155,7 @@ export async function updateMacroCache(): Promise<MacroSnapshot> {
 export async function getLatestValues(): Promise<MacroIndicators> {
   let snapshot: MacroSnapshot;
   try {
-    const rawCache = await fs.readFile(CACHE_PATH, 'utf-8');
+    const rawCache = await fs.readFile(MACRO_SNAPSHOT_CACHE_PATH, 'utf-8');
     const parsed = MacroCacheSchema.safeParse(JSON.parse(rawCache));
     if (!parsed.success) {
       console.warn('Invalid macro cache. Re-fetching...');

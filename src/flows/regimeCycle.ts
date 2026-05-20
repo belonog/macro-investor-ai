@@ -1,5 +1,4 @@
 import fs from 'fs';
-import path from 'path';
 import { updateMacroCache, getLatestValues } from '../data/fetchers/fredFetcher.js';
 import { getLatestReleases } from '../data/fetchers/blsFetcher.js';
 import { getLatest as getLatestEia } from '../data/fetchers/eiaFetcher.js';
@@ -9,8 +8,7 @@ import { generateRebalancingReport } from '../agents/rebalancingAgent.js';
 import { sendTelegramAlert } from '../alerts/telegramBot.js';
 import { PositionSnapshot } from '../types/index.js';
 import { logger } from '../utils/logger.js';
-
-const POSITIONS_CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'positions_snapshot.json');
+import { POSITIONS_CACHE_PATH } from '../config/paths.js';
 
 export async function runRegimeCycle(trigger: 'manual' | 'post_release' | 'scheduled' = 'manual') {
   try {

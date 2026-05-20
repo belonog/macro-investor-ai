@@ -1,14 +1,11 @@
 import fs from 'fs';
-import path from 'path';
 import { runRegimeCycle } from './regimeCycle.js';
 import { getEarningsCalendar } from '../data/fetchers/polygonFetcher.js';
 import { getLatestValues } from '../data/fetchers/fredFetcher.js';
 import { sendTelegramAlert } from '../alerts/telegramBot.js';
 import { RegimeAssessment, PortfolioConfigSchema } from '../types/index.js';
 import { logger } from '../utils/logger.js';
-
-const REGIME_CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'regime_latest.json');
-const POSITIONS_CONFIG_PATH = path.join(process.cwd(), 'config', 'positions.json');
+import { REGIME_CACHE_PATH, POSITIONS_CONFIG_PATH } from '../config/paths.js';
 
 /**
  * Morning digest flow: checks regime staleness, upcoming earnings, and key indicators.

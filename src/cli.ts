@@ -2,7 +2,6 @@
 import './config/env.js';
 import { Command } from 'commander';
 import fs from 'fs';
-import path from 'path';
 import { runRegimeCycle } from './flows/regimeCycle.js';
 import { runEodCheck } from './flows/eodCheck.js';
 import { runEventPrebrief } from './flows/eventPrebrief.js';
@@ -11,6 +10,7 @@ import { setManualIndicator } from './utils/manualIndicators.js';
 import { runCoherenceAgent } from './agents/coherenceAgent.js';
 import { runInterpreterAgent } from './agents/interpreterAgent.js';
 import { db } from './db/database.js';
+import { POSITIONS_CONFIG_PATH } from './config/paths.js';
 import { PortfolioConfigSchema, PositionType, PortfolioConfig } from './types/index.js';
 
 const program = new Command();
@@ -81,8 +81,7 @@ program
   .option('-s, --size <number>', 'Proposed size in USD', '0')
   .action(async (symbol, thesis, options) => {
     try {
-      const positionsPath = path.join(process.cwd(), 'config', 'positions.json');
-      const positionsConfig = JSON.parse(fs.readFileSync(positionsPath, 'utf8'));
+      const positionsConfig = JSON.parse(fs.readFileSync(POSITIONS_CONFIG_PATH, 'utf8'));
       const currentRegime = db.getLatestRegime();
       
       if (!currentRegime) {
@@ -116,8 +115,7 @@ program
         releaseData = fs.readFileSync(data, 'utf8');
       }
 
-      const positionsPath = path.join(process.cwd(), 'config', 'positions.json');
-      const positionsConfig = JSON.parse(fs.readFileSync(positionsPath, 'utf8'));
+      const positionsConfig = JSON.parse(fs.readFileSync(POSITIONS_CONFIG_PATH, 'utf8'));
 
       const output = await runInterpreterAgent(name, releaseData, positionsConfig);
       console.log(JSON.stringify(output, null, 2));
@@ -143,10 +141,9 @@ program
         process.exit(1);
       }
 
-      const positionsPath = path.join(process.cwd(), 'config', 'positions.json');
       let positionsConfig: PortfolioConfig = {};
-      if (fs.existsSync(positionsPath)) {
-        positionsConfig = JSON.parse(fs.readFileSync(positionsPath, 'utf8'));
+      if (fs.existsSync(POSITIONS_CONFIG_PATH)) {
+        positionsConfig = JSON.parse(fs.readFileSync(POSITIONS_CONFIG_PATH, 'utf8'));
       }
       
       positionsConfig[options.symbol.toUpperCase()] = {
@@ -161,8 +158,8 @@ program
       // Validate against schema
       PortfolioConfigSchema.parse(positionsConfig);
 
-      fs.writeFileSync(positionsPath, JSON.stringify(positionsConfig, null, 2));
-      console.log(`Position for ${options.symbol.toUpperCase()} added/updated in ${positionsPath}`);
+      fs.writeFileSync(POSITIONS_CONFIG_PATH, JSON.stringify(positionsConfig, null, 2));
+      console.log(`Position for ${options.symbol.toUpperCase()} added/updated in ${POSITIONS_CONFIG_PATH}`);
     } catch (error) {
       console.error('Failed to add position:', error);
       process.exit(1);

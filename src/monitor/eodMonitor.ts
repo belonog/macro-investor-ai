@@ -1,5 +1,4 @@
 import fs from 'fs';
-import path from 'path';
 import { 
   PositionSnapshot, 
   PortfolioConfig, 
@@ -7,9 +6,7 @@ import {
   MacroIndicators,
 } from '../types/index.js';
 import { getLatestValues } from '../data/fetchers/fredFetcher.js';
-
-const POSITIONS_CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'positions_snapshot.json');
-const POSITIONS_CONFIG_PATH = path.join(process.cwd(), 'config', 'positions.json');
+import { POSITIONS_CACHE_PATH, POSITIONS_CONFIG_PATH } from '../config/paths.js';
 
 // Map descriptive names to semantic keys for threshold monitoring
 const INDICATOR_MAP: Record<string, string> = {

@@ -1,5 +1,4 @@
 import fs from 'fs';
-import path from 'path';
 import {
   RebalancingOutput,
   RebalancingOutputSchema,
@@ -13,26 +12,28 @@ import { generateAgentResponse } from './baseAgent.js';
 import { buildPortfolioContext } from '../utils/portfolioContext.js';
 import { StaleRegimeError } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
+import {
+  REGIME_CACHE_PATH,
+  POSITIONS_CACHE_PATH,
+  POSITIONS_CONFIG_PATH,
+  REBALANCING_PROMPT_PATH,
+  REBALANCING_CACHE_PATH,
+  CACHE_DIR
+} from '../config/paths.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
-
-const REGIME_CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'regime_latest.json');
-const POSITIONS_CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'positions_snapshot.json');
-const POSITIONS_CONFIG_PATH = path.join(process.cwd(), 'config', 'positions.json');
-const PROMPT_PATH = path.join(process.cwd(), 'src', 'prompts', 'rebalancing_system.txt');
-const REBALANCING_CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'rebalancingLatest.json');
 
 /**
  * Generates a portfolio rebalancing report based on current regime and positions.
  */
 export async function generateRebalancingReport(): Promise<RebalancingOutput> {
   try {
-    if (!fs.existsSync(PROMPT_PATH)) {
-      throw new Error(`System prompt file not found at ${PROMPT_PATH}`);
+    if (!fs.existsSync(REBALANCING_PROMPT_PATH)) {
+      throw new Error(`System prompt file not found at ${REBALANCING_PROMPT_PATH}`);
     }
 
-    let systemPrompt = fs.readFileSync(PROMPT_PATH, 'utf8');
+    let systemPrompt = fs.readFileSync(REBALANCING_PROMPT_PATH, 'utf8');
 
     // 1. Load Regime Snapshot
     if (!fs.existsSync(REGIME_CACHE_PATH)) {
@@ -89,9 +90,8 @@ export async function generateRebalancingReport(): Promise<RebalancingOutput> {
     });
 
     // 5. Cache to JSON
-    const cacheDir = path.dirname(REBALANCING_CACHE_PATH);
-    if (!fs.existsSync(cacheDir)) {
-      fs.mkdirSync(cacheDir, { recursive: true });
+    if (!fs.existsSync(CACHE_DIR)) {
+      fs.mkdirSync(CACHE_DIR, { recursive: true });
     }
     fs.writeFileSync(REBALANCING_CACHE_PATH, JSON.stringify(validated, null, 2));
 

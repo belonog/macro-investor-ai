@@ -1,8 +1,8 @@
 import dotenv from 'dotenv';
 import fs from 'fs';
-import path from 'path';
 import { generateRebalancingReport } from '../src/agents/rebalancingAgent.js';
 import { runEodMonitor } from '../src/monitor/eodMonitor.js';
+import { REGIME_CACHE_PATH } from '../src/config/paths.js';
 
 dotenv.config();
 
@@ -12,9 +12,8 @@ async function main() {
 
   try {
     // 1. Check Regime
-    const REGIME_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'regime_latest.json');
-    if (fs.existsSync(REGIME_PATH)) {
-      const regime = JSON.parse(fs.readFileSync(REGIME_PATH, 'utf8'));
+    if (fs.existsSync(REGIME_CACHE_PATH)) {
+      const regime = JSON.parse(fs.readFileSync(REGIME_CACHE_PATH, 'utf8'));
       console.log(`\n🌍 CURRENT REGIME: ${regime.regime_quadrant} (${regime.final_confidence}%)`);
       console.log(`📈 DRIFT:          ${regime.regime_drift_vs_prior}`);
       console.log(`📅 ASSESSED:       ${regime.assessed_at}`);

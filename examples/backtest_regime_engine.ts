@@ -1,13 +1,11 @@
 import dotenv from 'dotenv';
 import fs from 'fs/promises';
-import path from 'path';
 import { MacroCacheSchema } from '../src/types/index.js';
 import { runRegimeAgent } from '../src/agents/regimeAgent.js';
 import { deriveMetrics } from '../src/data/fetchers/fredFetcher.js';
+import { MACRO_SNAPSHOT_CACHE_PATH } from '../src/config/paths.js';
 
 dotenv.config();
-
-const CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'macroSnapshot.json');
 
 /**
  * Backtesting Utility:
@@ -18,7 +16,7 @@ async function backtest() {
 
   try {
     // 1. Load historical data from cache
-    const rawCache = await fs.readFile(CACHE_PATH, 'utf-8');
+    const rawCache = await fs.readFile(MACRO_SNAPSHOT_CACHE_PATH, 'utf-8');
     const parsed = MacroCacheSchema.parse(JSON.parse(rawCache));
     const snapshot = parsed.data;
 

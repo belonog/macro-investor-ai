@@ -1,5 +1,4 @@
 import fs from 'fs';
-import path from 'path';
 import {
   RegimeQuadrant,
   PipelineInput,
@@ -14,9 +13,9 @@ import {
 } from '../types/index.js';
 import { INDICATORS } from '../data/indicators/registry.js';
 import { logger } from '../utils/logger.js';
+import { REGIME_PIPELINE_CONFIG_PATH } from '../config/paths.js';
 
-const configPath = path.join(process.cwd(), 'config', 'regime_pipeline.json');
-const CONFIG: RegimePipelineConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+const CONFIG: RegimePipelineConfig = JSON.parse(fs.readFileSync(REGIME_PIPELINE_CONFIG_PATH, 'utf-8'));
 
 export type DriftStatus = 'N/A' | 'Stable' | 'Weakening' | 'Transitioning' | 'Shifted';
 

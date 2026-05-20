@@ -1,5 +1,4 @@
 import fs from 'fs';
-import path from 'path';
 import { 
   RegimeAssessment, 
   PortfolioConfigSchema,
@@ -14,13 +13,15 @@ import { generateAgentResponse } from './baseAgent.js';
 import { buildPortfolioContext } from '../utils/portfolioContext.js';
 import { runPipeline, buildLLMInput, mergePipelineAndLLM } from './regimePipeline.js';
 import { logger } from '../utils/logger.js';
+import {
+  REGIME_CACHE_PATH,
+  POSITIONS_CONFIG_PATH,
+  REGIME_PROMPT_PATH,
+  CACHE_DIR
+} from '../config/paths.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
-
-const CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'regime_latest.json');
-const POSITIONS_PATH = path.join(process.cwd(), 'config', 'positions.json');
-const PROMPT_PATH = path.join(process.cwd(), 'src', 'prompts', 'regime_system.txt');
 
 /**
  * Runs the Regime Agent using the quantamental pipeline and LLM validation.
@@ -35,22 +36,22 @@ export async function runRegimeAgent(
   trigger: 'manual' | 'post_release' | 'scheduled' | 'alert' = 'manual'
 ): Promise<RegimeAssessment> {
   try {
-    if (!fs.existsSync(PROMPT_PATH)) {
-      throw new Error(`System prompt file not found at ${PROMPT_PATH}`);
+    if (!fs.existsSync(REGIME_PROMPT_PATH)) {
+      throw new Error(`System prompt file not found at ${REGIME_PROMPT_PATH}`);
     }
 
-    let systemPrompt = fs.readFileSync(PROMPT_PATH, 'utf8');
+    let systemPrompt = fs.readFileSync(REGIME_PROMPT_PATH, 'utf8');
 
     // 1. Inject Portfolio Context
     let positionsConfig = {};
-    if (fs.existsSync(POSITIONS_PATH)) {
+    if (fs.existsSync(POSITIONS_CONFIG_PATH)) {
       try {
-        const raw = fs.readFileSync(POSITIONS_PATH, 'utf8');
+        const raw = fs.readFileSync(POSITIONS_CONFIG_PATH, 'utf8');
         if (raw.trim()) {
           positionsConfig = PortfolioConfigSchema.parse(JSON.parse(raw));
         }
       } catch (err) {
-        console.warn(`Failed to parse positions config at ${POSITIONS_PATH}:`, err);
+        console.warn(`Failed to parse positions config at ${POSITIONS_CONFIG_PATH}:`, err);
       }
     }
     const portfolioContext = buildPortfolioContext(positionsConfig);
@@ -58,9 +59,9 @@ export async function runRegimeAgent(
 
     // 2. Load prior assessment for drift detection
     let priorAssessment: PriorAssessment | null = null;
-    if (fs.existsSync(CACHE_PATH)) {
+    if (fs.existsSync(REGIME_CACHE_PATH)) {
       try {
-        const raw = fs.readFileSync(CACHE_PATH, 'utf8');
+        const raw = fs.readFileSync(REGIME_CACHE_PATH, 'utf8');
         if (raw.trim()) {
           const parsed = JSON.parse(raw);
           // priorAssessment expects snake_case fields per Spec v3
@@ -73,7 +74,7 @@ export async function runRegimeAgent(
           };
         }
       } catch (err) {
-        console.warn(`Failed to parse prior assessment at ${CACHE_PATH}:`, err);
+        console.warn(`Failed to parse prior assessment at ${REGIME_CACHE_PATH}:`, err);
       }
     }
 
@@ -136,11 +137,10 @@ export async function runRegimeAgent(
       raw_response: finalAssessment,
     });
 
-    const cacheDir = path.dirname(CACHE_PATH);
-    if (!fs.existsSync(cacheDir)) {
-      fs.mkdirSync(cacheDir, { recursive: true });
+    if (!fs.existsSync(CACHE_DIR)) {
+      fs.mkdirSync(CACHE_DIR, { recursive: true });
     }
-    fs.writeFileSync(CACHE_PATH, JSON.stringify(finalAssessment, null, 2));
+    fs.writeFileSync(REGIME_CACHE_PATH, JSON.stringify(finalAssessment, null, 2));
 
     return finalAssessment;
   } catch (error) {

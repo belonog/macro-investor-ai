@@ -1,15 +1,14 @@
 import Database from 'better-sqlite3';
-import path from 'path';
 import fs from 'fs';
 import { env } from '../config/env.js';
+import { LOGS_DIR, DB_PATH } from '../config/paths.js';
 
-const LOGS_DIR = path.join(process.cwd(), 'logs');
 if (!fs.existsSync(LOGS_DIR)) {
   fs.mkdirSync(LOGS_DIR, { recursive: true });
 }
 
 const isTest = env.NODE_ENV === 'test';
-export const dbConnection: Database.Database = new Database(isTest ? ':memory:' : path.join(LOGS_DIR, 'macro_investor.db'));
+export const dbConnection: Database.Database = new Database(isTest ? ':memory:' : DB_PATH);
 
 export function initSchemas(db: Database.Database) {
   db.exec(`

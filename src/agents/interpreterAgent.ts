@@ -1,5 +1,4 @@
 import fs from 'fs';
-import path from 'path';
 import { generateAgentResponse } from './baseAgent.js';
 import {
   InterpreterOutput,
@@ -10,6 +9,7 @@ import {
   EarningsEvent
 } from '../types/index.js';
 import { buildPortfolioContext } from '../utils/portfolioContext.js';
+import { INTERPRETER_PROMPT_PATH, PREBRIEF_PROMPT_PATH } from '../config/paths.js';
 
 /**
  * Analyzes raw economic release data and produces structured output.
@@ -23,8 +23,7 @@ export async function runInterpreterAgent(
   releaseData: string,
   positionsConfig: PortfolioConfig
 ): Promise<InterpreterOutput> {
-  const templatePath = path.join(process.cwd(), 'src/prompts/interpreter_system.txt');
-  const template = fs.readFileSync(templatePath, 'utf-8');
+  const template = fs.readFileSync(INTERPRETER_PROMPT_PATH, 'utf-8');
   
   const portfolioContext = buildPortfolioContext(positionsConfig);
   const systemPrompt = template.replace('{{PORTFOLIO_CONTEXT}}', portfolioContext);
@@ -54,8 +53,7 @@ export async function generatePrebrief(
   eventDetails: EarningsEvent,
   positionsConfig: PortfolioConfig
 ): Promise<PrebriefOutput> {
-  const templatePath = path.join(process.cwd(), 'src/prompts/prebrief_system.txt');
-  const template = fs.readFileSync(templatePath, 'utf-8');
+  const template = fs.readFileSync(PREBRIEF_PROMPT_PATH, 'utf-8');
 
   const portfolioContext = buildPortfolioContext(positionsConfig);
   const systemPrompt = template.replace('{{PORTFOLIO_CONTEXT}}', portfolioContext);
