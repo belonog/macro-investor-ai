@@ -11,13 +11,13 @@ import { getLatestValues } from '../data/fetchers/fredFetcher.js';
 const POSITIONS_CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'positions_snapshot.json');
 const POSITIONS_CONFIG_PATH = path.join(process.cwd(), 'config', 'positions.json');
 
-// Map descriptive names to FRED IDs for threshold monitoring
+// Map descriptive names to semantic keys for threshold monitoring
 const INDICATOR_MAP: Record<string, string> = {
-  'yield_30y': 'DGS30',
-  'yield_10y': 'DGS10',
-  'yield_2y': 'DGS2',
-  'fed_funds': 'FEDFUNDS',
-  'breakeven_5y5y': 'T5YIFR'
+  'yield_30y': 'yield_30y_pct',
+  'yield_10y': 'yield_10y_pct',
+  'yield_2y': 'yield_2y_pct',
+  'fed_funds': 'fed_funds_rate_pct',
+  'breakeven_5y5y': 'forward_5y5y_pct'
 };
 
 /**

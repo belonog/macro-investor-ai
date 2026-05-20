@@ -65,8 +65,8 @@ export async function runDailyDigest() {
     message += `*Last Assessed:* ${new Date(assessed_at_raw).toLocaleDateString()}\n\n`;
 
     message += `*Key Indicators:*\n`;
-    const y30 = latestValues['DGS30'];
-    const be5y = latestValues['T5YIE'];
+    const y30 = latestValues['yield_30y_pct'];
+    const be5y = latestValues['breakeven_5y_pct'];
     const nfp = latestValues['nfp_3m_avg_k'];
 
     if (y30 !== undefined) message += `- 30Y Yield: ${y30.value.toFixed(2)}%\n`;

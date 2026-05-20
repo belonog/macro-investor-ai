@@ -20,7 +20,7 @@ export async function runRegimeCycle(trigger: 'manual' | 'post_release' | 'sched
     const flatSnapshot = await getLatestValues();
 
     // Add gold price from Polygon
-    flatSnapshot.gold_price = await getGoldSpotPrice();
+    flatSnapshot.gold_price_usd = await getGoldSpotPrice();
 
     // 2. Fetch BLS and EIA data (Spec v3 Flow 1 Steps 2 & 3)
     const blsData = await getLatestReleases();

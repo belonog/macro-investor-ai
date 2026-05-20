@@ -54,3 +54,15 @@ No task is considered complete until the following "Iron Law" of verification is
 - **Prompting**: All system prompts reside in `src/prompts/`. Never use consensus-based framing; prioritize "Thesis Invalidation" and the growth/inflation quadrant.
 - **Data**: Primary data only (FRED, BLS, EIA, Polygon). No news or sentiment APIs.
 - **Positions**: Managed via `config/positions.json`. Quantitative fields are auto-synced; semantic fields (thesis, regime_match) are manual.
+
+## Key Architectural Decisions & Project Memory
+
+### Macro Data Pipeline Decoupling (Spec v3 Refinement)
+1. **Fetching Layer (`src/data/fetchers/`)**: Handles HTTP requests, cache synchronization, and Zod validation of raw data streams. Banned from doing indicator math, hardcoding metadata descriptions, or asserting semantic properties.
+2. **Registry Layer (`src/data/indicators/registry.ts`)**: Single source of truth for indicator definitions, description texts, data sources, update frequencies, and mappings from raw FRED series/Polygon tickers to semantic keys.
+3. **Derivation Layer (`src/data/indicators/derivation.ts`)**: Consumes `MacroSnapshot` data and performs all mathematical derivations (YoY %, rolling averages, yield curve spreads, real wages formulas, credit spread deltas), returning a typed semantic-keyed `MacroIndicators` record.
+
+### Key Downstream Rules
+- **Semantic Key Principle**: Downstream components (agents, alert pipelines, daily digest, and EOD warning checks) must query clean semantic keys (e.g. `cpi_yoy_pct`, `yield_30y_pct`) rather than raw FRED/Polygon ticker IDs.
+- **Dynamic Configuration Lookups**: Determine update frequency and metadata from `INDICATORS` registry rather than hardcoding static maps in agents.
+

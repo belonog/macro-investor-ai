@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchSeries, fetchAll, updateMacroCache, getLatestValues, TARGET_SERIES } from '../src/data/fetchers/fredFetcher.js';
+import { fetchSeries, fetchAll, updateMacroCache, getLatestValues } from '../src/data/fetchers/fredFetcher.js';
+import { RAW_FRED_SERIES_IDS } from '../src/data/indicators/registry.js';
 import axios from 'axios';
 import fs from 'fs/promises';
 import { getManualIndicators } from '../src/utils/manualIndicators.js';
@@ -8,10 +9,10 @@ vi.mock('axios');
 vi.mock('fs/promises');
 vi.mock('../src/utils/manualIndicators.js');
 
-describe('fredFetcher TARGET_SERIES', () => {
+describe('fredFetcher registry RAW_FRED_SERIES_IDS', () => {
   it('contains WTI Crude and Henry Hub Natural Gas series IDs', () => {
-    expect(TARGET_SERIES).toHaveProperty('DCOILWTICO');
-    expect(TARGET_SERIES).toHaveProperty('DHHNGSP');
+    expect(RAW_FRED_SERIES_IDS).toContain('DCOILWTICO');
+    expect(RAW_FRED_SERIES_IDS).toContain('DHHNGSP');
   });
 });
 
@@ -56,7 +57,7 @@ describe('fredFetcher', () => {
       });
 
       const result = await fetchAll();
-      expect(Object.keys(result.series)).toEqual(expect.arrayContaining(Object.keys(TARGET_SERIES)));
+      expect(Object.keys(result.series)).toEqual(expect.arrayContaining(RAW_FRED_SERIES_IDS));
       expect(result.series['CPIAUCSL']).toEqual([{ date: '2023-01-01', value: 100.0 }]);
     });
 
@@ -165,9 +166,10 @@ describe('fredFetcher', () => {
             'DGS10': Array(7).fill({ date: '2023-01-01', value: 0 }),
             'T10Y2Y': Array(7).fill({ date: '2023-01-01', value: 0 }),
             'DTWEXBGS': Array(7).fill({ date: '2023-01-01', value: 0 }),
-            'M2SL': Array(7).fill({ date: '2023-01-01', value: 0 })
+            'M2SL': Array(7).fill({ date: '2023-01-01', value: 0 }),
+            'DHHNGSP': Array(7).fill({ date: '2023-01-01', value: 0 })
           },
-          fetched_at: Object.keys(TARGET_SERIES).reduce((acc, k) => ({ ...acc, [k]: new Date().toISOString() }), {})
+          fetched_at: RAW_FRED_SERIES_IDS.reduce((acc, k) => ({ ...acc, [k]: new Date().toISOString() }), {})
         }
       };
       vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(mockCache));
@@ -178,12 +180,12 @@ describe('fredFetcher', () => {
       const latest = await getLatestValues();
       
       // Basic values
-      expect(latest['CPIAUCSL'].value).toBe(103.0);
-      expect(latest['CPIAUCSL'].unit).toBe('% YoY');
-      expect(latest['CPIAUCSL'].description).toBe('Consumer Price Index (CPI) YoY');
-      expect(latest['CPIAUCSL'].as_of).toBe('2023-01-01');
+      expect(latest['cpi_yoy_pct'].value).toBeCloseTo(3.0);
+      expect(latest['cpi_yoy_pct'].unit).toBe('% YoY');
+      expect(latest['cpi_yoy_pct'].description).toBe('Consumer Price Index (CPI) Year-over-Year % Change');
+      expect(latest['cpi_yoy_pct'].as_of).toBe('2023-01-01');
 
-      expect(latest['PAYEMS'].value).toBe(1450);
+      expect(latest['yield_30y_pct'].value).toBe(4.0);
       
       // Derived: oil_price_3m_change_pct ( (120 - 100) / 100 * 100 = 20 )
       expect(latest['oil_price_3m_change_pct'].value).toBeCloseTo(20);
@@ -222,7 +224,7 @@ describe('fredFetcher', () => {
       });
 
       const latest = await getLatestValues();
-      expect(latest['CPIAUCSL'].value).toBe(110.0);
+      expect(latest['yield_30y_pct'].value).toBe(110.0);
       expect(fs.writeFile).toHaveBeenCalled();
     });
   });

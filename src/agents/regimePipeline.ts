@@ -1,38 +1,23 @@
 import fs from 'fs';
 import path from 'path';
-import { 
-  RegimeQuadrant, 
-  PipelineInput, 
-  PipelineOutput, 
-  NormalizedIndicator, 
-  DataGap, 
-  LLMResponse, 
+import {
+  RegimeQuadrant,
+  PipelineInput,
+  PipelineOutput,
+  NormalizedIndicator,
+  DataGap,
+  LLMResponse,
   FinalAssessment,
   PriorAssessment,
   MacroIndicators,
   RegimePipelineConfig
 } from '../types/index.js';
+import { INDICATORS } from '../data/indicators/registry.js';
 
 const configPath = path.join(process.cwd(), 'config', 'regime_pipeline.json');
 const CONFIG: RegimePipelineConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
 
-type IndicatorFrequency = 'daily' | 'weekly' | 'monthly' | 'quarterly';
 export type DriftStatus = 'N/A' | 'Stable' | 'Weakening' | 'Transitioning' | 'Shifted';
-
-const INDICATOR_FREQUENCY: Record<string, IndicatorFrequency> = {
-  cpi_yoy_pct:                    'monthly',
-  pce_yoy_pct:                    'monthly',
-  breakeven_5y_pct:               'daily',
-  forward_5y5y_pct:               'daily',
-  ppi_yoy_pct:                    'monthly',
-  oil_price_3m_change_pct:        'daily',
-  fertilizer_index_3m_change_pct: 'monthly',
-  ism_manufacturing:              'monthly',
-  ism_services:                   'monthly',
-  real_gdp_qoq_ann_pct:           'quarterly',
-  nfp_3m_avg_k:                   'monthly',
-  retail_sales_yoy_real_pct:      'monthly',
-};
 
 const CONFIDENCE_PENALTIES = {
   perMissingHighWeightIndicator: 8,   // per indicator with original weight >= 0.10
@@ -65,8 +50,7 @@ export function isStale(
   indicatorKey: string,
   currentDate: Date
 ): boolean {
-  const frequency: IndicatorFrequency =
-    INDICATOR_FREQUENCY[indicatorKey] ?? 'monthly';
+  const frequency = INDICATORS[indicatorKey]?.frequency ?? 'monthly';
   const limitDays = CONFIG.staleness_limits_days[frequency];
   const dataDate  = new Date(asOf);
   const ageDays   = (currentDate.getTime() - dataDate.getTime()) / 86_400_000;
@@ -93,10 +77,10 @@ export function redistributeWeights(
     const indicator = indicators[key];
 
     if (!indicator || typeof indicator === 'number') {
-      const val = typeof indicator === 'number' 
-        ? indicator 
-        : (indicator && typeof indicator === 'object' && 'value' in indicator) 
-          ? (indicator as { value: number }).value 
+      const val = typeof indicator === 'number'
+        ? indicator
+        : (indicator && typeof indicator === 'object' && 'value' in indicator)
+          ? (indicator as { value: number }).value
           : undefined;
       if (val === undefined || val === null) {
         gaps.push({
@@ -452,7 +436,7 @@ const SUPPLEMENTARY_KEYS: string[] = [
   'tips_real_yield_5y_pct', 'yield_curve_10y_2y_bps', 'hy_spread_bps',
   'ig_spread_bps', 'dxy', 'gold_price_usd', 'wti_price_usd',
   'consumer_sentiment', 'personal_saving_rate_pct', 'capacity_utilization_pct',
-  'real_wages_yoy_pct',
+  'real_wages_yoy_pct', 'fao_food_price_index'
 ];
 
 function extractRaw(
