@@ -12,6 +12,7 @@ import { logRebalancingDecision } from '../db/database.js';
 import { generateAgentResponse } from './baseAgent.js';
 import { buildPortfolioContext } from '../utils/portfolioContext.js';
 import { StaleRegimeError } from '../utils/errors.js';
+import { logger } from '../utils/logger.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -96,7 +97,7 @@ export async function generateRebalancingReport(): Promise<RebalancingOutput> {
 
     return validated;
   } catch (error) {
-    console.error('Error generating rebalancing report:', error);
+    logger.error(error, 'Error generating rebalancing report');
     throw error;
   }
 }

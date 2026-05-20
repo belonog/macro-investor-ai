@@ -8,12 +8,13 @@ import { runRegimeAgent } from '../agents/regimeAgent.js';
 import { generateRebalancingReport } from '../agents/rebalancingAgent.js';
 import { sendTelegramAlert } from '../alerts/telegramBot.js';
 import { PositionSnapshot } from '../types/index.js';
+import { logger } from '../utils/logger.js';
 
 const POSITIONS_CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'positions_snapshot.json');
 
 export async function runRegimeCycle(trigger: 'manual' | 'post_release' | 'scheduled' = 'manual') {
   try {
-    console.log(`Starting Regime Cycle (Trigger: ${trigger})...`);
+    logger.info(`Starting Regime Cycle (Trigger: ${trigger})...`);
     
     // 1. Update Macro Data
     await updateMacroCache();
@@ -44,16 +45,16 @@ export async function runRegimeCycle(trigger: 'manual' | 'post_release' | 'sched
             const diffHours = (now.getTime() - fetchedAt.getTime()) / (1000 * 3600);
             
             if (diffHours > 26) {
-              console.warn(`Portfolio snapshot is stale (${diffHours.toFixed(1)}h). Rebalancing report might be inaccurate.`);
+              logger.warn(`Portfolio snapshot is stale (${diffHours.toFixed(1)}h). Rebalancing report might be inaccurate.`);
             }
           } else {
-            console.warn('Portfolio snapshot is empty. Rebalancing report will be incomplete.');
+            logger.warn('Portfolio snapshot is empty. Rebalancing report will be incomplete.');
           }
         } catch (err) {
-          console.error(`Failed to parse portfolio snapshot at ${POSITIONS_CACHE_PATH}:`, err);
+          logger.error(err, `Failed to parse portfolio snapshot at ${POSITIONS_CACHE_PATH}`);
         }
       } else {
-        console.warn('Portfolio snapshot not found. Rebalancing report will be incomplete.');
+        logger.warn('Portfolio snapshot not found. Rebalancing report will be incomplete.');
       }
 
       const report = await generateRebalancingReport();
@@ -75,7 +76,7 @@ export async function runRegimeCycle(trigger: 'manual' | 'post_release' | 'sched
     }
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('Regime Cycle Failed:', error);
+    logger.error(error, 'Regime Cycle Failed');
     await sendTelegramAlert({
       level: 'CRITICAL',
       message: `Alert: Regime Cycle Failed: ${message}`,

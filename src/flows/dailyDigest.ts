@@ -5,6 +5,7 @@ import { getEarningsCalendar } from '../data/fetchers/polygonFetcher.js';
 import { getLatestValues } from '../data/fetchers/fredFetcher.js';
 import { sendTelegramAlert } from '../alerts/telegramBot.js';
 import { RegimeAssessment, PortfolioConfigSchema } from '../types/index.js';
+import { logger } from '../utils/logger.js';
 
 const REGIME_CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'regime_latest.json');
 const POSITIONS_CONFIG_PATH = path.join(process.cwd(), 'config', 'positions.json');
@@ -14,11 +15,11 @@ const POSITIONS_CONFIG_PATH = path.join(process.cwd(), 'config', 'positions.json
  */
 export async function runDailyDigest() {
   try {
-    console.log('Starting Daily Digest...');
+    logger.info('Starting Daily Digest...');
 
     // 1. Read regime_latest.json — check assessed_at
     if (!fs.existsSync(REGIME_CACHE_PATH)) {
-      console.log('No regime assessment found. Running regime cycle...');
+      logger.info('No regime assessment found. Running regime cycle...');
       await runRegimeCycle('scheduled');
     }
 
@@ -26,7 +27,7 @@ export async function runDailyDigest() {
     try {
       regimeAssessment = JSON.parse(fs.readFileSync(REGIME_CACHE_PATH, 'utf8'));
     } catch {
-      console.error('Failed to parse regime assessment. Running regime cycle...');
+      logger.error('Failed to parse regime assessment. Running regime cycle...');
       await runRegimeCycle('scheduled');
       regimeAssessment = JSON.parse(fs.readFileSync(REGIME_CACHE_PATH, 'utf8'));
     }
@@ -37,7 +38,7 @@ export async function runDailyDigest() {
     const diffDays = (now.getTime() - assessedAt.getTime()) / (1000 * 3600 * 24);
 
     if (diffDays > 7) {
-      console.log(`Regime assessment is stale (${diffDays.toFixed(1)} days). Running regime cycle...`);
+      logger.info(`Regime assessment is stale (${diffDays.toFixed(1)} days). Running regime cycle...`);
       await runRegimeCycle('scheduled');
       regimeAssessment = JSON.parse(fs.readFileSync(REGIME_CACHE_PATH, 'utf8'));
     }
@@ -92,9 +93,9 @@ export async function runDailyDigest() {
       action: null
     });
 
-    console.log('Daily Digest Completed.');
+    logger.info('Daily Digest Completed.');
   } catch (error) {
-    console.error('Daily Digest Failed:', error);
+    logger.error(error, 'Daily Digest Failed');
     throw error;
   }
 }

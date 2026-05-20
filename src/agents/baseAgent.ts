@@ -3,6 +3,7 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
 import { db } from '../db/database.js';
+import { logger } from '../utils/logger.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -73,7 +74,7 @@ export async function generateAgentResponse<T>(
       return result.object;
     } catch (error) {
       lastError = error;
-      console.error(`Attempt ${attempt} failed for agent ${options.agentName}:`, error);
+      logger.error(error, `Attempt ${attempt} failed for agent ${options.agentName}`);
       
       if (attempt < maxRetries) {
         // Simple exponential backoff: 2s, 4s

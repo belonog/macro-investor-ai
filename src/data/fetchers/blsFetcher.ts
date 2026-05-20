@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { z } from 'zod';
+import { logger } from '../../utils/logger.js';
 
 const BLS_BASE = 'https://api.bls.gov/publicAPI/v2/timeseries/data/';
 
@@ -74,7 +75,7 @@ export async function getLatestReleases(): Promise<unknown[]> {
       return `Series ${s.seriesID}: No data`;
     });
   } catch (error) {
-    console.error('Failed to get BLS latest releases:', error);
+    logger.error(error, 'Failed to get BLS latest releases');
     return [];
   }
 }

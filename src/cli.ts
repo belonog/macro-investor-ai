@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import './config/env.js';
 import { Command } from 'commander';
 import fs from 'fs';
 import path from 'path';

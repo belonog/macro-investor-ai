@@ -1,4 +1,5 @@
 .superpowers
+.antigravitycli
 node_modules
 dist
 .env

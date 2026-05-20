@@ -4,6 +4,7 @@ import { getEarningsCalendar } from '../data/fetchers/polygonFetcher.js';
 import { generatePrebrief } from '../agents/interpreterAgent.js';
 import { sendTelegramAlert } from '../alerts/telegramBot.js';
 import { PortfolioConfigSchema } from '../types/index.js';
+import { logger } from '../utils/logger.js';
 
 const POSITIONS_CONFIG_PATH = path.join(process.cwd(), 'config', 'positions.json');
 
@@ -12,7 +13,7 @@ const POSITIONS_CONFIG_PATH = path.join(process.cwd(), 'config', 'positions.json
  */
 export async function runEventPrebrief() {
   try {
-    console.log('Starting Event Pre-Brief flow...');
+    logger.info('Starting Event Pre-Brief flow...');
 
     // 1. Load Positions Config
     if (!fs.existsSync(POSITIONS_CONFIG_PATH)) {
@@ -26,7 +27,7 @@ export async function runEventPrebrief() {
     const heldSymbols = Object.keys(positionsConfig);
 
     if (heldSymbols.length === 0) {
-      console.log('No held symbols found. Skipping event pre-brief.');
+      logger.info('No held symbols found. Skipping event pre-brief.');
       return;
     }
 
@@ -34,18 +35,18 @@ export async function runEventPrebrief() {
     const events = await getEarningsCalendar(heldSymbols, 2);
 
     if (events.length === 0) {
-      console.log('No upcoming earnings events found within 48h.');
+      logger.info('No upcoming earnings events found within 48h.');
       return;
     }
 
-    console.log(`Found ${events.length} upcoming events. Generating pre-briefs...`);
+    logger.info(`Found ${events.length} upcoming events. Generating pre-briefs...`);
 
     // 3. Generate Pre-Briefs for each event
     for (const event of events) {
       const symbol = event.symbol;
       const thesis = positionsConfig[symbol]?.thesis || 'No thesis provided.';
       
-      console.log(`Generating pre-brief for ${symbol}...`);
+      logger.info(`Generating pre-brief for ${symbol}...`);
       const prebrief = await generatePrebrief(symbol, thesis, event, positionsConfig);
 
       // 4. Send to Telegram
@@ -58,9 +59,9 @@ export async function runEventPrebrief() {
       });
     }
 
-    console.log('Event Pre-Brief flow completed.');
+    logger.info('Event Pre-Brief flow completed.');
   } catch (error) {
-    console.error('Event Pre-Brief flow failed:', error);
+    logger.error(error, 'Event Pre-Brief flow failed');
     throw error;
   }
 }

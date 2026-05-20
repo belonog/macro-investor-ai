@@ -7,13 +7,14 @@ import { sendTelegramAlert } from '../alerts/telegramBot.js';
 import fs from 'fs';
 import path from 'path';
 import { PortfolioConfigSchema } from '../types/index.js';
+import { logger } from '../utils/logger.js';
 
 const POSITIONS_CONFIG_PATH = path.join(process.cwd(), 'config', 'positions.json');
 const POSITIONS_CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'positions_snapshot.json');
 
 export async function runEodCheck() {
   try {
-    console.log('Starting EOD Check...');
+    logger.info('Starting EOD Check...');
     
     const token = process.env.IBKR_FLEX_TOKEN;
     const queryId = process.env.IBKR_FLEX_REPORT_ID;
@@ -56,10 +57,10 @@ export async function runEodCheck() {
       await sendTelegramAlert(alert);
     }
     
-    console.log('EOD Check Completed Successfully.');
+    logger.info('EOD Check Completed Successfully.');
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('EOD Check Failed:', error);
+    logger.error(error, 'EOD Check Failed');
     await sendTelegramAlert({
       level: 'CRITICAL',
       message: `Alert: EOD Check Failed: ${message}`,

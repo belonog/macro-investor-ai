@@ -13,6 +13,7 @@ import { logRegimeEvaluation } from '../db/database.js';
 import { generateAgentResponse } from './baseAgent.js';
 import { buildPortfolioContext } from '../utils/portfolioContext.js';
 import { runPipeline, buildLLMInput, mergePipelineAndLLM } from './regimePipeline.js';
+import { logger } from '../utils/logger.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -143,7 +144,7 @@ export async function runRegimeAgent(
 
     return finalAssessment;
   } catch (error) {
-    console.error('Error running regime agent:', error);
+    logger.error(error, 'Error running regime agent');
     throw error;
   }
 }

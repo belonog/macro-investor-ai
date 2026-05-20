@@ -4,6 +4,7 @@ import path from 'path';
 import { DataPoint, DataPointSchema, MacroSnapshot, MacroCacheSchema, MacroIndicators } from '../../types/index.js';
 import { RAW_FRED_SERIES_IDS, RAW_FRED_METADATA } from '../indicators/registry.js';
 import { deriveMetrics } from '../indicators/derivation.js';
+import { logger } from '../../utils/logger.js';
 
 const FRED_BASE_URL = 'https://api.stlouisfed.org/fred';
 const CACHE_PATH = path.join(process.cwd(), 'src', 'data', 'cache', 'macroSnapshot.json');
@@ -70,7 +71,7 @@ export async function fetchAll(): Promise<MacroSnapshot> {
       snapshot.fetched_at[seriesId] = new Date().toISOString();
     } catch {
       const desc = RAW_FRED_METADATA[seriesId]?.description || seriesId;
-      console.error(`Failed to fetch ${seriesId} (${desc})`);
+      logger.error(`Failed to fetch ${seriesId} (${desc})`);
       snapshot.series[seriesId] = []; // Ensure the key exists even on failure
       snapshot.fetched_at[seriesId] = new Date().toISOString();
     }
@@ -124,7 +125,7 @@ export async function updateMacroCache(): Promise<MacroSnapshot> {
       snapshot.fetched_at[seriesId] = new Date().toISOString();
     } catch (error) {
       const desc = RAW_FRED_METADATA[seriesId]?.description || seriesId;
-      console.error(`Failed to fetch ${seriesId} (${desc}):`, error);
+      logger.error(error, `Failed to fetch ${seriesId} (${desc})`);
       if (!snapshot.series[seriesId]) {
         snapshot.series[seriesId] = [];
       }
