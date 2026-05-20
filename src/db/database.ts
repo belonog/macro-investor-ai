@@ -3,6 +3,7 @@ import { AgentRunRepository } from './repositories/agentRunRepository.js';
 import { RegimeHistoryRepository } from './repositories/regimeHistoryRepository.js';
 import { AlertsRepository } from './repositories/alertsRepository.js';
 import { DecisionRepository } from './repositories/decisionRepository.js';
+import { CacheRepository } from './repositories/cacheRepository.js';
 import {
   RegimeAssessment,
   Alert,
@@ -37,6 +38,7 @@ export class DatabaseManager {
   public regimeHistory: RegimeHistoryRepository;
   public alertsSent: AlertsRepository;
   public decisionLog: DecisionRepository;
+  public cache: CacheRepository;
 
   constructor() {
     initSchemas(dbConnection);
@@ -44,6 +46,20 @@ export class DatabaseManager {
     this.regimeHistory = new RegimeHistoryRepository(dbConnection);
     this.alertsSent = new AlertsRepository(dbConnection);
     this.decisionLog = new DecisionRepository(dbConnection);
+    this.cache = new CacheRepository(dbConnection);
+  }
+
+  // Cache Helpers
+  public getCache<T>(key: string): T | null {
+    return this.cache.get<T>(key);
+  }
+
+  public setCache<T>(key: string, value: T): void {
+    return this.cache.set<T>(key, value);
+  }
+
+  public deleteCache(key: string): void {
+    return this.cache.delete(key);
   }
 
   // Insert Helpers

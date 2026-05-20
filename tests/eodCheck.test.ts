@@ -12,6 +12,16 @@ vi.mock('../src/data/fetchers/fredFetcher.js');
 vi.mock('../src/data/fetchers/polygonFetcher.js');
 vi.mock('../src/alerts/telegramBot.js');
 
+const { mockSetCache } = vi.hoisted(() => ({
+  mockSetCache: vi.fn()
+}));
+
+vi.mock('../src/db/database.js', () => ({
+  db: {
+    setCache: mockSetCache
+  }
+}));
+
 describe('eodCheck flow', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -59,10 +69,9 @@ describe('eodCheck flow', () => {
     await runEodCheck();
 
     // Verify snapshot was cached
-    expect(fs.writeFileSync).toHaveBeenCalledWith(
-      expect.stringContaining('positions_snapshot.json'),
-      expect.stringContaining('AAPL')
-    );
+    expect(mockSetCache).toHaveBeenCalledWith('positions_snapshot', expect.arrayContaining([
+      expect.objectContaining({ symbol: 'AAPL' })
+    ]));
 
     // Verify config was updated/synced
     expect(fs.writeFileSync).toHaveBeenCalledWith(

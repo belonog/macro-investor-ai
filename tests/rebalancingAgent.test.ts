@@ -10,8 +10,18 @@ vi.mock('../src/agents/baseAgent', () => ({
 }));
 
 vi.mock('fs');
+const { mockGetCache, mockSetCache, mockLogRebalancingDecision } = vi.hoisted(() => ({
+  mockGetCache: vi.fn(),
+  mockSetCache: vi.fn(),
+  mockLogRebalancingDecision: vi.fn()
+}));
+
 vi.mock('../src/db/database', () => ({
-  logRebalancingDecision: vi.fn()
+  logRebalancingDecision: mockLogRebalancingDecision,
+  db: {
+    getCache: mockGetCache,
+    setCache: mockSetCache
+  }
 }));
 
 import { logRebalancingDecision } from '../src/db/database.js';
@@ -47,9 +57,13 @@ describe('rebalancingAgent', () => {
       assessed_at: staleDate.toISOString()
     };
 
+    mockGetCache.mockImplementation((key) => {
+      if (key === 'regime_latest') return mockRegime;
+      return null;
+    });
+
     vi.mocked(fs.readFileSync).mockImplementation((path) => {
       if (typeof path === 'string') {
-        if (path.includes('regime_latest.json')) return JSON.stringify(mockRegime);
         if (path.includes('rebalancing_system.txt')) return 'Mock Prompt';
         if (path.includes('positions.json')) return '{}';
       }
@@ -99,10 +113,14 @@ describe('rebalancingAgent', () => {
       }
     };
 
+    mockGetCache.mockImplementation((key) => {
+      if (key === 'regime_latest') return mockRegime;
+      if (key === 'positions_snapshot') return mockPositions;
+      return null;
+    });
+
     vi.mocked(fs.readFileSync).mockImplementation((path) => {
       if (typeof path === 'string') {
-        if (path.includes('regime_latest.json')) return JSON.stringify(mockRegime);
-        if (path.includes('positions_snapshot.json')) return JSON.stringify(mockPositions);
         if (path.includes('positions.json')) return JSON.stringify(mockConfig);
         if (path.includes('rebalancing_system.txt')) return 'Mock Prompt: {{PORTFOLIO_CONTEXT}}';
       }
@@ -145,10 +163,7 @@ describe('rebalancingAgent', () => {
     }));
     
     expect(logRebalancingDecision).toHaveBeenCalled();
-    expect(fs.writeFileSync).toHaveBeenCalledWith(
-      expect.stringContaining('rebalancing_latest.json'),
-      expect.stringContaining('"alignment_grade": "B"')
-    );
+    expect(mockSetCache).toHaveBeenCalledWith('rebalancing_latest', expect.objectContaining({ alignment_grade: 'B' }));
   });
 });
 

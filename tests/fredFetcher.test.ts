@@ -2,12 +2,23 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fetchSeries, fetchAll, updateMacroCache, getLatestValues } from '../src/data/fetchers/fredFetcher.js';
 import { RAW_FRED_SERIES_IDS } from '../src/data/indicators/registry.js';
 import axios from 'axios';
-import fs from 'fs/promises';
+
 import { getManualIndicators } from '../src/utils/manualIndicators.js';
 
 vi.mock('axios');
-vi.mock('fs/promises');
 vi.mock('../src/utils/manualIndicators.js');
+
+const { mockGetCache, mockSetCache } = vi.hoisted(() => ({
+  mockGetCache: vi.fn(),
+  mockSetCache: vi.fn()
+}));
+
+vi.mock('../src/db/database.js', () => ({
+  db: {
+    getCache: mockGetCache,
+    setCache: mockSetCache
+  }
+}));
 
 describe('fredFetcher registry RAW_FRED_SERIES_IDS', () => {
   it('contains WTI Crude and Henry Hub Natural Gas series IDs', () => {
@@ -20,6 +31,7 @@ describe('fredFetcher', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     process.env.FRED_API_KEY = 'test_api_key';
+    mockGetCache.mockReturnValue(null);
   });
 
   it('should fetch and parse a FRED series', async () => {
@@ -88,13 +100,12 @@ describe('fredFetcher', () => {
           observations: [{ date: '2023-01-01', value: '100.0' }]
         }
       });
-      vi.mocked(fs.readFile).mockRejectedValue(new Error('File not found'));
+      mockGetCache.mockReturnValue(null);
 
       const result = await updateMacroCache();
-      expect(fs.mkdir).toHaveBeenCalled();
-      expect(fs.writeFile).toHaveBeenCalledWith(
-        expect.stringContaining('macro_snapshot.json'),
-        expect.stringContaining('"CPIAUCSL":')
+      expect(mockSetCache).toHaveBeenCalledWith(
+        'macro_snapshot',
+        expect.objectContaining({ data: expect.objectContaining({ series: expect.objectContaining({ 'CPIAUCSL': expect.any(Array) }) }) })
       );
       expect(result.series['CPIAUCSL']).toEqual([{ date: '2023-01-01', value: 100.0 }]);
     });
@@ -172,7 +183,7 @@ describe('fredFetcher', () => {
           fetched_at: RAW_FRED_SERIES_IDS.reduce((acc, k) => ({ ...acc, [k]: new Date().toISOString() }), {})
         }
       };
-      vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(mockCache));
+      mockGetCache.mockReturnValue(mockCache);
       vi.mocked(getManualIndicators).mockReturnValue({
         'MANUAL_TEST': { value: 99.9, period: '2023-05', description: 'Test Description', updated_at: new Date().toISOString(), source: 'test' }
       });
@@ -214,7 +225,7 @@ describe('fredFetcher', () => {
     });
 
     it('should fetch and update cache if cache is missing', async () => {
-      vi.mocked(fs.readFile).mockRejectedValue(new Error('File not found'));
+      mockGetCache.mockReturnValue(null);
       vi.mocked(getManualIndicators).mockReturnValue({});
       const mockedAxios = vi.mocked(axios);
       mockedAxios.get.mockResolvedValue({
@@ -225,7 +236,7 @@ describe('fredFetcher', () => {
 
       const latest = await getLatestValues();
       expect(latest['yield_30y_pct'].value).toBe(110.0);
-      expect(fs.writeFile).toHaveBeenCalled();
+      expect(mockSetCache).toHaveBeenCalled();
     });
   });
 });

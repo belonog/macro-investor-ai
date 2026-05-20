@@ -8,16 +8,14 @@ import {
   PriorAssessment,
   LLMResponseSchema
 } from '../types/index.js';
-import { logRegimeEvaluation } from '../db/database.js';
+import { logRegimeEvaluation, db } from '../db/database.js';
 import { generateAgentResponse } from './baseAgent.js';
 import { buildPortfolioContext } from '../utils/portfolioContext.js';
 import { runPipeline, buildLLMInput, mergePipelineAndLLM } from './regimePipeline.js';
 import { logger } from '../utils/logger.js';
 import {
-  REGIME_CACHE_PATH,
   POSITIONS_CONFIG_PATH,
-  REGIME_PROMPT_PATH,
-  CACHE_DIR
+  REGIME_PROMPT_PATH
 } from '../config/paths.js';
 import dotenv from 'dotenv';
 
@@ -59,22 +57,18 @@ export async function runRegimeAgent(
 
     // 2. Load prior assessment for drift detection
     let priorAssessment: PriorAssessment | null = null;
-    if (fs.existsSync(REGIME_CACHE_PATH)) {
+    const rawPrior = db.getCache<RegimeAssessment>('regime_latest');
+    if (rawPrior) {
       try {
-        const raw = fs.readFileSync(REGIME_CACHE_PATH, 'utf8');
-        if (raw.trim()) {
-          const parsed = JSON.parse(raw);
-          // priorAssessment expects snake_case fields per Spec v3
-          priorAssessment = {
-            regime_quadrant: parsed.regime_quadrant,
-            inflation_score: parsed.inflation_score,
-            growth_score: parsed.growth_score,
-            confidence: parsed.confidence,
-            assessed_at: parsed.assessed_at,
-          };
-        }
+        priorAssessment = {
+          regime_quadrant: rawPrior.regime_quadrant,
+          inflation_score: rawPrior.inflation_score,
+          growth_score: rawPrior.growth_score,
+          confidence: rawPrior.final_confidence,
+          assessed_at: rawPrior.assessed_at,
+        };
       } catch (err) {
-        logger.warn(err, `Failed to parse prior assessment at ${REGIME_CACHE_PATH}`);
+        logger.warn(err, `Failed to parse prior assessment from cache`);
       }
     }
 
@@ -137,10 +131,7 @@ export async function runRegimeAgent(
       raw_response: finalAssessment,
     });
 
-    if (!fs.existsSync(CACHE_DIR)) {
-      fs.mkdirSync(CACHE_DIR, { recursive: true });
-    }
-    fs.writeFileSync(REGIME_CACHE_PATH, JSON.stringify(finalAssessment, null, 2));
+    db.setCache('regime_latest', finalAssessment);
 
     return finalAssessment;
   } catch (error) {

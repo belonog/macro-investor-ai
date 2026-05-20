@@ -1,4 +1,4 @@
-import fs from 'fs';
+
 import { updateMacroCache, getLatestValues } from '../data/fetchers/fredFetcher.js';
 import { getLatestReleases } from '../data/fetchers/blsFetcher.js';
 import { getLatest as getLatestEia } from '../data/fetchers/eiaFetcher.js';
@@ -9,7 +9,7 @@ import { sendTelegramAlert } from '../alerts/telegramBot.js';
 import { formatRegimeSummary, formatRegimeNarrative } from '../utils/alertFormatter.js';
 import { PositionSnapshot } from '../types/index.js';
 import { logger } from '../utils/logger.js';
-import { POSITIONS_CACHE_PATH } from '../config/paths.js';
+import { db } from '../db/database.js';
 
 export async function runRegimeCycle(trigger: 'manual' | 'post_release' | 'scheduled' = 'manual') {
   try {
@@ -59,28 +59,23 @@ export async function runRegimeCycle(trigger: 'manual' | 'post_release' | 'sched
     // 5. Conditional Rebalancing Logic (Stays for logging/background info)
     if (['Transitioning', 'Shifted'].includes(assessment.regime_drift_vs_prior)) {
       // Verify fetched_at < 26h for portfolio snapshot (Spec v3 Flow 1 Step 6)
-      if (fs.existsSync(POSITIONS_CACHE_PATH)) {
-        try {
-          const raw = fs.readFileSync(POSITIONS_CACHE_PATH, 'utf8');
-          const snapshots: PositionSnapshot[] = raw.trim() ? JSON.parse(raw) : [];
+      try {
+        const snapshots = db.getCache<PositionSnapshot[]>('positions_snapshot') || [];
+        
+        if (snapshots.length > 0) {
+          const fetched_at_raw = snapshots[0].fetched_at;
+          const fetchedAt = new Date(fetched_at_raw);
+          const now = new Date();
+          const diffHours = (now.getTime() - fetchedAt.getTime()) / (1000 * 3600);
           
-          if (snapshots.length > 0) {
-            const fetched_at_raw = snapshots[0].fetched_at;
-            const fetchedAt = new Date(fetched_at_raw);
-            const now = new Date();
-            const diffHours = (now.getTime() - fetchedAt.getTime()) / (1000 * 3600);
-            
-            if (diffHours > 26) {
-              logger.warn(`Portfolio snapshot is stale (${diffHours.toFixed(1)}h). Rebalancing report might be inaccurate.`);
-            }
-          } else {
-            logger.warn('Portfolio snapshot is empty. Rebalancing report will be incomplete.');
+          if (diffHours > 26) {
+            logger.warn(`Portfolio snapshot is stale (${diffHours.toFixed(1)}h). Rebalancing report might be inaccurate.`);
           }
-        } catch (err) {
-          logger.error(err, `Failed to parse portfolio snapshot at ${POSITIONS_CACHE_PATH}`);
+        } else {
+          logger.warn('Portfolio snapshot is empty. Rebalancing report will be incomplete.');
         }
-      } else {
-        logger.warn('Portfolio snapshot not found. Rebalancing report will be incomplete.');
+      } catch (err) {
+        logger.error(err, `Failed to parse portfolio snapshot from cache`);
       }
 
       await generateRebalancingReport();

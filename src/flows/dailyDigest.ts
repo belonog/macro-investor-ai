@@ -5,7 +5,8 @@ import { getLatestValues } from '../data/fetchers/fredFetcher.js';
 import { sendTelegramAlert } from '../alerts/telegramBot.js';
 import { RegimeAssessment, PortfolioConfigSchema } from '../types/index.js';
 import { logger } from '../utils/logger.js';
-import { REGIME_CACHE_PATH, POSITIONS_CONFIG_PATH } from '../config/paths.js';
+import { POSITIONS_CONFIG_PATH } from '../config/paths.js';
+import { db } from '../db/database.js';
 
 /**
  * Morning digest flow: checks regime staleness, upcoming earnings, and key indicators.
@@ -14,19 +15,23 @@ export async function runDailyDigest() {
   try {
     logger.info('Starting Daily Digest...');
 
-    // 1. Read regime_latest.json — check assessed_at
-    if (!fs.existsSync(REGIME_CACHE_PATH)) {
+    // 1. Read regime_latest from cache — check assessed_at
+    let rawRegime = db.getCache<unknown>('regime_latest');
+    
+    if (!rawRegime) {
       logger.info('No regime assessment found. Running regime cycle...');
       await runRegimeCycle('scheduled');
+      rawRegime = db.getCache<unknown>('regime_latest');
     }
 
     let regimeAssessment: RegimeAssessment;
     try {
-      regimeAssessment = JSON.parse(fs.readFileSync(REGIME_CACHE_PATH, 'utf8'));
+      regimeAssessment = rawRegime as RegimeAssessment;
+      if (!regimeAssessment || !regimeAssessment.assessed_at) throw new Error('Invalid schema');
     } catch {
       logger.error('Failed to parse regime assessment. Running regime cycle...');
       await runRegimeCycle('scheduled');
-      regimeAssessment = JSON.parse(fs.readFileSync(REGIME_CACHE_PATH, 'utf8'));
+      regimeAssessment = db.getCache<RegimeAssessment>('regime_latest')!;
     }
 
     const assessed_at_raw = regimeAssessment.assessed_at;
@@ -37,7 +42,7 @@ export async function runDailyDigest() {
     if (diffDays > 7) {
       logger.info(`Regime assessment is stale (${diffDays.toFixed(1)} days). Running regime cycle...`);
       await runRegimeCycle('scheduled');
-      regimeAssessment = JSON.parse(fs.readFileSync(REGIME_CACHE_PATH, 'utf8'));
+      regimeAssessment = db.getCache<RegimeAssessment>('regime_latest')!;
     }
 
     // 2. Get Earnings Calendar for held symbols

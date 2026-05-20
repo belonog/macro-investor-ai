@@ -64,5 +64,11 @@ export function initSchemas(db: Database.Database) {
       alignment_grade TEXT,
       full_output TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS app_cache (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 }

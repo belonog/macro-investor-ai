@@ -74,8 +74,18 @@ vi.mock('../src/agents/baseAgent', () => ({
   generateAgentResponse: mockGenerateAgentResponse
 }));
 
+const { mockGetCache, mockSetCache, mockLogRegimeEvaluation } = vi.hoisted(() => ({
+  mockGetCache: vi.fn(),
+  mockSetCache: vi.fn(),
+  mockLogRegimeEvaluation: vi.fn()
+}));
+
 vi.mock('../src/db/database', () => ({
-  logRegimeEvaluation: vi.fn()
+  logRegimeEvaluation: mockLogRegimeEvaluation,
+  db: {
+    getCache: mockGetCache,
+    setCache: mockSetCache
+  }
 }));
 
 import { logRegimeEvaluation } from '../src/db/database.js';
@@ -180,10 +190,7 @@ describe('regimeAgent', () => {
       data_inputs: mockMacroData
     }));
     
-    expect(fs.writeFileSync).toHaveBeenCalledWith(
-      expect.stringContaining('regime_latest.json'),
-      expect.stringContaining('"regime_quadrant": "Boundary Zone"')
-    );
+    expect(mockSetCache).toHaveBeenCalledWith('regime_latest', expect.objectContaining({ regime_quadrant: 'Boundary Zone' }));
   });
 
   it('should throw error if prompt file is missing', async () => {

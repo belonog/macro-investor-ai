@@ -7,19 +7,12 @@ import {
   PortfolioConfig,
   PortfolioConfigSchema
 } from '../types/index.js';
-import { logRebalancingDecision } from '../db/database.js';
+import { logRebalancingDecision, db } from '../db/database.js';
 import { generateAgentResponse } from './baseAgent.js';
 import { buildPortfolioContext } from '../utils/portfolioContext.js';
 import { StaleRegimeError } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
-import {
-  REGIME_CACHE_PATH,
-  POSITIONS_CACHE_PATH,
-  POSITIONS_CONFIG_PATH,
-  REBALANCING_PROMPT_PATH,
-  REBALANCING_CACHE_PATH,
-  CACHE_DIR
-} from '../config/paths.js';
+import { POSITIONS_CONFIG_PATH, REBALANCING_PROMPT_PATH } from '../config/paths.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -36,10 +29,11 @@ export async function generateRebalancingReport(): Promise<RebalancingOutput> {
     let systemPrompt = fs.readFileSync(REBALANCING_PROMPT_PATH, 'utf8');
 
     // 1. Load Regime Snapshot
-    if (!fs.existsSync(REGIME_CACHE_PATH)) {
-      throw new Error(`Regime snapshot not found at ${REGIME_CACHE_PATH}. Run regime check first.`);
+    const rawRegime = db.getCache<RegimeAssessment>('regime_latest');
+    if (!rawRegime) {
+      throw new Error(`Regime snapshot not found in cache. Run regime check first.`);
     }
-    const regimeSnapshot: RegimeAssessment = JSON.parse(fs.readFileSync(REGIME_CACHE_PATH, 'utf8'));
+    const regimeSnapshot: RegimeAssessment = rawRegime;
 
     // Stale-data guard
     const assessed_at_raw = regimeSnapshot.assessed_at;
@@ -51,10 +45,7 @@ export async function generateRebalancingReport(): Promise<RebalancingOutput> {
     }
 
     // 2. Load Portfolio Snapshot (from IBKR fetcher)
-    let positionSnapshots: PositionSnapshot[] = [];
-    if (fs.existsSync(POSITIONS_CACHE_PATH)) {
-      positionSnapshots = JSON.parse(fs.readFileSync(POSITIONS_CACHE_PATH, 'utf8'));
-    }
+    const positionSnapshots: PositionSnapshot[] = db.getCache<PositionSnapshot[]>('positions_snapshot') || [];
 
     // 3. Load Positions Config (Theses, types, etc.)
     if (!fs.existsSync(POSITIONS_CONFIG_PATH)) {
@@ -89,11 +80,8 @@ export async function generateRebalancingReport(): Promise<RebalancingOutput> {
       raw_response: validated,
     });
 
-    // 5. Cache to JSON
-    if (!fs.existsSync(CACHE_DIR)) {
-      fs.mkdirSync(CACHE_DIR, { recursive: true });
-    }
-    fs.writeFileSync(REBALANCING_CACHE_PATH, JSON.stringify(validated, null, 2));
+    // 5. Cache to SQLite
+    db.setCache('rebalancing_latest', validated);
 
     return validated;
   } catch (error) {

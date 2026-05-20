@@ -7,7 +7,8 @@ import { sendTelegramAlert } from '../alerts/telegramBot.js';
 import fs from 'fs';
 import { PortfolioConfigSchema } from '../types/index.js';
 import { logger } from '../utils/logger.js';
-import { POSITIONS_CONFIG_PATH, POSITIONS_CACHE_PATH, CACHE_DIR } from '../config/paths.js';
+import { POSITIONS_CONFIG_PATH } from '../config/paths.js';
+import { db } from '../db/database.js';
 
 export async function runEodCheck() {
   try {
@@ -24,10 +25,7 @@ export async function runEodCheck() {
     const snapshot = await fetchPortfolioSnapshot(token, queryId);
     
     // Cache the snapshot (Spec v3 requirement)
-    if (!fs.existsSync(CACHE_DIR)) {
-      fs.mkdirSync(CACHE_DIR, { recursive: true });
-    }
-    fs.writeFileSync(POSITIONS_CACHE_PATH, JSON.stringify(snapshot, null, 2));
+    db.setCache('positions_snapshot', snapshot);
     
     // 2. Sync Positions
     const positionsConfig = JSON.parse(fs.readFileSync(POSITIONS_CONFIG_PATH, 'utf8'));

@@ -59,6 +59,16 @@ vi.mock('../src/data/fetchers/polygonFetcher.js');
 vi.mock('../src/data/fetchers/fredFetcher.js');
 vi.mock('../src/alerts/telegramBot.js');
 
+const { mockGetCache } = vi.hoisted(() => ({
+  mockGetCache: vi.fn()
+}));
+
+vi.mock('../src/db/database.js', () => ({
+  db: {
+    getCache: mockGetCache
+  }
+}));
+
 describe('dailyDigest', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -66,9 +76,11 @@ describe('dailyDigest', () => {
   });
 
   it('should trigger regime cycle if regime assessment is missing or stale', async () => {
-    vi.mocked(fs.existsSync).mockImplementation((path) => {
-      if (typeof path === 'string' && path.includes('regime_latest.json')) return false;
-      return true;
+    mockGetCache.mockReturnValueOnce(null); // First call returns null to trigger cycle
+    mockGetCache.mockReturnValue({
+      regime_quadrant: 'Goldilocks',
+      final_confidence: 80,
+      assessed_at: new Date().toISOString()
     });
 
     vi.mocked(fs.readFileSync).mockImplementation((path) => {
@@ -90,13 +102,6 @@ describe('dailyDigest', () => {
           });
         }
         if (path.includes('positions.json')) return JSON.stringify({ AAPL: {} });
-        if (path.includes('regime_latest.json')) {
-          return JSON.stringify({
-            regime_quadrant: 'Goldilocks',
-            final_confidence: 80,
-            assessed_at: new Date().toISOString()
-          });
-        }
       }
       return '{}';
     });
@@ -110,14 +115,13 @@ describe('dailyDigest', () => {
   });
 
   it('should format and send a digest correctly', async () => {
+    mockGetCache.mockReturnValue({
+      regime_quadrant: 'Stagflation',
+      final_confidence: 75,
+      assessed_at: new Date().toISOString()
+    });
+
     vi.mocked(fs.readFileSync).mockImplementation((path) => {
-      if (typeof path === 'string' && path.includes('regime_latest.json')) {
-        return JSON.stringify({
-          regime_quadrant: 'Stagflation',
-          final_confidence: 75,
-          assessed_at: new Date().toISOString()
-        });
-      }
       if (typeof path === 'string' && path.includes('positions.json')) {
         return JSON.stringify({
           AAPL: { 
