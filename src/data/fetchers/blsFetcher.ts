@@ -2,6 +2,7 @@ import axios from 'axios';
 import { z } from 'zod';
 import { logger } from '../../utils/logger.js';
 import { env } from '../../config/env.js';
+import { withRetry } from '../../utils/retry.js';
 
 const BLS_BASE = 'https://api.bls.gov/publicAPI/v2/timeseries/data/';
 
@@ -47,7 +48,7 @@ export async function fetchSeries(seriesIds: string[], startYear: string, endYea
     payload.registrationkey = env.BLS_API_KEY;
   }
 
-  const response = await axios.post(BLS_BASE, payload);
+  const response = await withRetry(() => axios.post(BLS_BASE, payload));
 
   if (response.data.status !== 'REQUEST_SUCCEEDED') {
     throw new Error(`BLS API Error: ${response.data.status}`);

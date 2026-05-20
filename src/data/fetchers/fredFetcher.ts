@@ -5,6 +5,7 @@ import { deriveMetrics } from '../indicators/derivation.js';
 import { logger } from '../../utils/logger.js';
 import { db } from '../../db/database.js';
 import { env } from '../../config/env.js';
+import { withRetry } from '../../utils/retry.js';
 
 const FRED_BASE_URL = 'https://api.stlouisfed.org/fred';
 
@@ -23,7 +24,7 @@ export async function fetchSeries(seriesId: string, startDate?: string): Promise
   const defaultStartDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const obsStart = startDate || defaultStartDate;
 
-  const response = await axios.get(`${FRED_BASE_URL}/series/observations`, {
+  const response = await withRetry(() => axios.get(`${FRED_BASE_URL}/series/observations`, {
     params: {
       series_id: seriesId,
       api_key: apiKey,
@@ -31,7 +32,7 @@ export async function fetchSeries(seriesId: string, startDate?: string): Promise
       sort_order: 'asc',
       observation_start: obsStart,
     }
-  });
+  }));
 
   if (!response.data || !response.data.observations) {
     throw new Error(`Failed to fetch series ${seriesId}`);

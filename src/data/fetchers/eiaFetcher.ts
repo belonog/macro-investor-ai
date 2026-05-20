@@ -1,13 +1,14 @@
 import axios from 'axios';
 import { env } from '../../config/env.js';
+import { withRetry } from '../../utils/retry.js';
 
 const EIA_BASE = 'https://api.eia.gov/v2';
 
 async function fetchEiaValue(apiPath: string): Promise<number> {
   const url = `${EIA_BASE}${apiPath}`;
-  const response = await axios.get(url, {
+  const response = await withRetry(() => axios.get(url, {
     params: { api_key: env.EIA_API_KEY }
-  });
+  }));
   return response.data.response.data[0].value;
 }
 

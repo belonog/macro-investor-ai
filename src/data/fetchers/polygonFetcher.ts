@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { EarningsEvent, RawIndicator } from '../../types/index.js';
 import { env } from '../../config/env.js';
+import { withRetry } from '../../utils/retry.js';
 
 const POLYGON_BASE = 'https://api.polygon.io';
 
@@ -12,9 +13,9 @@ const POLYGON_BASE = 'https://api.polygon.io';
 export async function getEodPrices(symbols: string[]): Promise<Record<string, number>> {
   const prices: Record<string, number> = {};
   for (const symbol of symbols) {
-    const response = await axios.get(`${POLYGON_BASE}/v2/aggs/ticker/${symbol}/prev`, {
+    const response = await withRetry(() => axios.get(`${POLYGON_BASE}/v2/aggs/ticker/${symbol}/prev`, {
       params: { adjusted: true, apiKey: env.POLYGON_API_KEY }
-    });
+    }));
     if (response.data && response.data.results && response.data.results.length > 0) {
       prices[symbol] = response.data.results[0].c;
     } else {
@@ -31,9 +32,9 @@ export async function getEodPrices(symbols: string[]): Promise<Record<string, nu
  * @returns Promise<EarningsEvent[]>
  */
 export async function getEarningsCalendar(symbols: string[], _daysAhead: number): Promise<EarningsEvent[]> {
-  const response = await axios.get(`${POLYGON_BASE}/vX/reference/tickers/earnings`, {
+  const response = await withRetry(() => axios.get(`${POLYGON_BASE}/vX/reference/tickers/earnings`, {
     params: { apiKey: env.POLYGON_API_KEY }
-  });
+  }));
 
   const events: EarningsEvent[] = [];
   for (const item of response.data.results || []) {
@@ -54,9 +55,9 @@ export async function getEarningsCalendar(symbols: string[], _daysAhead: number)
  * @returns Promise<RawIndicator>
  */
 export async function getGoldSpotPrice(): Promise<RawIndicator> {
-  const response = await axios.get(`${POLYGON_BASE}/v2/aggs/ticker/C:XAUUSD/prev`, {
+  const response = await withRetry(() => axios.get(`${POLYGON_BASE}/v2/aggs/ticker/C:XAUUSD/prev`, {
     params: { adjusted: true, apiKey: env.POLYGON_API_KEY }
-  });
+  }));
   
   let value = 0;
   let asOf = new Date().toISOString().split('T')[0];

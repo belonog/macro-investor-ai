@@ -1,6 +1,7 @@
 import { XMLParser } from 'fast-xml-parser';
 import axios from 'axios';
 import { PositionSnapshot, PositionSnapshotSchema } from '../../types/index.js';
+import { withRetry } from '../../utils/retry.js';
 
 export function parseFlexXml(xml: string): PositionSnapshot[] {
   const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '' });
@@ -48,7 +49,7 @@ interface OpenPosition {
 
 export async function fetchPortfolioSnapshot(token: string, queryId: string): Promise<PositionSnapshot[]> {
   const baseUrl = 'https://www.interactivebrokers.com/Universal/servlet/FlexStatementService.SendRequest';
-  const response = await axios.get(`${baseUrl}?t=${token}&q=${queryId}&v=3`);
+  const response = await withRetry(() => axios.get(`${baseUrl}?t=${token}&q=${queryId}&v=3`));
   
   const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '' });
   const statusObj = parser.parse(response.data);
@@ -64,7 +65,7 @@ export async function fetchPortfolioSnapshot(token: string, queryId: string): Pr
   let reportData = '';
   
   while (!dataReady) {
-    const statementResponse = await axios.get(`${getStatementUrl}?t=${token}&q=${referenceCode}&v=3`);
+    const statementResponse = await withRetry(() => axios.get(`${getStatementUrl}?t=${token}&q=${referenceCode}&v=3`));
     if (typeof statementResponse.data === 'string' && statementResponse.data.includes('FlexQueryResponse')) {
       reportData = statementResponse.data;
       dataReady = true;
