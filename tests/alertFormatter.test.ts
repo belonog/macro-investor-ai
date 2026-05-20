@@ -30,20 +30,27 @@ describe('alertFormatter', () => {
     const mockAssessment = {
       classification_verdict: 'Confirmed',
       challenge_rationale: 'Growth is accelerating while inflation moderates.',
-      confirming_indicators: ['Strong NFP', 'Declining CPI'],
-      contradicting_indicators: ['Oil prices rising'],
+      confirming_indicators: [
+        { indicator: 'NFP', value: '300k', signal: 'Strong labor market' },
+        { indicator: 'CPI', value: '3.1%', signal: 'Moderating inflation' }
+      ],
+      contradicting_indicators: [
+        { indicator: 'WTI', value: '$85', signal: 'Energy cost pressure' }
+      ],
       central_thesis_conflict: 'No major conflicts.',
       fastest_path_to_being_wrong: 'Sudden spike in energy prices.',
-      watch_next: ['Fed meeting on June 15'],
+      watch_next: [
+        { release: 'FOMC Meeting', watch_for: 'Rate hike signal' }
+      ],
     } as unknown as RegimeAssessment;
 
     const narrative = formatRegimeNarrative(mockAssessment);
     expect(narrative).toContain('*Big Picture:* Confirmed');
     expect(narrative).toContain('Growth is accelerating');
-    expect(narrative).toContain('• Strong NFP');
-    expect(narrative).toContain('• Oil prices rising');
+    expect(narrative).toContain('• *NFP* (300k): Strong labor market');
+    expect(narrative).toContain('• *WTI* ($85): Energy cost pressure');
     expect(narrative).toContain('*Thesis Conflict:* No major conflicts.');
     expect(narrative).toContain('Sudden spike in energy prices.');
-    expect(narrative).toContain('• Fed meeting on June 15');
+    expect(narrative).toContain('• *FOMC Meeting*: watch for Rate hike signal');
   });
 });

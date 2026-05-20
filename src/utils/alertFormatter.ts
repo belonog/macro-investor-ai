@@ -18,7 +18,20 @@ export function formatRegimeSummary(assessment: RegimeAssessment): string {
 }
 
 export function formatRegimeNarrative(assessment: RegimeAssessment): string {
-  const formatList = (items: unknown[]) => (items && items.length > 0) ? items.map(i => `• ${i}`).join('\n') : '_None_';
+  type ListItem = string | { indicator: string; value: string; signal?: string } | { release: string; watch_for?: string };
+  const formatList = (items: ListItem[]) => {
+    if (!items || items.length === 0) return '_None_';
+    return items.map(item => {
+      if (typeof item === 'string') return `• ${item}`;
+      if ('indicator' in item && 'value' in item) {
+        return `• *${item.indicator}* (${item.value}): ${item.signal || ''}`;
+      }
+      if ('release' in item) {
+        return `• *${item.release}*: watch for ${item.watch_for || ''}`;
+      }
+      return `• ${JSON.stringify(item)}`;
+    }).join('\n');
+  };
 
   return [
     `*Big Picture:* ${assessment.classification_verdict}`,
