@@ -9,13 +9,14 @@ import { PortfolioConfigSchema } from '../types/index.js';
 import { logger } from '../utils/logger.js';
 import { POSITIONS_CONFIG_PATH } from '../config/paths.js';
 import { db } from '../db/database.js';
+import { env } from '../config/env.js';
 
 export async function runEodCheck() {
   try {
     logger.info('Starting EOD Check...');
     
-    const token = process.env.IBKR_FLEX_TOKEN;
-    const queryId = process.env.IBKR_FLEX_REPORT_ID;
+    const token = env.IBKR_FLEX_TOKEN;
+    const queryId = env.IBKR_FLEX_REPORT_ID;
     
     if (!token || !queryId) {
       throw new Error('IBKR Flex token or query ID missing');

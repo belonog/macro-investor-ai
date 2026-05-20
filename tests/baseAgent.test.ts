@@ -2,6 +2,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { generateAgentResponse } from '../src/agents/baseAgent.js';
 import { z } from 'zod';
 import { db } from '../src/db/database.js';
+import { env } from '../src/config/env.js';
+
+vi.mock('../src/config/env.js', () => ({
+  env: {
+    AI_PROVIDER: 'google',
+    GEMINI_API_KEY: 'test-key',
+    ANTHROPIC_API_KEY: 'test-key-anthropic',
+    NODE_ENV: 'test',
+    LOG_LEVEL: 'info'
+  }
+}));
 
 // Mock AI SDK and providers
 vi.mock('ai', () => ({
@@ -34,9 +45,9 @@ vi.mock('../src/db/database', () => ({
 describe('baseAgent', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.AI_PROVIDER = 'google';
-    process.env.GEMINI_API_KEY = 'test-key';
-    process.env.ANTHROPIC_API_KEY = 'test-key-anthropic';
+    env.AI_PROVIDER = 'google';
+    env.GEMINI_API_KEY = 'test-key';
+    env.ANTHROPIC_API_KEY = 'test-key-anthropic';
   });
 
   it('should call generateObject and log the run', async () => {
@@ -117,7 +128,7 @@ describe('baseAgent', () => {
     } as unknown as Awaited<ReturnType<typeof generateObject>>);
 
     // Test Anthropic
-    process.env.AI_PROVIDER = 'anthropic';
+    env.AI_PROVIDER = 'anthropic';
     await generateAgentResponse({
       systemPrompt: 'sys',
       prompt: 'p',
@@ -128,7 +139,7 @@ describe('baseAgent', () => {
     expect(anthropic).toHaveBeenCalled();
 
     // Test Google
-    process.env.AI_PROVIDER = 'google';
+    env.AI_PROVIDER = 'google';
     await generateAgentResponse({
       systemPrompt: 'sys',
       prompt: 'p',

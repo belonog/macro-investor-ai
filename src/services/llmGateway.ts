@@ -4,6 +4,7 @@ import { createAnthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
 import { logger } from '../utils/logger.js';
 import { DatabaseManager } from '../db/database.js';
+import { env } from '../config/env.js';
 
 export interface GenerateOptions<T> {
   systemPrompt: string;
@@ -18,10 +19,10 @@ export class LLMService {
   constructor(private db: DatabaseManager) {}
 
   public async generate<T>(options: GenerateOptions<T>): Promise<T> {
-    const provider = process.env.AI_PROVIDER || 'google';
+    const provider = env.AI_PROVIDER;
     const apiKey = provider === 'google' 
-      ? process.env.GEMINI_API_KEY 
-      : process.env.ANTHROPIC_API_KEY;
+      ? env.GEMINI_API_KEY 
+      : env.ANTHROPIC_API_KEY;
 
     if (!apiKey) {
       throw new Error(`API key for provider ${provider} is not set.`);
@@ -29,8 +30,8 @@ export class LLMService {
 
     const modelName = options.model || (
       options.agentName === 'regimeAgent' 
-        ? process.env.REGIME_AGENT_MODEL 
-        : process.env.REBALANCING_AGENT_MODEL
+        ? env.REGIME_AGENT_MODEL 
+        : env.REBALANCING_AGENT_MODEL
     ) || (provider === 'google' ? 'gemini-2.0-flash' : 'claude-3-5-sonnet-20241022');
 
     let model;
@@ -71,7 +72,7 @@ export class LLMService {
         logger.error(error, `Attempt ${attempt} failed for agent ${options.agentName}`);
         
         if (attempt < maxRetries) {
-          const delay = process.env.NODE_ENV === 'test' ? 0 : Math.pow(2, attempt) * 1000;
+          const delay = env.NODE_ENV === 'test' ? 0 : Math.pow(2, attempt) * 1000;
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       }

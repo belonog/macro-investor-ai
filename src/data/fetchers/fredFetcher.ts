@@ -4,6 +4,7 @@ import { RAW_FRED_SERIES_IDS, RAW_FRED_METADATA } from '../indicators/registry.j
 import { deriveMetrics } from '../indicators/derivation.js';
 import { logger } from '../../utils/logger.js';
 import { db } from '../../db/database.js';
+import { env } from '../../config/env.js';
 
 const FRED_BASE_URL = 'https://api.stlouisfed.org/fred';
 
@@ -14,7 +15,7 @@ const FRED_BASE_URL = 'https://api.stlouisfed.org/fred';
  * @returns Promise<DataPoint[]>
  */
 export async function fetchSeries(seriesId: string, startDate?: string): Promise<DataPoint[]> {
-  const apiKey = process.env.FRED_API_KEY;
+  const apiKey = env.FRED_API_KEY;
   if (!apiKey) {
     throw new Error('FRED_API_KEY is not set');
   }

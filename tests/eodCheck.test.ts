@@ -5,6 +5,16 @@ import * as flexReportFetcher from '../src/data/fetchers/flexReportFetcher.js';
 import * as fredFetcher from '../src/data/fetchers/fredFetcher.js';
 import * as polygonFetcher from '../src/data/fetchers/polygonFetcher.js';
 import * as telegramBot from '../src/alerts/telegramBot.js';
+import { env } from '../src/config/env.js';
+
+vi.mock('../src/config/env.js', () => ({
+  env: {
+    IBKR_FLEX_TOKEN: 'test-token',
+    IBKR_FLEX_REPORT_ID: 'test-id',
+    NODE_ENV: 'test',
+    LOG_LEVEL: 'info'
+  }
+}));
 
 vi.mock('fs');
 vi.mock('../src/data/fetchers/flexReportFetcher.js');
@@ -25,8 +35,8 @@ vi.mock('../src/db/database.js', () => ({
 describe('eodCheck flow', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.IBKR_FLEX_TOKEN = 'test-token';
-    process.env.IBKR_FLEX_REPORT_ID = 'test-id';
+    env.IBKR_FLEX_TOKEN = 'test-token';
+    env.IBKR_FLEX_REPORT_ID = 'test-id';
   });
 
   it('should run the full EOD check flow successfully', async () => {

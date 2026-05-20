@@ -2,12 +2,10 @@ import { Telegraf } from 'telegraf';
 import { Alert } from '../types/index.js';
 import { logAlert } from '../db/database.js';
 import { logger } from '../utils/logger.js';
-import dotenv from 'dotenv';
+import { env } from '../config/env.js';
 
-dotenv.config();
-
-const token = process.env.TELEGRAM_BOT_TOKEN;
-const chatId = process.env.TELEGRAM_CHAT_ID;
+const token = env.TELEGRAM_BOT_TOKEN;
+const chatId = env.TELEGRAM_CHAT_ID;
 
 const bot = token ? new Telegraf(token) : null;
 

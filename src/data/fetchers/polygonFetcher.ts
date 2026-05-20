@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { EarningsEvent, RawIndicator } from '../../types/index.js';
+import { env } from '../../config/env.js';
 
 const POLYGON_BASE = 'https://api.polygon.io';
 
@@ -12,7 +13,7 @@ export async function getEodPrices(symbols: string[]): Promise<Record<string, nu
   const prices: Record<string, number> = {};
   for (const symbol of symbols) {
     const response = await axios.get(`${POLYGON_BASE}/v2/aggs/ticker/${symbol}/prev`, {
-      params: { adjusted: true, apiKey: process.env.POLYGON_API_KEY }
+      params: { adjusted: true, apiKey: env.POLYGON_API_KEY }
     });
     if (response.data && response.data.results && response.data.results.length > 0) {
       prices[symbol] = response.data.results[0].c;
@@ -31,7 +32,7 @@ export async function getEodPrices(symbols: string[]): Promise<Record<string, nu
  */
 export async function getEarningsCalendar(symbols: string[], _daysAhead: number): Promise<EarningsEvent[]> {
   const response = await axios.get(`${POLYGON_BASE}/vX/reference/tickers/earnings`, {
-    params: { apiKey: process.env.POLYGON_API_KEY }
+    params: { apiKey: env.POLYGON_API_KEY }
   });
 
   const events: EarningsEvent[] = [];
@@ -54,7 +55,7 @@ export async function getEarningsCalendar(symbols: string[], _daysAhead: number)
  */
 export async function getGoldSpotPrice(): Promise<RawIndicator> {
   const response = await axios.get(`${POLYGON_BASE}/v2/aggs/ticker/C:XAUUSD/prev`, {
-    params: { adjusted: true, apiKey: process.env.POLYGON_API_KEY }
+    params: { adjusted: true, apiKey: env.POLYGON_API_KEY }
   });
   
   let value = 0;

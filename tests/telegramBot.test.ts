@@ -1,4 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { env } from '../src/config/env.js';
+
+vi.mock('../src/config/env.js', () => ({
+  env: {
+    TELEGRAM_BOT_TOKEN: '',
+    TELEGRAM_CHAT_ID: '',
+    NODE_ENV: 'test',
+    LOG_LEVEL: 'info'
+  }
+}));
 
 // Mock telegraf
 const mockSendMessage = vi.fn().mockResolvedValue({ message_id: 123 });
@@ -28,8 +38,8 @@ describe('telegramBot', () => {
   });
 
   it('should log alert even if bot is not configured', async () => {
-    process.env.TELEGRAM_BOT_TOKEN = '';
-    process.env.TELEGRAM_CHAT_ID = '';
+    env.TELEGRAM_BOT_TOKEN = '';
+    env.TELEGRAM_CHAT_ID = '';
     
     const { sendTelegramAlert } = await import('../src/alerts/telegramBot.js');
     const { logAlert } = await import('../src/db/database.js');
@@ -50,8 +60,8 @@ describe('telegramBot', () => {
   });
 
   it('should call sendMessage when bot is configured', async () => {
-    process.env.TELEGRAM_BOT_TOKEN = 'test_token';
-    process.env.TELEGRAM_CHAT_ID = 'test_chat_id';
+    env.TELEGRAM_BOT_TOKEN = 'test_token';
+    env.TELEGRAM_CHAT_ID = 'test_chat_id';
 
     const { sendTelegramAlert } = await import('../src/alerts/telegramBot.js');
     const { logAlert } = await import('../src/db/database.js');

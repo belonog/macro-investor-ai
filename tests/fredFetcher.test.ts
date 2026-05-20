@@ -4,6 +4,15 @@ import { RAW_FRED_SERIES_IDS } from '../src/data/indicators/registry.js';
 import axios from 'axios';
 
 import { getManualIndicators } from '../src/utils/manualIndicators.js';
+import { env } from '../src/config/env.js';
+
+vi.mock('../src/config/env.js', () => ({
+  env: {
+    FRED_API_KEY: 'test_api_key',
+    NODE_ENV: 'test',
+    LOG_LEVEL: 'info'
+  }
+}));
 
 vi.mock('axios');
 vi.mock('../src/utils/manualIndicators.js');
@@ -30,7 +39,7 @@ describe('fredFetcher registry RAW_FRED_SERIES_IDS', () => {
 describe('fredFetcher', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    process.env.FRED_API_KEY = 'test_api_key';
+    env.FRED_API_KEY = 'test_api_key';
     mockGetCache.mockReturnValue(null);
   });
 
@@ -51,12 +60,12 @@ describe('fredFetcher', () => {
   });
 
   it('should throw error if FRED_API_KEY is missing', async () => {
-    const originalApiKey = process.env.FRED_API_KEY;
-    delete process.env.FRED_API_KEY;
+    const originalApiKey = env.FRED_API_KEY;
+    env.FRED_API_KEY = '';
     
     await expect(fetchSeries('CPIAUCSL')).rejects.toThrow('FRED_API_KEY is not set');
     
-    process.env.FRED_API_KEY = originalApiKey;
+    env.FRED_API_KEY = originalApiKey;
   });
 
   describe('fetchAll', () => {
