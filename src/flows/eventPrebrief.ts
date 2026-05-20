@@ -15,7 +15,7 @@ export async function runEventPrebrief() {
 
     // 1. Load Positions Config
     if (!fs.existsSync(POSITIONS_CONFIG_PATH)) {
-      console.warn('Positions config not found. Skipping event pre-brief.');
+      logger.warn('Positions config not found. Skipping event pre-brief.');
       return;
     }
 

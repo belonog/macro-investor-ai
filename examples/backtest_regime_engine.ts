@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import fs from 'fs/promises';
 import { MacroCacheSchema } from '../src/types/index.js';
 import { runRegimeAgent } from '../src/agents/regimeAgent.js';
-import { deriveMetrics } from '../src/data/fetchers/fredFetcher.js';
+import { deriveMetrics } from '../src/data/indicators/derivation.js';
 import { MACRO_SNAPSHOT_CACHE_PATH } from '../src/config/paths.js';
 
 dotenv.config();
@@ -31,14 +31,14 @@ async function backtest() {
 
     for (const date of dates) {
       process.stdout.write(`Processing ${date}... `);
-      
+
       // 3. Derive metrics for this specific date using the engine's own logic
       const historicalValues = deriveMetrics(snapshot, date);
 
       // 4. Run Regime Agent
       // We pass a mock trigger to avoid side effects if any were present
       const regime = await runRegimeAgent(historicalValues, { isBacktest: true }, 'manual');
-      
+
       results.push({
         date,
         quadrant: regime.regime_quadrant,

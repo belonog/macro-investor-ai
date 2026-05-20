@@ -106,13 +106,17 @@ export async function generateRebalancingReport(): Promise<RebalancingOutput> {
 if (import.meta.url.endsWith(process.argv[1])) {
   generateRebalancingReport()
     .then(report => {
-      console.log('Rebalancing Report Generated Successfully');
-      console.log(`Grade: ${report.alignment_grade} (Score: ${report.alignment_score})`);
-      console.log('\nPriority Actions:');
-      report.priority_actions.forEach((action: string) => console.log(`- ${action}`));
+      logger.info('Rebalancing Report Generated Successfully');
+      logger.info({ 
+        grade: report.alignment_grade, 
+        score: report.alignment_score 
+      }, 'Portfolio Alignment');
+      logger.info({ 
+        priority_actions: report.priority_actions 
+      }, 'Priority Actions');
     })
     .catch(err => {
-      console.error('Failed to generate report:', err.message);
+      logger.error(err, 'Failed to generate report');
       process.exit(1);
     });
 }

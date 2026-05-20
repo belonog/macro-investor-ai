@@ -2,6 +2,7 @@ import fs from 'fs';
 import { z } from 'zod';
 import { ManualIndicator, ManualIndicatorSchema } from '../types/index.js';
 import { CACHE_DIR, MANUAL_INDICATORS_CACHE_PATH } from '../config/paths.js';
+import { logger } from '../utils/logger.js';
 
 export function getManualIndicators(): Record<string, ManualIndicator> {
   if (!fs.existsSync(MANUAL_INDICATORS_CACHE_PATH)) {
@@ -12,7 +13,7 @@ export function getManualIndicators(): Record<string, ManualIndicator> {
     const parsed = JSON.parse(raw);
     return z.record(z.string(), ManualIndicatorSchema).parse(parsed);
   } catch (error) {
-    console.error('Error reading manual indicators:', error);
+    logger.error(error, 'Error reading manual indicators');
     return {};
   }
 }

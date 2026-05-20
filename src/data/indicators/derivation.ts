@@ -1,5 +1,6 @@
 import { MacroSnapshot, MacroIndicators, RawIndicator } from '../../types/index.js';
 import { getManualIndicators } from '../../utils/manualIndicators.js';
+import { logger } from '../../utils/logger.js';
 import { INDICATORS } from './registry.js';
 
 /**
@@ -50,7 +51,7 @@ export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Da
 
     const metadata = INDICATORS[key];
     if (!metadata) {
-      console.warn(`No indicator registry entry for key: ${key}`);
+      logger.warn(`No indicator registry entry for key: ${key}`);
       return null;
     }
 

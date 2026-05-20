@@ -51,7 +51,7 @@ export async function runRegimeAgent(
           positionsConfig = PortfolioConfigSchema.parse(JSON.parse(raw));
         }
       } catch (err) {
-        console.warn(`Failed to parse positions config at ${POSITIONS_CONFIG_PATH}:`, err);
+        logger.warn(err, `Failed to parse positions config at ${POSITIONS_CONFIG_PATH}`);
       }
     }
     const portfolioContext = buildPortfolioContext(positionsConfig);
@@ -74,7 +74,7 @@ export async function runRegimeAgent(
           };
         }
       } catch (err) {
-        console.warn(`Failed to parse prior assessment at ${REGIME_CACHE_PATH}:`, err);
+        logger.warn(err, `Failed to parse prior assessment at ${REGIME_CACHE_PATH}`);
       }
     }
 

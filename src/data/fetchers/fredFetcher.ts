@@ -158,7 +158,7 @@ export async function getLatestValues(): Promise<MacroIndicators> {
     const rawCache = await fs.readFile(MACRO_SNAPSHOT_CACHE_PATH, 'utf-8');
     const parsed = MacroCacheSchema.safeParse(JSON.parse(rawCache));
     if (!parsed.success) {
-      console.warn('Invalid macro cache. Re-fetching...');
+      logger.warn('Invalid macro cache. Re-fetching...');
       snapshot = await updateMacroCache();
     } else {
       snapshot = parsed.data.data;

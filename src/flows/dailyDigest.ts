@@ -47,7 +47,7 @@ export async function runDailyDigest() {
         const positionsConfig = PortfolioConfigSchema.parse(JSON.parse(fs.readFileSync(POSITIONS_CONFIG_PATH, 'utf8')));
         heldSymbols = Object.keys(positionsConfig);
       } catch (err) {
-        console.warn('Failed to parse positions.json for daily digest:', err);
+        logger.warn(err, 'Failed to parse positions.json for daily digest');
       }
     }
     
