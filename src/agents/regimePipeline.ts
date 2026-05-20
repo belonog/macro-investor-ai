@@ -13,6 +13,7 @@ import {
   RegimePipelineConfig
 } from '../types/index.js';
 import { INDICATORS } from '../data/indicators/registry.js';
+import { logger } from '../utils/logger.js';
 
 const configPath = path.join(process.cwd(), 'config', 'regime_pipeline.json');
 const CONFIG: RegimePipelineConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
@@ -436,7 +437,10 @@ const SUPPLEMENTARY_KEYS: string[] = [
   'tips_real_yield_5y_pct', 'yield_curve_10y_2y_bps', 'hy_spread_bps',
   'ig_spread_bps', 'dxy', 'gold_price_usd', 'wti_price_usd',
   'consumer_sentiment', 'personal_saving_rate_pct', 'capacity_utilization_pct',
-  'real_wages_yoy_pct', 'fao_food_price_index'
+  'real_wages_yoy_pct', 'fao_food_price_index',
+  'forward_5y5y_pct', 'yield_curve_30_2', 'credit_spread_delta',
+  'henry_hub_price_usd', 'm2_money_supply', 'retail_sales_ex_auto_pct',
+  'industrial_production_index'
 ];
 
 function extractRaw(
@@ -455,6 +459,13 @@ export function buildLLMInput(
   pipelineOutput: PipelineOutput,
   input:          PipelineInput
 ): string {
+  const missingSupplementary = SUPPLEMENTARY_KEYS.filter(key => !(key in input.indicators));
+  if (missingSupplementary.length > 0) {
+    logger.warn({ missing: missingSupplementary }, 'Missing mandatory supplementary indicators');
+  }
+
+  const actualSupplementaryKeys = Object.keys(input.indicators).filter(key => !WEIGHTED_KEYS.has(key));
+
   const payload = {
     quantitative_assessment: {
       regime_quadrant:       pipelineOutput.regime_quadrant,
@@ -470,7 +481,7 @@ export function buildLLMInput(
       normalized_growth:     pipelineOutput.normalized_growth_indicators,
     },
     weighted_raw_indicators: extractRaw(input.indicators, WEIGHTED_KEYS),
-    supplementary_indicators: extractRaw(input.indicators, SUPPLEMENTARY_KEYS),
+    supplementary_indicators: extractRaw(input.indicators, actualSupplementaryKeys),
     prior_assessment: input.prior_assessment,
     portfolio_context: input.portfolio_context,
     assessed_at: pipelineOutput.assessed_at,
