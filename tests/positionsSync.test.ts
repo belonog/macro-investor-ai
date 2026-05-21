@@ -35,6 +35,7 @@ describe('positionsSync', () => {
 
     const positionsConfig: PortfolioConfig = {
       TLT: {
+        description: "Test description",
         shares: 100,
         avg_cost: 90.0,
         position_type: 'macro_core',
@@ -68,6 +69,7 @@ describe('positionsSync', () => {
 
     const positionsConfig: PortfolioConfig = {
       TLT: {
+        description: "Test description",
         shares: 100,
         avg_cost: 90.0,
         position_type: 'macro_core',
@@ -114,6 +116,7 @@ describe('positionsSync', () => {
 
     const positionsConfig: PortfolioConfig = {
       TLT: {
+        description: "Test description",
         shares: 100,
         avg_cost: 90.0,
         position_type: 'macro_core',
@@ -162,6 +165,7 @@ describe('positionsSync', () => {
 
     const positionsConfig: PortfolioConfig = {
       TLT: {
+        description: "Test description",
         shares: 100,
         avg_cost: 90.0,
         position_type: 'macro_core',
@@ -170,6 +174,7 @@ describe('positionsSync', () => {
         thesis_invalidation: 'Invalidation TLT',
       },
       GLD: {
+        description: "Test description",
         shares: 50,
         avg_cost: 200.0,
         position_type: 'macro_hedge',

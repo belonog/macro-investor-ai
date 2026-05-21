@@ -8,7 +8,7 @@ const CONTRADICTORY_REGIMES: Record<string, string> = {
 };
 
 export function buildPortfolioContext(positionsConfig: PortfolioConfig): string {
-  const lines: string[] = ['CURRENT PORTFOLIO CONTEXT (live from positions.json):', ''];
+  const lines: string[] = ['CURRENT PORTFOLIO CONTEXT (live):', ''];
 
   const typeOrder: PositionType[] = ['macro_core', 'macro_hedge', 'speculative', 'equity_single'];
   const symbols = Object.keys(positionsConfig);
@@ -21,7 +21,7 @@ export function buildPortfolioContext(positionsConfig: PortfolioConfig): string 
       const symbol = typedSymbols[i];
       const config = positionsConfig[symbol];
       const prefix = i === 0 ? `${type}:`.padEnd(15) : ' '.repeat(15);
-      
+
       let detail = config.regime_match.length === 4
         ? `(${config.thesis})`
         : `${config.regime_match.join(', ')} — ${config.thesis}`;

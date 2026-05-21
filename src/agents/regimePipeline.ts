@@ -156,6 +156,8 @@ export function computeCategoryScore(
 
     normalized_indicators.push({
       key,
+      name:                  INDICATORS[key]?.name || key,
+      source:                getFormattedSource(key),
       raw_value:             indicator.value,
       unit:                 indicator.unit,
       normalized_score:      round(normalizedScore,      3),
@@ -442,14 +444,35 @@ const SUPPLEMENTARY_KEYS: string[] = [
   'industrial_production_index'
 ];
 
+function getFormattedSource(key: string): string {
+  const def = INDICATORS[key];
+  if (!def) return 'Unknown';
+  if (def.source === 'calculated') {
+    return `Calculated (depends on: ${def.dependsOn?.join(', ') || 'none'})`;
+  }
+  if (def.rawSeriesId) {
+    const provider = def.source.toUpperCase();
+    return `${provider} ${def.rawSeriesId}`;
+  }
+  return def.source;
+}
+
 function extractRaw(
   indicators: MacroIndicators,
   keys: Iterable<string>
-): Record<string, { value: number; unit: string; as_of: string }> {
-  const result: Record<string, { value: number; unit: string; as_of: string }> = {};
+): Record<string, { name: string; value: number; unit: string; as_of: string; source: string }> {
+  const result: Record<string, { name: string; value: number; unit: string; as_of: string; source: string }> = {};
   for (const key of keys) {
     const ind = indicators[key];
-    if (ind) result[key] = { value: ind.value, unit: ind.unit, as_of: ind.as_of };
+    if (ind) {
+      result[key] = {
+        name: INDICATORS[key]?.name || key,
+        value: ind.value,
+        unit: ind.unit,
+        as_of: ind.as_of,
+        source: getFormattedSource(key)
+      };
+    }
   }
   return result;
 }
@@ -479,7 +502,6 @@ export function buildLLMInput(
       normalized_inflation:  pipelineOutput.normalized_inflation_indicators,
       normalized_growth:     pipelineOutput.normalized_growth_indicators,
     },
-    weighted_raw_indicators: extractRaw(input.indicators, WEIGHTED_KEYS),
     supplementary_indicators: extractRaw(input.indicators, actualSupplementaryKeys),
     prior_assessment: input.prior_assessment,
     portfolio_context: input.portfolio_context,

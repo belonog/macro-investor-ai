@@ -55,6 +55,7 @@ describe('eodCheck flow', () => {
 
     const mockConfig = {
       AAPL: {
+        description: 'Apple stock',
         shares: 10,
         avg_cost: 150,
         position_type: 'macro_core',

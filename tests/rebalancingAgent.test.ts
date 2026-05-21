@@ -104,6 +104,7 @@ describe('rebalancingAgent', () => {
 
     const mockConfig = {
       TLT: {
+        description: 'Treasury bonds',
         shares: 100,
         avg_cost: 90,
         position_type: 'macro_core',

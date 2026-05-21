@@ -84,6 +84,8 @@ export type PipelineInput = z.infer<typeof PipelineInputSchema>;
 
 export const NormalizedIndicatorSchema = z.object({
   key:                 z.string(),
+  name:                z.string(),
+  source:              z.string(),
   raw_value:            z.number(),
   unit:                z.string(),
   normalized_score:     z.number(),
@@ -187,6 +189,7 @@ export type RebalancingReport = RebalancingOutput;
 export const RebalancingReportSchema = RebalancingOutputSchema;
 
 export const PositionConfigSchema = z.object({
+  description: z.string(),
   shares: z.number(),
   avg_cost: z.number(),
   position_type: PositionTypeSchema,

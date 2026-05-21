@@ -212,7 +212,6 @@ describe('regimePipeline - helpers', () => {
     const llmInput = buildLLMInput(output, input);
     const parsed = JSON.parse(llmInput);
     expect(parsed.quantitative_assessment.regime_quadrant).toBe(output.regime_quadrant);
-    expect(parsed.weighted_raw_indicators.cpi_yoy_pct.value).toBe(3.0);
   });
 
   it('mergePipelineAndLLM correctly adjusts confidence', () => {

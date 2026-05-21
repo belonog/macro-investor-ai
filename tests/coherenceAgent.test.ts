@@ -25,6 +25,7 @@ describe('coherenceAgent', () => {
       proposedSizeUsd: 5000,
       currentBook: {
         'TLT': {
+          description: "Test description",
           shares: 100,
           avg_cost: 90,
           position_type: 'macro_core',

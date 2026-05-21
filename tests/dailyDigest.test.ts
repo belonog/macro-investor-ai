@@ -125,6 +125,7 @@ describe('dailyDigest', () => {
       if (typeof path === 'string' && path.includes('positions.json')) {
         return JSON.stringify({
           AAPL: { 
+            description: 'Apple',
             shares: 10,
             avg_cost: 150,
             position_type: 'equity_single',

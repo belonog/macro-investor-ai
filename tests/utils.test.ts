@@ -5,6 +5,7 @@ import { PortfolioConfig } from '../src/types/index.js';
 describe('buildPortfolioContext', () => {
   const mockPositions: PortfolioConfig = {
     "TLT": {
+      description: "Test description",
       "shares": 100,
       "avg_cost": 90,
       "position_type": "macro_core",
@@ -13,6 +14,7 @@ describe('buildPortfolioContext', () => {
       "thesis_invalidation": "Higher yields"
     },
     "SM": {
+      description: "Test description",
       "shares": 50,
       "avg_cost": 50,
       "position_type": "speculative",
@@ -21,6 +23,7 @@ describe('buildPortfolioContext', () => {
       "thesis_invalidation": "Lower oil prices"
     },
     "DUST": {
+      description: "Test description",
       "shares": 100,
       "avg_cost": 10,
       "position_type": "speculative",
@@ -30,6 +33,7 @@ describe('buildPortfolioContext', () => {
       "thesis_invalidation": "Gold price surge"
     },
     "SGOV": {
+      description: "Test description",
       "shares": 500,
       "avg_cost": 100,
       "position_type": "macro_hedge",

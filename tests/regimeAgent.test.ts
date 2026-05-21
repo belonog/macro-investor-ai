@@ -208,6 +208,7 @@ describe('regimeAgent', () => {
         if (path.includes('regime_system.txt')) return 'PROMPT: {{PORTFOLIO_CONTEXT}}';
         if (path.includes('positions.json')) return JSON.stringify({
           'AAPL': {
+            description: 'Apple stock',
             shares: 10,
             avg_cost: 150,
             position_type: 'equity_single',

@@ -250,6 +250,7 @@ describe('RegimeAssessmentSchema', () => {
 describe('PositionConfigSchema', () => {
   it('should validate with optional fields', () => {
     const config = {
+      description: 'Test description',
       shares: 100,
       avg_cost: 50,
       position_type: 'macro_core',
@@ -264,6 +265,7 @@ describe('PositionConfigSchema', () => {
 
   it('should validate without optional fields', () => {
     const minimalConfig = {
+      description: 'Test description',
       shares: 100,
       avg_cost: 50,
       position_type: 'macro_core',

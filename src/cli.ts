@@ -134,6 +134,7 @@ program
   .option('--type <type>', 'Position type (macro_core, macro_hedge, speculative, equity_single)', 'macro_core')
   .option('--thesis <thesis>', 'Investment thesis', '')
   .option('--invalidation <invalidation>', 'Thesis invalidation criteria', '')
+  .option('--description <description>', 'Position description', '')
   .action(async (options) => {
     try {
       if (!options.symbol) {
@@ -147,6 +148,7 @@ program
       }
       
       positionsConfig[options.symbol.toUpperCase()] = {
+        description: options.description || '',
         shares: parseFloat(options.shares),
         avg_cost: parseFloat(options.avgCost),
         position_type: options.type as PositionType,

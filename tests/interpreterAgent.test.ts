@@ -68,6 +68,7 @@ describe('InterpreterAgent', () => {
 
     const mockPositions = {
       'AAPL': {
+        description: "Test description",
         shares: 10,
         avg_cost: 150,
         position_type: 'equity_single',

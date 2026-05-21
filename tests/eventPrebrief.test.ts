@@ -19,6 +19,7 @@ describe('eventPrebrief flow', () => {
   it('should run the full event pre-brief flow successfully', async () => {
     const mockConfig = {
       AAPL: {
+        description: "Test description",
         shares: 10,
         avg_cost: 150,
         position_type: 'equity_single',
@@ -63,6 +64,7 @@ describe('eventPrebrief flow', () => {
   it('should skip if no events found', async () => {
     const mockConfig = {
       AAPL: {
+        description: "Test description",
         shares: 10,
         avg_cost: 150,
         position_type: 'equity_single',
