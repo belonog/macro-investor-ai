@@ -59,7 +59,9 @@ No task is considered complete until the following "Iron Law" of verification is
 
 ### Macro Data Pipeline Decoupling (Spec v3 Refinement)
 1. **Fetching Layer (`src/data/fetchers/`)**: Handles HTTP requests, cache synchronization, and Zod validation of raw data streams. Banned from doing indicator math, hardcoding metadata descriptions, or asserting semantic properties.
+   - **Unified Cache Architecture**: All API data sources (FRED, BLS, EIA) must utilize a standardized `fetchSeries` (array-based) and `updateMacroCache` (SQLite sync) architecture. No single-point getters (like `getLatestReleases`) should exist.
 2. **Registry Layer (`src/data/indicators/registry.ts`)**: Single source of truth for indicator definitions, description texts, data sources, update frequencies, and mappings from raw FRED series/Polygon tickers to semantic keys.
+   - **Single Source of Truth for Metadata**: Avoid creating redundant dictionaries mapping raw string IDs to metadata. The `INDICATORS` registry acts as the single source of truth. Features like error logging dynamically resolve human-readable descriptions by searching `INDICATORS` using `rawSeriesId` or `dependsOn` references.
 3. **Derivation Layer (`src/data/indicators/derivation.ts`)**: Consumes `MacroSnapshot` data and performs all mathematical derivations (YoY %, rolling averages, yield curve spreads, real wages formulas, credit spread deltas), returning a typed semantic-keyed `MacroIndicators` record.
 
 ### Key Downstream Rules
