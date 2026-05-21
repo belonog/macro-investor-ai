@@ -1,4 +1,4 @@
-export type IndicatorSource = 'fred' | 'polygon' | 'manual' | 'calculated';
+export type IndicatorSource = 'fred' | 'polygon' | 'manual' | 'calculated' | 'bls' | 'eia';
 export type IndicatorFrequency = 'daily' | 'weekly' | 'monthly' | 'quarterly';
 
 export interface IndicatorDefinition {
@@ -321,6 +321,24 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     frequency: 'monthly',
     source: 'fred',
     rawSeriesId: 'INDPRO'
+  },
+  eia_crude_inventory_change: {
+    key: 'eia_crude_inventory_change',
+    name: 'EIA Crude Oil Inventory Change',
+    description: 'Weekly change in U.S. commercial crude oil inventories',
+    unit: 'thousands of barrels',
+    frequency: 'weekly',
+    source: 'eia',
+    rawSeriesId: 'petroleum/sum/sndw/data/'
+  },
+  eia_crude_production: {
+    key: 'eia_crude_production',
+    name: 'EIA U.S. Crude Oil Production',
+    description: 'Weekly U.S. field production of crude oil',
+    unit: 'thousands of barrels per day',
+    frequency: 'weekly',
+    source: 'eia',
+    rawSeriesId: 'petroleum/crd/crpdn/data/'
   }
 };
 
@@ -341,37 +359,32 @@ export const RAW_FRED_SERIES_IDS: string[] = Array.from(
   )
 );
 
-// Metadata for raw FRED series, mapping raw IDs to their basic descriptions/sources
-export interface RawSeriesMetadata {
-  description: string;
-  source: string;
+/**
+ * Helper to get a human-readable description for any raw series ID,
+ * derived directly from the INDICATORS map.
+ */
+export function getRawSeriesDescription(seriesId: string): string {
+  for (const ind of Object.values(INDICATORS)) {
+    if (ind.rawSeriesId === seriesId) return ind.description;
+    if (ind.dependsOn?.includes(seriesId)) return ind.description;
+  }
+  return seriesId;
 }
 
-export const RAW_FRED_METADATA: Record<string, RawSeriesMetadata> = {
-  CPIAUCSL: { description: 'Consumer Price Index for All Urban Consumers: All Items', source: 'BLS' },
-  PCEPI: { description: 'Personal Consumption Expenditures: Chain-type Price Index', source: 'BEA' },
-  PPIACO: { description: 'Producer Price Index by Commodity: All Commodities', source: 'BLS' },
-  T5YIE: { description: '5-Year Breakeven Inflation Rate', source: 'FRED' },
-  T5YIFR: { description: '5-Year, 5-Year Forward Inflation Expectation Rate', source: 'FRED' },
-  ECIWAG: { description: 'Employment Cost Index: Wages and Salaries', source: 'BLS' },
-  DFII5: { description: '5-Year Treasury Inflation-Indexed Security, Constant Maturity (TIPS Real Yield)', source: 'FRED' },
-  GDPC1: { description: 'Real Gross Domestic Product', source: 'BEA' },
-  RSAFS: { description: 'Advance Real Retail and Food Services Sales', source: 'Census' },
-  RSXFS: { description: 'Advance Retail Sales: Retail Trade and Food Services (Excl Motor Vehicle & Parts)', source: 'Census' },
-  PAYEMS: { description: 'Nonfarm Payrolls (NFP)', source: 'BLS' },
-  INDPRO: { description: 'Industrial Production Index', source: 'Federal Reserve' },
-  CAPUTLG211S: { description: 'Capacity Utilization: Total Industry', source: 'Federal Reserve' },
-  BAMLH0A0HYM2: { description: 'ICE BofA US High Yield Index Option-Adjusted Spread', source: 'ICE BofA' },
-  BAMLC0A0CM: { description: 'ICE BofA US Corporate Index Option-Adjusted Spread', source: 'ICE BofA' },
-  UMCSENT: { description: 'University of Michigan: Consumer Sentiment', source: 'University of Michigan' },
-  PSAVERT: { description: 'Personal Saving Rate', source: 'BEA' },
-  DCOILWTICO: { description: 'Crude Oil Prices: West Texas Intermediate (WTI)', source: 'EIA' },
-  DHHNGSP: { description: 'Henry Hub Natural Gas Spot Price', source: 'EIA' },
-  FEDFUNDS: { description: 'Effective Federal Funds Rate', source: 'FRED' },
-  DGS2: { description: '2-Year Treasury Constant Maturity Rate', source: 'FRED' },
-  DGS10: { description: '10-Year Treasury Constant Maturity Rate', source: 'FRED' },
-  DGS30: { description: '30-Year Treasury Constant Maturity Rate', source: 'FRED' },
-  T10Y2Y: { description: '10-Year Treasury Constant Maturity Minus 2-Year Treasury Constant Maturity', source: 'FRED' },
-  DTWEXBGS: { description: 'Trade Weighted U.S. Dollar Index', source: 'FRED' },
-  M2SL: { description: 'M2 Money Supply', source: 'Federal Reserve' }
-};
+// Raw BLS Series IDs
+export const RAW_BLS_SERIES_IDS: string[] = Array.from(
+  new Set(
+    Object.values(INDICATORS)
+      .filter((ind) => ind.source === 'bls' && ind.rawSeriesId)
+      .map((ind) => ind.rawSeriesId!)
+  )
+);
+
+// Raw EIA Series IDs
+export const RAW_EIA_SERIES_IDS: string[] = Array.from(
+  new Set(
+    Object.values(INDICATORS)
+      .filter((ind) => ind.source === 'eia' && ind.rawSeriesId)
+      .map((ind) => ind.rawSeriesId!)
+  )
+);

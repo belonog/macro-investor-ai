@@ -154,7 +154,7 @@ export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Da
 
   // 4. Map other raw series automatically
   for (const [key, def] of Object.entries(INDICATORS)) {
-    if (def.source === 'fred' && def.rawSeriesId) {
+    if ((def.source === 'fred' || def.source === 'bls' || def.source === 'eia') && def.rawSeriesId) {
       const val = getSeriesValue(def.rawSeriesId, 0);
       if (val !== null) {
         const w = wrap(key, val);

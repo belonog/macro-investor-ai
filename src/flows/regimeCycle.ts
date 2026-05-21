@@ -1,7 +1,7 @@
 
-import { updateMacroCache, getLatestValues } from '../data/fetchers/fredFetcher.js';
-import { getLatestReleases } from '../data/fetchers/blsFetcher.js';
-import { getLatest as getLatestEia } from '../data/fetchers/eiaFetcher.js';
+import { updateMacroCache as updateFredCache, getLatestValues } from '../data/fetchers/fredFetcher.js';
+import { updateMacroCache as updateBlsCache } from '../data/fetchers/blsFetcher.js';
+import { updateMacroCache as updateEiaCache } from '../data/fetchers/eiaFetcher.js';
 import { getGoldSpotPrice } from '../data/fetchers/polygonFetcher.js';
 import { runRegimeAgent } from '../agents/regimeAgent.js';
 import { generateRebalancingReport } from '../agents/rebalancingAgent.js';
@@ -15,19 +15,21 @@ export async function runRegimeCycle(trigger: 'manual' | 'post_release' | 'sched
   try {
     logger.info(`Starting Regime Cycle (Trigger: ${trigger})...`);
     
-    // 1. Update Macro Data
-    await updateMacroCache();
+    // 1. Update Macro Data Caches
+    await Promise.all([
+      updateFredCache(),
+      updateBlsCache(),
+      updateEiaCache(),
+    ]);
+
+    // 2. Fetch Latest Derived Values
     const flatSnapshot = await getLatestValues();
 
     // Add gold price from Polygon
     flatSnapshot.gold_price_usd = await getGoldSpotPrice();
-
-    // 2. Fetch BLS and EIA data (Spec v3 Flow 1 Steps 2 & 3)
-    const blsData = await getLatestReleases();
-    const eiaData = await getLatestEia();
     
     // 3. Run Regime Agent
-    const assessment = await runRegimeAgent(flatSnapshot, { bls: blsData, eia: eiaData }, trigger);
+    const assessment = await runRegimeAgent(flatSnapshot, {}, trigger);
     
     // 4. Send Narrative Alerts
     const summaryMsg = formatRegimeSummary(assessment);

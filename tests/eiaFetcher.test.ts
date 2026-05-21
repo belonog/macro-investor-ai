@@ -1,40 +1,60 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
-import { getCrudeInventoryChange, getCrudeProduction, getLatest } from '../src/data/fetchers/eiaFetcher.js';
+import { fetchSeries, fetchAll, updateMacroCache } from '../src/data/fetchers/eiaFetcher.js';
+import { db } from '../src/db/database.js';
 
 vi.mock('axios');
+vi.mock('../src/db/database.js', () => ({
+  db: {
+    getCache: vi.fn(),
+    setCache: vi.fn(),
+  }
+}));
 
 describe('eiaFetcher', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('fetches crude inventory change', async () => {
-    vi.mocked(axios.get).mockResolvedValueOnce({
-      data: { response: { data: [{ value: -1500 }] } }
+  describe('fetchSeries', () => {
+    it('returns empty if no ids provided', async () => {
+      const result = await fetchSeries([]);
+      expect(result).toEqual({});
     });
-    const change = await getCrudeInventoryChange();
-    expect(change).toBe(-1500);
-    expect(axios.get).toHaveBeenCalledWith(expect.stringContaining('api.eia.gov'), expect.any(Object));
+
+    it('fetches EIA series and converts to DataPoint[]', async () => {
+      vi.mocked(axios.get).mockResolvedValueOnce({
+        data: { response: { data: [{ period: '2026-05-01', value: 1500 }] } }
+      });
+      const result = await fetchSeries(['/petroleum/sum/sndw/data/']);
+      
+      expect(axios.get).toHaveBeenCalledWith(expect.stringContaining('api.eia.gov/v2/petroleum/sum/sndw/data/'), expect.any(Object));
+      expect(result['/petroleum/sum/sndw/data/']).toHaveLength(1);
+      expect(result['/petroleum/sum/sndw/data/'][0].value).toBe(1500);
+      expect(result['/petroleum/sum/sndw/data/'][0].date).toBe('2026-05-01');
+    });
+
+    it('handles errors gracefully per series', async () => {
+      vi.mocked(axios.get).mockRejectedValueOnce(new Error('Network Error'));
+      const result = await fetchSeries(['/petroleum/sum/sndw/data/']);
+      expect(result['/petroleum/sum/sndw/data/']).toEqual([]);
+    });
   });
 
-  it('fetches crude production', async () => {
-    vi.mocked(axios.get).mockResolvedValueOnce({
-      data: { response: { data: [{ value: 13200 }] } }
+  describe('fetchAll', () => {
+    it('returns snapshot structure', async () => {
+      const snapshot = await fetchAll();
+      expect(snapshot.series).toBeDefined();
+      expect(snapshot.fetched_at).toBeDefined();
     });
-    const prod = await getCrudeProduction();
-    expect(prod).toBe(13200);
-    expect(axios.get).toHaveBeenCalledWith(expect.stringContaining('api.eia.gov'), expect.any(Object));
   });
 
-  it('gets all latest values', async () => {
-    vi.mocked(axios.get).mockResolvedValue({
-      data: { response: { data: [{ value: 10 }] } }
+  describe('updateMacroCache', () => {
+    it('updates cache and returns snapshot', async () => {
+      vi.mocked(db.getCache).mockReturnValueOnce(null);
+      const snapshot = await updateMacroCache();
+      expect(snapshot.series).toBeDefined();
+      expect(db.setCache).toHaveBeenCalled();
     });
-    const latest = await getLatest();
-    expect(latest).toHaveProperty('crude_inventory_change');
-    expect(latest).toHaveProperty('crude_production');
-    expect(latest).not.toHaveProperty('crude_oil_price'); // Ensure spot prices are removed
-    expect(latest).not.toHaveProperty('nat_gas_price');
   });
 });

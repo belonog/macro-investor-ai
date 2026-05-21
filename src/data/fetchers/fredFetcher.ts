@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { DataPoint, DataPointSchema, MacroSnapshot, MacroCacheSchema, MacroIndicators } from '../../types/index.js';
-import { RAW_FRED_SERIES_IDS, RAW_FRED_METADATA } from '../indicators/registry.js';
+import { RAW_FRED_SERIES_IDS, getRawSeriesDescription } from '../indicators/registry.js';
 import { deriveMetrics } from '../indicators/derivation.js';
 import { logger } from '../../utils/logger.js';
 import { db } from '../../db/database.js';
@@ -70,7 +70,7 @@ export async function fetchAll(): Promise<MacroSnapshot> {
       snapshot.series[seriesId] = data;
       snapshot.fetched_at[seriesId] = new Date().toISOString();
     } catch {
-      const desc = RAW_FRED_METADATA[seriesId]?.description || seriesId;
+      const desc = getRawSeriesDescription(seriesId);
       logger.error(`Failed to fetch ${seriesId} (${desc})`);
       snapshot.series[seriesId] = []; // Ensure the key exists even on failure
       snapshot.fetched_at[seriesId] = new Date().toISOString();
@@ -126,7 +126,7 @@ export async function updateMacroCache(): Promise<MacroSnapshot> {
       snapshot.series[seriesId] = merged;
       snapshot.fetched_at[seriesId] = new Date().toISOString();
     } catch (error) {
-      const desc = RAW_FRED_METADATA[seriesId]?.description || seriesId;
+      const desc = getRawSeriesDescription(seriesId);
       logger.error(error, `Failed to fetch ${seriesId} (${desc})`);
       if (!snapshot.series[seriesId]) {
         snapshot.series[seriesId] = [];

@@ -1,8 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
-import { fetchSeries, getLatestReleases } from '../src/data/fetchers/blsFetcher.js';
+import { fetchSeries, fetchAll, updateMacroCache } from '../src/data/fetchers/blsFetcher.js';
+import { db } from '../src/db/database.js';
 
 vi.mock('axios');
+vi.mock('../src/db/database.js', () => ({
+  db: {
+    getCache: vi.fn(),
+    setCache: vi.fn(),
+  }
+}));
 
 describe('blsFetcher', () => {
   beforeEach(() => {
@@ -10,7 +17,12 @@ describe('blsFetcher', () => {
   });
 
   describe('fetchSeries', () => {
-    it('fetches BLS series successfully via POST', async () => {
+    it('returns empty object if no ids provided', async () => {
+      const res = await fetchSeries([], '2026', '2026');
+      expect(res).toEqual({});
+    });
+
+    it('fetches BLS series successfully via POST and converts to DataPoint[]', async () => {
       const mockResponse = {
         data: {
           status: 'REQUEST_SUCCEEDED',
@@ -40,9 +52,9 @@ describe('blsFetcher', () => {
         })
       );
       
-      expect(result).toHaveLength(1);
-      expect(result[0].seriesID).toBe('CES0000000001');
-      expect(result[0].data[0].value).toBe('150');
+      expect(result['CES0000000001']).toHaveLength(1);
+      expect(result['CES0000000001'][0].date).toBe('2026-04-01');
+      expect(result['CES0000000001'][0].value).toBe(150);
     });
 
     it('throws error if BLS API returns failure status', async () => {
@@ -57,28 +69,19 @@ describe('blsFetcher', () => {
     });
   });
 
-  describe('getLatestReleases', () => {
-    it('returns formatted latest releases info', async () => {
-      vi.mocked(axios.post).mockResolvedValueOnce({
-        data: {
-          status: 'REQUEST_SUCCEEDED',
-          Results: {
-            series: [
-              {
-                seriesID: 'CES0000000001',
-                data: [
-                  { year: '2026', period: 'M04', value: '150', periodName: 'April' }
-                ]
-              }
-            ]
-          }
-        }
-      });
-      const releases = await getLatestReleases();
-      expect(releases).toBeInstanceOf(Array);
-      expect(releases).toHaveLength(1);
-      expect(releases[0]).toContain('CES0000000001');
-      expect(releases[0]).toContain('150');
+  describe('fetchAll', () => {
+    it('returns snapshot structure even if empty', async () => {
+      const snapshot = await fetchAll();
+      expect(snapshot.series).toBeDefined();
+      expect(snapshot.fetched_at).toBeDefined();
+    });
+  });
+
+  describe('updateMacroCache', () => {
+    it('returns snapshot without setting cache if no series to fetch', async () => {
+      vi.mocked(db.getCache).mockReturnValueOnce(null);
+      const snapshot = await updateMacroCache();
+      expect(snapshot.series).toBeDefined();
     });
   });
 });
