@@ -230,6 +230,7 @@ export const IndicatorBoundsSchema = z.object({
   low: z.number(),
   neutral: z.number(),
   high: z.number(),
+  inverted: z.boolean().optional(),
 });
 
 export const RegimePipelineConfigSchema = z.object({

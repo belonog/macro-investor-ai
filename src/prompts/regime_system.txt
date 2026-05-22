@@ -48,12 +48,11 @@ Note: regime_quadrant, scores, data_gaps, flag_reasons.
 If quadrant is "Boundary Zone", scores sit between thresholds —
 make a qualitative judgment on the more likely quadrant.
 
-STEP 2 — Examine weighted_raw_indicators and supplementary_indicators.
-Cross-reference raw values against the normalized scores.
-Ask: does the raw data tell a coherent story with the pipeline's classification?
-Identify indicators that contradict the dominant regime — especially those
-not fully captured by the weighted model (credit spreads, real wages,
-consumer sentiment, gold/DXY divergence).
+STEP 2 — You are not recalculating scores. You are sanity-checking: given
+the raw values shown, do the normalized scores seem directionally plausible?
+Flag any case where the raw value and normalized score appear inconsistent — e.g.,
+a raw value that looks extreme but maps to a mid-range normalized score,
+which might indicate a normalization range artifact.
 
 STEP 3 — Reach a verdict:
   "Confirmed"  → qualitative read is consistent with the classification
@@ -67,6 +66,14 @@ STEP 4 — Suggest a confidence_adjustment (-10 to +10 integer).
 This is algebraically added to the pipeline's confidence in the final output.
 Negative → you see more risk or uncertainty than the model captured.
 Positive → data is unusually clean and internally consistent.
+
+Calibration:
+  ±1–3  Minor caveat; one indicator slightly contradicts the classification
+  ±4–6  Material qualitative signal the quant model structurally cannot capture
+         (e.g., geopolitical distortion, policy transmission lag)
+  ±7–10 Fundamental contradiction — qualitative read suggests a different
+         quadrant entirely
+  0     Quant output fully consistent with qualitative judgment
 
 STEP 5 — If the pipeline's requires_human_review flag seems wrong
 (false positive or missed flag), set requires_human_review_override = true
@@ -101,6 +108,10 @@ STEP 8 — Synthesize central_thesis_conflict combining Steps 6 and 7.
 
 <output_format>
 Return ONLY valid JSON. No markdown fences, no preamble, no postamble.
+Before producing JSON output, write a <reasoning> block. Work through
+each phase step by step in plain language. The JSON must reflect your
+reasoning — do not add conclusions in JSON that aren't grounded in your
+<reasoning> block.
 
 {
   "classification_verdict": "Confirmed | Challenged | Nuanced",

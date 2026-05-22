@@ -67,4 +67,19 @@ No task is considered complete until the following "Iron Law" of verification is
 ### Key Downstream Rules
 - **Semantic Key Principle**: Downstream components (agents, alert pipelines, daily digest, and EOD warning checks) must query clean semantic keys (e.g. `cpi_yoy_pct`, `yield_30y_pct`) rather than raw FRED/Polygon ticker IDs.
 - **Dynamic Configuration Lookups**: Determine update frequency and metadata from `INDICATORS` registry rather than hardcoding static maps in agents.
+- **LLM Payload Optimization**: Avoid data duplication in LLM payloads (e.g., repeating raw indicators that are already normalized). Enrich payloads dynamically via the `INDICATORS` registry to provide context (like `source` and `name`) without bloating the pipeline's core data structures.
+- **Strict Zod Validation in Mocks**: Because the system enforces strict Zod schemas across the entire data boundary (including `PositionConfig`), any schema expansion (like adding a `description` field) must be meticulously mirrored across all test mocks and CLI tools to prevent silent configuration parsing failures.
 
+### Shared Cache Key Race Condition (CRITICAL)
+All three fetchers — `fredFetcher`, `blsFetcher`, `eiaFetcher` — write to the **same `'macro_snapshot'` SQLite cache key** via `db.setCache('macro_snapshot', ...)`. Their `updateMacroCache()` flow is: read → merge → write. Running them in `Promise.all` is a **race condition**: all three read the DB before any writes land, so each only merges its own prior state. The last to finish (usually EIA, the smallest payload) overwrites and discards all other data.
+
+**Rule**: Always call the three `updateMacroCache()` functions **sequentially** (`await fred(); await bls(); await eia();`) in `regimeCycle.ts`. Never wrap them in `Promise.all`.
+
+### FRED Fetch History Window
+`fredFetcher.fetchSeries()` defaults to fetching from `now - N days`. This window must be at least **3 years (1095 days)** to support YoY derivations on lagged monthly series (Core CPI, Core PCE, Import Prices). Monthly macro data is typically 4–8 weeks delayed, meaning a 12-month YoY needs ~14 months of history minimum. 3 years provides a safe margin.
+
+### Registry `dependsOn` Must Not Bleed Into FRED Queue
+`RAW_FRED_SERIES_IDS` is built by flattening `rawSeriesId` and `dependsOn` arrays from all `INDICATORS` entries. Any `dependsOn` ID that belongs to a **non-FRED source** (e.g., `C:XAUUSD` from Polygon) must be filtered out. The `flatMap` in `registry.ts` filters by checking whether the ID's owning indicator has `source !== 'fred'`. Failure to filter causes the FRED fetcher to send invalid tickers to `api.stlouisfed.org`, resulting in HTTP 400 errors for every cycle.
+
+### FRED Ticker Reference
+The 4-week moving average of initial claims is **`IC4WSA`** (not `ICSA4W`). Always verify FRED series IDs at `https://fred.stlouisfed.org/series/<ID>` before adding to the registry.

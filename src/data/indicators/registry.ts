@@ -339,6 +339,199 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     frequency: 'weekly',
     source: 'eia',
     rawSeriesId: 'petroleum/crd/crpdn/data/'
+  },
+
+  // ── Base Raw Indicators (Source Data) ────────────────────────────────────
+  cpi_index: {
+    key: 'cpi_index',
+    name: 'Consumer Price Index (CPI)',
+    description: 'Consumer Price Index for All Urban Consumers: All Items',
+    unit: 'Index',
+    frequency: 'monthly',
+    source: 'fred',
+    rawSeriesId: 'CPIAUCSL'
+  },
+  pce_index: {
+    key: 'pce_index',
+    name: 'Personal Consumption Expenditures (PCE)',
+    description: 'Personal Consumption Expenditures: Chain-type Price Index',
+    unit: 'Index',
+    frequency: 'monthly',
+    source: 'fred',
+    rawSeriesId: 'PCEPI'
+  },
+  ppi_index: {
+    key: 'ppi_index',
+    name: 'Producer Price Index (PPI)',
+    description: 'Producer Price Index by Commodity: All Commodities',
+    unit: 'Index',
+    frequency: 'monthly',
+    source: 'fred',
+    rawSeriesId: 'PPIACO'
+  },
+  real_gdp: {
+    key: 'real_gdp',
+    name: 'Real GDP',
+    description: 'Real Gross Domestic Product',
+    unit: 'Billions of Chained 2017 Dollars',
+    frequency: 'quarterly',
+    source: 'fred',
+    rawSeriesId: 'GDPC1'
+  },
+  nonfarm_payrolls: {
+    key: 'nonfarm_payrolls',
+    name: 'All Employees, Total Nonfarm',
+    description: 'All Employees, Total Nonfarm',
+    unit: 'Thousands of Persons',
+    frequency: 'monthly',
+    source: 'fred',
+    rawSeriesId: 'PAYEMS'
+  },
+  retail_sales: {
+    key: 'retail_sales',
+    name: 'Retail Sales',
+    description: 'Advance Retail Sales: Retail Trade and Food Services',
+    unit: 'Millions of Dollars',
+    frequency: 'monthly',
+    source: 'fred',
+    rawSeriesId: 'RSAFS'
+  },
+  eci_wages: {
+    key: 'eci_wages',
+    name: 'Employment Cost Index',
+    description: 'Employment Cost Index: Wages and Salaries: Private Industry Workers',
+    unit: 'Index',
+    frequency: 'quarterly',
+    source: 'fred',
+    rawSeriesId: 'ECIWAG'
+  },
+  core_cpi_index: {
+    key: 'core_cpi_index',
+    name: 'Core CPI Index',
+    description: 'Consumer Price Index for All Urban Consumers: All Items Less Food and Energy',
+    unit: 'Index',
+    frequency: 'monthly',
+    source: 'fred',
+    rawSeriesId: 'CPILFESL'
+  },
+  core_pce_index: {
+    key: 'core_pce_index',
+    name: 'Core PCE Index',
+    description: 'Personal Consumption Expenditures Excluding Food and Energy',
+    unit: 'Index',
+    frequency: 'monthly',
+    source: 'fred',
+    rawSeriesId: 'PCEPILFE'
+  },
+  import_price_index: {
+    key: 'import_price_index',
+    name: 'Import Price Index',
+    description: 'Import Price Index (All Imports)',
+    unit: 'Index',
+    frequency: 'monthly',
+    source: 'fred',
+    rawSeriesId: 'IR'
+  },
+  average_hourly_earnings: {
+    key: 'average_hourly_earnings',
+    name: 'Average Hourly Earnings',
+    description: 'Average Hourly Earnings of All Employees, Total Private',
+    unit: 'Dollars per Hour',
+    frequency: 'monthly',
+    source: 'fred',
+    rawSeriesId: 'CES0500000003'
+  },
+
+  // ── Newly Added Indicators ────────────────────────────────────────────────
+  core_cpi_yoy_pct: {
+    key: 'core_cpi_yoy_pct',
+    name: 'Core CPI YoY',
+    description: 'Core Consumer Price Index (Ex Food and Energy) Year-over-Year % Change',
+    unit: '% YoY',
+    frequency: 'monthly',
+    source: 'calculated',
+    dependsOn: ['CPILFESL']
+  },
+  core_pce_yoy_pct: {
+    key: 'core_pce_yoy_pct',
+    name: 'Core PCE YoY',
+    description: 'Core Personal Consumption Expenditures (Ex Food and Energy) Year-over-Year % Change',
+    unit: '% YoY',
+    frequency: 'monthly',
+    source: 'calculated',
+    dependsOn: ['PCEPILFE']
+  },
+  import_price_yoy_pct: {
+    key: 'import_price_yoy_pct',
+    name: 'Import Price Index YoY',
+    description: 'Import Price Index (All Imports) Year-over-Year % Change',
+    unit: '% YoY',
+    frequency: 'monthly',
+    source: 'calculated',
+    dependsOn: ['IR']
+  },
+  ahe_yoy_pct: {
+    key: 'ahe_yoy_pct',
+    name: 'Average Hourly Earnings YoY',
+    description: 'Average Hourly Earnings Year-over-Year % Change',
+    unit: '% YoY',
+    frequency: 'monthly',
+    source: 'calculated',
+    dependsOn: ['CES0500000003']
+  },
+  initial_claims_4w_avg_k: {
+    key: 'initial_claims_4w_avg_k',
+    name: 'Initial Jobless Claims (4-Week Average)',
+    description: '4-Week Moving Average of Initial Claims (Thousands)',
+    unit: 'thousands',
+    frequency: 'weekly',
+    source: 'fred',
+    rawSeriesId: 'IC4WSA'
+  },
+  sloos_net_tightening: {
+    key: 'sloos_net_tightening',
+    name: 'SLOOS Net Tightening',
+    description: 'Net Percentage of Domestic Banks Tightening Standards for C&I Loans',
+    unit: '% net tightening',
+    frequency: 'quarterly',
+    source: 'fred',
+    rawSeriesId: 'DRTSCILM'
+  },
+  tips_10y_real_yield: {
+    key: 'tips_10y_real_yield',
+    name: '10-Year TIPS Real Yield',
+    description: '10-Year Treasury Inflation-Indexed Security (Real Yield)',
+    unit: '% real yield',
+    frequency: 'daily',
+    source: 'fred',
+    rawSeriesId: 'DFII10'
+  },
+  yield_30y_3m_change_pct: {
+    key: 'yield_30y_3m_change_pct',
+    name: '30-Year Treasury Yield 3-Month Change',
+    description: '30-Year Treasury Yield 3-Month Change in Percentage Points',
+    unit: 'percentage points (3-month change)',
+    frequency: 'daily',
+    source: 'calculated',
+    dependsOn: ['DGS30']
+  },
+  dxy_3m_change_pct: {
+    key: 'dxy_3m_change_pct',
+    name: 'DXY 3-Month % Change',
+    description: 'Trade Weighted U.S. Dollar Index 3-Month % Change',
+    unit: '% change over prior 3 months',
+    frequency: 'daily',
+    source: 'calculated',
+    dependsOn: ['DTWEXBGS']
+  },
+  gold_3m_change_pct: {
+    key: 'gold_3m_change_pct',
+    name: 'Gold 3-Month % Change',
+    description: 'Gold Spot Price 3-Month % Change',
+    unit: '% change over prior 3 months',
+    frequency: 'daily',
+    source: 'calculated',
+    dependsOn: ['C:XAUUSD']
   }
 };
 
@@ -352,7 +545,10 @@ export const RAW_FRED_SERIES_IDS: string[] = Array.from(
           ids.push(ind.rawSeriesId);
         }
         if (ind.dependsOn) {
-          ids.push(...ind.dependsOn);
+          ids.push(...ind.dependsOn.filter(id => {
+            const definedSource = Object.values(INDICATORS).find(i => i.rawSeriesId === id)?.source;
+            return !definedSource || definedSource === 'fred';
+          }));
         }
         return ids;
       })

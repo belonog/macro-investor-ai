@@ -15,12 +15,12 @@ export async function runRegimeCycle(trigger: 'manual' | 'post_release' | 'sched
   try {
     logger.info(`Starting Regime Cycle (Trigger: ${trigger})...`);
     
-    // 1. Update Macro Data Caches
-    await Promise.all([
-      updateFredCache(),
-      updateBlsCache(),
-      updateEiaCache(),
-    ]);
+    // 1. Update Macro Data Caches sequentially — all three write to the same
+    //    'macro_snapshot' DB key, so parallel execution is a race condition
+    //    where the last writer would overwrite the others' data.
+    await updateFredCache();
+    await updateBlsCache();
+    await updateEiaCache();
 
     // 2. Fetch Latest Derived Values
     const flatSnapshot = await getLatestValues();

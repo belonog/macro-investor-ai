@@ -51,7 +51,22 @@ export async function sendTelegramAlert(alert: Alert): Promise<void> {
     // Log alert to DB
     logAlert(alert);
   } catch (error) {
-    logger.error(error, 'Failed to send Telegram message');
+    // If Markdown parsing fails, retry without parse_mode
+    if (error instanceof Error && error.message.includes("can't parse entities")) {
+      logger.warn('Telegram Markdown parsing failed, retrying without parse_mode...');
+      try {
+        await bot.telegram.sendMessage(chatId, message, {
+          ...extra,
+          parse_mode: undefined
+        });
+        logAlert(alert);
+        return;
+      } catch (retryError) {
+        logger.error(retryError, 'Failed to send Telegram message on retry');
+      }
+    } else {
+      logger.error(error, 'Failed to send Telegram message');
+    }
     // Still try to log to DB if sending failed
     logAlert(alert);
   }

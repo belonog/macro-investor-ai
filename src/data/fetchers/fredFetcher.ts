@@ -21,7 +21,8 @@ export async function fetchSeries(seriesId: string, startDate?: string): Promise
     throw new Error('FRED_API_KEY is not set');
   }
 
-  const defaultStartDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  // Fetch 3 years (1095 days) by default to ensure enough history for YoY calculations on lagged series
+  const defaultStartDate = new Date(Date.now() - 1095 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const obsStart = startDate || defaultStartDate;
 
   const response = await withRetry(() => axios.get(`${FRED_BASE_URL}/series/observations`, {

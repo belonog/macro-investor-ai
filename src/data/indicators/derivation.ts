@@ -98,6 +98,30 @@ export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Da
     if (w) indicators['oil_price_3m_change_pct'] = w;
   }
 
+  const coreCpiYoY = calculateYoY('CPILFESL');
+  if (coreCpiYoY !== null) {
+    const w = wrap('core_cpi_yoy_pct', coreCpiYoY);
+    if (w) indicators['core_cpi_yoy_pct'] = w;
+  }
+
+  const corePceYoY = calculateYoY('PCEPILFE');
+  if (corePceYoY !== null) {
+    const w = wrap('core_pce_yoy_pct', corePceYoY);
+    if (w) indicators['core_pce_yoy_pct'] = w;
+  }
+
+  const importPriceYoY = calculateYoY('IR');
+  if (importPriceYoY !== null) {
+    const w = wrap('import_price_yoy_pct', importPriceYoY);
+    if (w) indicators['import_price_yoy_pct'] = w;
+  }
+
+  const aheYoY = calculateYoY('CES0500000003');
+  if (aheYoY !== null) {
+    const w = wrap('ahe_yoy_pct', aheYoY);
+    if (w) indicators['ahe_yoy_pct'] = w;
+  }
+
   // 2. Calculations: Growth Metrics
   const gdpCurr = getSeriesValue('GDPC1', 0);
   const gdpPrior = getSeriesValue('GDPC1', 1);
@@ -150,6 +174,27 @@ export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Da
     const val = hySpread - hyAvg6m;
     const w = wrap('credit_spread_delta', val);
     if (w) indicators['credit_spread_delta'] = w;
+  }
+
+  const y30Curr = getSeriesValue('DGS30', 0);
+  const y30_3mAgo = getSeriesValueMonthsAgo('DGS30', 3);
+  if (y30Curr !== null && y30_3mAgo !== null) {
+    const w = wrap('yield_30y_3m_change_pct', y30Curr - y30_3mAgo);
+    if (w) indicators['yield_30y_3m_change_pct'] = w;
+  }
+
+  const dxyCurr = getSeriesValue('DTWEXBGS', 0);
+  const dxy_3mAgo = getSeriesValueMonthsAgo('DTWEXBGS', 3);
+  if (dxyCurr !== null && dxy_3mAgo !== null && dxy_3mAgo !== 0) {
+    const w = wrap('dxy_3m_change_pct', ((dxyCurr - dxy_3mAgo) / dxy_3mAgo) * 100);
+    if (w) indicators['dxy_3m_change_pct'] = w;
+  }
+
+  const goldCurr = getSeriesValue('C:XAUUSD', 0);
+  const gold_3mAgo = getSeriesValueMonthsAgo('C:XAUUSD', 3);
+  if (goldCurr !== null && gold_3mAgo !== null && gold_3mAgo !== 0) {
+    const w = wrap('gold_3m_change_pct', ((goldCurr - gold_3mAgo) / gold_3mAgo) * 100);
+    if (w) indicators['gold_3m_change_pct'] = w;
   }
 
   // 4. Map other raw series automatically

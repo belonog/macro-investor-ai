@@ -37,12 +37,15 @@ const CONFIDENCE_CAPS = {
 /**
  * Piecewise linear normalization to [0, 1].
  */
-export function normalize(value: number, bounds: { low: number, neutral: number, high: number }): number {
-  const { low, neutral, high } = bounds;
-  if (value <= low)     return 0.0;
-  if (value >= high)    return 1.0;
-  if (value <= neutral) return 0.5 * (value - low) / (neutral - low);
-  return 0.5 + 0.5 * (value - neutral) / (high - neutral);
+export function normalize(value: number, bounds: { low: number, neutral: number, high: number, inverted?: boolean }): number {
+  const v = bounds.inverted ? -value : value;
+  const { low, neutral, high } = bounds.inverted
+    ? { low: -bounds.low, neutral: -bounds.neutral, high: -bounds.high }
+    : bounds;
+  if (v <= low)     return 0.0;
+  if (v >= high)    return 1.0;
+  if (v <= neutral) return 0.5 * (v - low) / (neutral - low);
+  return 0.5 + 0.5 * (v - neutral) / (high - neutral);
 }
 
 export function isStale(

@@ -2,33 +2,39 @@
   "_CONFIG_": "Edit this section for backtesting calibration. No other code should change between calibration runs.",
   "_comment_bounds": "Piecewise normalization bounds. The neutral point does NOT have to be the arithmetic midpoint of [low, high]. This lets you express asymmetric inflation expectations: e.g. CPI neutral at 2% (Fed target) even though the range is 0–7%.",
   "inflation_bounds": {
+    "core_cpi_yoy_pct":               { "low": 0, "neutral": 2.0, "high": 6.0 },
     "cpi_yoy_pct":                    { "low": 0, "neutral": 2.0, "high": 7.0 },
-    "pce_yoy_pct":                    { "low": 0, "neutral": 2.0, "high": 6.0 },
+    "core_pce_yoy_pct":               { "low": 0, "neutral": 2.0, "high": 5.0 },
     "breakeven_5y_pct":               { "low": 1.5, "neutral": 2.0, "high": 3.5 },
     "ppi_yoy_pct":                    { "low": -1.0, "neutral": 2.0, "high": 9.0 },
-    "oil_price_3m_change_pct":        { "low": -20, "neutral": 0, "high": 20 },
-    "fertilizer_index_3m_change_pct": { "low": -20, "neutral": 0, "high": 20 }
+    "forward_5y5y_pct":               { "low": 1.5, "neutral": 2.0, "high": 3.5 },
+    "import_price_yoy_pct":           { "low": -5.0, "neutral": 0, "high": 10.0 },
+    "oil_price_3m_change_pct":        { "low": -20, "neutral": 0, "high": 20 }
   },
   "growth_bounds": {
     "ism_manufacturing":         { "low": 44, "neutral": 50, "high": 58 },
     "ism_services":              { "low": 44, "neutral": 50, "high": 58 },
     "real_gdp_qoq_ann_pct":      { "low": -2, "neutral": 2.0, "high": 5.0 },
     "nfp_3m_avg_k":              { "low": 0, "neutral": 150, "high": 300 },
+    "initial_claims_4w_avg_k":   { "low": 150, "neutral": 220, "high": 400, "inverted": true },
     "retail_sales_yoy_real_pct": { "low": -3, "neutral": 2.0, "high": 7.0 }
   },
   "inflation_weights": {
-    "cpi_yoy_pct":                    0.25,
-    "pce_yoy_pct":                    0.20,
+    "core_cpi_yoy_pct":               0.15,
+    "cpi_yoy_pct":                    0.10,
+    "core_pce_yoy_pct":               0.20,
     "breakeven_5y_pct":               0.20,
     "ppi_yoy_pct":                    0.15,
-    "oil_price_3m_change_pct":        0.10,
-    "fertilizer_index_3m_change_pct": 0.10
+    "forward_5y5y_pct":               0.10,
+    "import_price_yoy_pct":           0.07,
+    "oil_price_3m_change_pct":        0.03
   },
   "growth_weights": {
     "ism_manufacturing":         0.30,
-    "ism_services":              0.20,
+    "ism_services":              0.15,
     "real_gdp_qoq_ann_pct":      0.25,
-    "nfp_3m_avg_k":              0.15,
+    "nfp_3m_avg_k":              0.10,
+    "initial_claims_4w_avg_k":   0.10,
     "retail_sales_yoy_real_pct": 0.10
   },
   "_comment_thresholds": "boundary_zone: within ±this of any threshold → flag boundary proximity",
