@@ -83,3 +83,6 @@ All three fetchers — `fredFetcher`, `blsFetcher`, `eiaFetcher` — write to th
 
 ### FRED Ticker Reference
 The 4-week moving average of initial claims is **`IC4WSA`** (not `ICSA4W`). Always verify FRED series IDs at `https://fred.stlouisfed.org/series/<ID>` before adding to the registry.
+
+### Telegram Markdown Escaping (Legacy Markdown V1)
+Because the `telegraf` bot uses `parse_mode: 'Markdown'` (V1), characters like `_` are treated as italics entities. Since the system heavily relies on variables containing underscores (e.g., `growth_score`, `cpi_yoy_pct`), and the LLM output frequently includes these variable names in its rationale, **all dynamic LLM text must have underscores escaped as `\_`** before being injected into the Telegram message string. Failing to do so results in Telegram throwing a `400: Bad Request: can't parse entities` error and silently dropping the alert.
