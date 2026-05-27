@@ -1,6 +1,16 @@
 export type IndicatorSource = 'fred' | 'polygon' | 'manual' | 'calculated' | 'bls' | 'eia';
 export type IndicatorFrequency = 'daily' | 'weekly' | 'monthly' | 'quarterly';
 
+export type CalculationOp =
+  | { type: 'yoy'; seriesId: string }
+  | { type: 'change_pct'; seriesId: string; months: number }
+  | { type: 'change_abs'; seriesId: string; months: number }
+  | { type: 'qoq_ann_pct'; seriesId: string }
+  | { type: 'avg_change'; seriesId: string; periods: number }
+  | { type: 'real_yoy'; nominalSeriesId: string; cpiSeriesId: string }
+  | { type: 'spread'; leftSeriesId: string; rightSeriesId: string }
+  | { type: 'spread_delta_avg'; seriesId: string; periods: number };
+
 export interface IndicatorDefinition {
   key: string;
   name: string;
@@ -11,6 +21,7 @@ export interface IndicatorDefinition {
   source: IndicatorSource;
   rawSeriesId?: string; // FRED ID or Polygon ticker for fetched series
   dependsOn?: string[]; // raw series IDs this indicator depends on
+  calculation?: CalculationOp;
 }
 
 export const INDICATORS: Record<string, IndicatorDefinition> = {
@@ -24,6 +35,7 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
     dependsOn: ['CPIAUCSL'],
+    calculation: { type: 'yoy', seriesId: 'CPIAUCSL' },
   },
   pce_yoy_pct: {
     key: 'pce_yoy_pct',
@@ -34,6 +46,7 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
     dependsOn: ['PCEPI'],
+    calculation: { type: 'yoy', seriesId: 'PCEPI' },
   },
   breakeven_5y_pct: {
     key: 'breakeven_5y_pct',
@@ -54,6 +67,7 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
     dependsOn: ['PPIACO'],
+    calculation: { type: 'yoy', seriesId: 'PPIACO' },
   },
   oil_price_3m_change_pct: {
     key: 'oil_price_3m_change_pct',
@@ -64,6 +78,7 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
     dependsOn: ['DCOILWTICO'],
+    calculation: { type: 'change_pct', seriesId: 'DCOILWTICO', months: 3 },
   },
   fertilizer_index_3m_change_pct: {
     key: 'fertilizer_index_3m_change_pct',
@@ -103,6 +118,7 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
     dependsOn: ['GDPC1'],
+    calculation: { type: 'qoq_ann_pct', seriesId: 'GDPC1' },
   },
   nfp_3m_avg_k: {
     key: 'nfp_3m_avg_k',
@@ -113,6 +129,7 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
     dependsOn: ['PAYEMS'],
+    calculation: { type: 'avg_change', seriesId: 'PAYEMS', periods: 3 },
   },
   retail_sales_yoy_real_pct: {
     key: 'retail_sales_yoy_real_pct',
@@ -123,6 +140,7 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
     dependsOn: ['RSAFS', 'CPIAUCSL'],
+    calculation: { type: 'real_yoy', nominalSeriesId: 'RSAFS', cpiSeriesId: 'CPIAUCSL' },
   },
 
   // ── Supplementary Indicators ────────────────────────────────────────────────
@@ -275,6 +293,7 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
     dependsOn: ['ECIWAG', 'CPIAUCSL'],
+    calculation: { type: 'real_yoy', nominalSeriesId: 'ECIWAG', cpiSeriesId: 'CPIAUCSL' },
   },
   fao_food_price_index: {
     key: 'fao_food_price_index',
@@ -306,6 +325,7 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
     dependsOn: ['DGS30', 'DGS2'],
+    calculation: { type: 'spread', leftSeriesId: 'DGS30', rightSeriesId: 'DGS2' },
   },
   credit_spread_delta: {
     key: 'credit_spread_delta',
@@ -316,6 +336,7 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
     dependsOn: ['BAMLH0A0HYM2'],
+    calculation: { type: 'spread_delta_avg', seriesId: 'BAMLH0A0HYM2', periods: 6 },
   },
   henry_hub_price_usd: {
     key: 'henry_hub_price_usd',
@@ -500,6 +521,7 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
     dependsOn: ['CPILFESL'],
+    calculation: { type: 'yoy', seriesId: 'CPILFESL' },
   },
   core_pce_yoy_pct: {
     key: 'core_pce_yoy_pct',
@@ -510,6 +532,7 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
     dependsOn: ['PCEPILFE'],
+    calculation: { type: 'yoy', seriesId: 'PCEPILFE' },
   },
   import_price_yoy_pct: {
     key: 'import_price_yoy_pct',
@@ -520,6 +543,7 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
     dependsOn: ['IR'],
+    calculation: { type: 'yoy', seriesId: 'IR' },
   },
   ahe_yoy_pct: {
     key: 'ahe_yoy_pct',
@@ -530,6 +554,7 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
     dependsOn: ['CES0500000003'],
+    calculation: { type: 'yoy', seriesId: 'CES0500000003' },
   },
   initial_claims_4w_avg_k: {
     key: 'initial_claims_4w_avg_k',
@@ -570,6 +595,7 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
     dependsOn: ['DGS30'],
+    calculation: { type: 'change_abs', seriesId: 'DGS30', months: 3 },
   },
   usd_index_3m_change_pct: {
     key: 'usd_index_3m_change_pct',
@@ -580,6 +606,7 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
     dependsOn: ['DTWEXBGS'],
+    calculation: { type: 'change_pct', seriesId: 'DTWEXBGS', months: 3 },
   },
   gold_3m_change_pct: {
     key: 'gold_3m_change_pct',
@@ -590,6 +617,7 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
     dependsOn: ['C:XAUUSD'],
+    calculation: { type: 'change_pct', seriesId: 'C:XAUUSD', months: 3 },
   },
   nonfarm_labor_productivity_qoq_pct: {
     key: 'nonfarm_labor_productivity_qoq_pct',

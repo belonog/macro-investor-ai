@@ -71,135 +71,84 @@ export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Da
     };
   };
 
-  // 1. Calculations: Inflation Metrics
-  const cpiYoY = calculateYoY('CPIAUCSL');
-  if (cpiYoY !== null) {
-    const w = wrap('cpi_yoy_pct', cpiYoY);
-    if (w) indicators['cpi_yoy_pct'] = w;
-  }
-
-  const pceYoY = calculateYoY('PCEPI');
-  if (pceYoY !== null) {
-    const w = wrap('pce_yoy_pct', pceYoY);
-    if (w) indicators['pce_yoy_pct'] = w;
-  }
-
-  const ppiYoY = calculateYoY('PPIACO');
-  if (ppiYoY !== null) {
-    const w = wrap('ppi_yoy_pct', ppiYoY);
-    if (w) indicators['ppi_yoy_pct'] = w;
-  }
-
-  const oilCurr = getSeriesValue('DCOILWTICO', 0);
-  const oil3mAgo = getSeriesValueMonthsAgo('DCOILWTICO', 3);
-  if (oilCurr !== null && oil3mAgo !== null && oil3mAgo !== 0) {
-    const val = ((oilCurr - oil3mAgo) / oil3mAgo) * 100;
-    const w = wrap('oil_price_3m_change_pct', val);
-    if (w) indicators['oil_price_3m_change_pct'] = w;
-  }
-
-  const coreCpiYoY = calculateYoY('CPILFESL');
-  if (coreCpiYoY !== null) {
-    const w = wrap('core_cpi_yoy_pct', coreCpiYoY);
-    if (w) indicators['core_cpi_yoy_pct'] = w;
-  }
-
-  const corePceYoY = calculateYoY('PCEPILFE');
-  if (corePceYoY !== null) {
-    const w = wrap('core_pce_yoy_pct', corePceYoY);
-    if (w) indicators['core_pce_yoy_pct'] = w;
-  }
-
-  const importPriceYoY = calculateYoY('IR');
-  if (importPriceYoY !== null) {
-    const w = wrap('import_price_yoy_pct', importPriceYoY);
-    if (w) indicators['import_price_yoy_pct'] = w;
-  }
-
-  const aheYoY = calculateYoY('CES0500000003');
-  if (aheYoY !== null) {
-    const w = wrap('ahe_yoy_pct', aheYoY);
-    if (w) indicators['ahe_yoy_pct'] = w;
-  }
-
-  // 2. Calculations: Growth Metrics
-  const gdpCurr = getSeriesValue('GDPC1', 0);
-  const gdpPrior = getSeriesValue('GDPC1', 1);
-  if (gdpCurr !== null && gdpPrior !== null && gdpPrior !== 0) {
-    const qoq = (gdpCurr - gdpPrior) / gdpPrior;
-    const val = (Math.pow(1 + qoq, 4) - 1) * 100;
-    const w = wrap('real_gdp_qoq_ann_pct', val);
-    if (w) indicators['real_gdp_qoq_ann_pct'] = w;
-  }
-
-  const nfpSeries = snapshot.series['PAYEMS']?.filter(p => p.date <= baseDate);
-  if (nfpSeries && nfpSeries.length >= 4) {
-    const changes = [
-      nfpSeries[nfpSeries.length - 1].value - nfpSeries[nfpSeries.length - 2].value,
-      nfpSeries[nfpSeries.length - 2].value - nfpSeries[nfpSeries.length - 3].value,
-      nfpSeries[nfpSeries.length - 3].value - nfpSeries[nfpSeries.length - 4].value,
-    ];
-    const val = changes.reduce((a, b) => a + b, 0) / 3;
-    const w = wrap('nfp_3m_avg_k', val);
-    if (w) indicators['nfp_3m_avg_k'] = w;
-  }
-
-  const rsNominalYoY = calculateYoY('RSAFS');
-  if (rsNominalYoY !== null && cpiYoY !== null) {
-    const val = rsNominalYoY - cpiYoY;
-    const w = wrap('retail_sales_yoy_real_pct', val);
-    if (w) indicators['retail_sales_yoy_real_pct'] = w;
-  }
-
-  const eciYoY = calculateYoY('ECIWAG');
-  if (eciYoY !== null && cpiYoY !== null) {
-    const val = eciYoY - cpiYoY;
-    const w = wrap('real_wages_yoy_pct', val);
-    if (w) indicators['real_wages_yoy_pct'] = w;
-  }
-
-  // 3. Derived Metrics: Spreads
-  const y30 = getSeriesValue('DGS30');
-  const y2 = getSeriesValue('DGS2');
-  if (y30 !== null && y2 !== null) {
-    const val = y30 - y2;
-    const w = wrap('yield_curve_30_2', val);
-    if (w) indicators['yield_curve_30_2'] = w;
-  }
-
-  const hySpread = getSeriesValue('BAMLH0A0HYM2');
-  const s = snapshot.series['BAMLH0A0HYM2']?.filter(p => p.date <= baseDate);
-  if (hySpread !== null && s && s.length >= 6) {
-    const hyAvg6m = s.slice(-6).reduce((sum, p) => sum + p.value, 0) / 6;
-    const val = hySpread - hyAvg6m;
-    const w = wrap('credit_spread_delta', val);
-    if (w) indicators['credit_spread_delta'] = w;
-  }
-
-  const y30Curr = getSeriesValue('DGS30', 0);
-  const y30_3mAgo = getSeriesValueMonthsAgo('DGS30', 3);
-  if (y30Curr !== null && y30_3mAgo !== null) {
-    const w = wrap('yield_30y_3m_change_pct', y30Curr - y30_3mAgo);
-    if (w) indicators['yield_30y_3m_change_pct'] = w;
-  }
-
-  const usdIndexCurr = getSeriesValue('DTWEXBGS', 0);
-  const usd_index_3mAgo = getSeriesValueMonthsAgo('DTWEXBGS', 3);
-  if (usdIndexCurr !== null && usd_index_3mAgo !== null && usd_index_3mAgo !== 0) {
-    const w = wrap('usd_index_3m_change_pct', ((usdIndexCurr - usd_index_3mAgo) / usd_index_3mAgo) * 100);
-    if (w) indicators['usd_index_3m_change_pct'] = w;
-  }
-
-  const goldCurr = getSeriesValue('C:XAUUSD', 0);
-  const gold_3mAgo = getSeriesValueMonthsAgo('C:XAUUSD', 3);
-  if (goldCurr !== null && gold_3mAgo !== null && gold_3mAgo !== 0) {
-    const w = wrap('gold_3m_change_pct', ((goldCurr - gold_3mAgo) / gold_3mAgo) * 100);
-    if (w) indicators['gold_3m_change_pct'] = w;
-  }
-
-  // 4. Map other raw series automatically
+  // 1. Calculate and map indicators
   for (const [key, def] of Object.entries(INDICATORS)) {
-    if ((def.source === 'fred' || def.source === 'bls' || def.source === 'eia') && def.rawSeriesId) {
+    if (def.source === 'calculated' && def.calculation) {
+      let val: number | null = null;
+      const calc = def.calculation;
+
+      switch (calc.type) {
+        case 'yoy':
+          val = calculateYoY(calc.seriesId);
+          break;
+        case 'change_pct': {
+          const curr = getSeriesValue(calc.seriesId, 0);
+          const prior = getSeriesValueMonthsAgo(calc.seriesId, calc.months);
+          if (curr !== null && prior !== null && prior !== 0) {
+            val = ((curr - prior) / prior) * 100;
+          }
+          break;
+        }
+        case 'change_abs': {
+          const curr = getSeriesValue(calc.seriesId, 0);
+          const prior = getSeriesValueMonthsAgo(calc.seriesId, calc.months);
+          if (curr !== null && prior !== null) {
+            val = curr - prior;
+          }
+          break;
+        }
+        case 'qoq_ann_pct': {
+          const curr = getSeriesValue(calc.seriesId, 0);
+          const prior = getSeriesValue(calc.seriesId, 1);
+          if (curr !== null && prior !== null && prior !== 0) {
+            const qoq = (curr - prior) / prior;
+            val = (Math.pow(1 + qoq, 4) - 1) * 100;
+          }
+          break;
+        }
+        case 'avg_change': {
+          const s = snapshot.series[calc.seriesId]?.filter(p => p.date <= baseDate);
+          if (s && s.length > calc.periods) {
+            let sum = 0;
+            for (let i = 0; i < calc.periods; i++) {
+              sum += s[s.length - 1 - i].value - s[s.length - 2 - i].value;
+            }
+            val = sum / calc.periods;
+          }
+          break;
+        }
+        case 'real_yoy': {
+          const nom = calculateYoY(calc.nominalSeriesId);
+          const cpi = calculateYoY(calc.cpiSeriesId);
+          if (nom !== null && cpi !== null) {
+            val = nom - cpi;
+          }
+          break;
+        }
+        case 'spread': {
+          const left = getSeriesValue(calc.leftSeriesId);
+          const right = getSeriesValue(calc.rightSeriesId);
+          if (left !== null && right !== null) {
+            val = left - right;
+          }
+          break;
+        }
+        case 'spread_delta_avg': {
+          const spread = getSeriesValue(calc.seriesId);
+          const s = snapshot.series[calc.seriesId]?.filter(p => p.date <= baseDate);
+          if (spread !== null && s && s.length >= calc.periods) {
+            const avg = s.slice(-calc.periods).reduce((sum, p) => sum + p.value, 0) / calc.periods;
+            val = spread - avg;
+          }
+          break;
+        }
+      }
+
+      if (val !== null) {
+        const w = wrap(key, val);
+        if (w) indicators[key] = w;
+      }
+    } else if ((def.source === 'fred' || def.source === 'bls' || def.source === 'eia') && def.rawSeriesId) {
       const val = getSeriesValue(def.rawSeriesId, 0);
       if (val !== null) {
         const w = wrap(key, val);
