@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { DataPoint, DataPointSchema, MacroSnapshot, MacroCacheSchema, MacroIndicators } from '../../types/index.js';
-import { RAW_FRED_SERIES_IDS, getRawSeriesDescription } from '../indicators/registry.js';
+import { RAW_FRED_SERIES_IDS, getRawSeriesDescription, getRevisionLookbackPeriods } from '../indicators/registry.js';
 import { deriveMetrics } from '../indicators/derivation.js';
 import { logger } from '../../utils/logger.js';
 import { db } from '../../db/database.js';
@@ -110,9 +110,11 @@ export async function updateMacroCache(): Promise<MacroSnapshot> {
     try {
       const cachedSeries = snapshot.series[seriesId] || [];
       let startDate: string | undefined = undefined;
+      const lookback = getRevisionLookbackPeriods(seriesId);
       
       if (cachedSeries.length > 0) {
-        startDate = cachedSeries[cachedSeries.length - 1].date;
+        const index = Math.max(0, cachedSeries.length - 1 - lookback);
+        startDate = cachedSeries[index].date;
       }
       
       const newPoints = await fetchSeries(seriesId, startDate);

@@ -11,6 +11,12 @@ vi.mock('../src/db/database.js', () => ({
   }
 }));
 
+vi.mock('../src/data/indicators/registry.js', () => ({
+  RAW_EIA_SERIES_IDS: ['/petroleum/sum/sndw/data/'],
+  getRawSeriesDescription: vi.fn().mockReturnValue('Test EIA'),
+  getRevisionLookbackPeriods: vi.fn().mockReturnValue(1) // Lookback of 1
+}));
+
 describe('eiaFetcher', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -52,9 +58,45 @@ describe('eiaFetcher', () => {
   describe('updateMacroCache', () => {
     it('updates cache and returns snapshot', async () => {
       vi.mocked(db.getCache).mockReturnValueOnce(null);
+      vi.mocked(axios.get).mockResolvedValueOnce({
+        data: { response: { data: [] } }
+      });
       const snapshot = await updateMacroCache();
       expect(snapshot.series).toBeDefined();
       expect(db.setCache).toHaveBeenCalled();
+    });
+
+    it('calculates startDates based on cache and lookback', async () => {
+      const mockCache = {
+        fetched_at: new Date().toISOString(),
+        data: {
+          series: {
+            '/petroleum/sum/sndw/data/': [
+              { date: '2026-05-01', value: 100 },
+              { date: '2026-05-08', value: 110 },
+              { date: '2026-05-15', value: 120 }
+            ]
+          },
+          fetched_at: {}
+        }
+      };
+      vi.mocked(db.getCache).mockReturnValueOnce(mockCache);
+      vi.mocked(axios.get).mockResolvedValueOnce({
+        data: { response: { data: [] } }
+      });
+
+      await updateMacroCache();
+
+      // Lookback is 1. Length is 3. index = Math.max(0, 3 - 1 - 1) = 1.
+      // Date at index 1 is '2026-05-08'.
+      expect(axios.get).toHaveBeenCalledWith(
+        expect.stringContaining('api.eia.gov/v2/petroleum/sum/sndw/data/'),
+        expect.objectContaining({
+          params: expect.objectContaining({
+            start: '2026-05-08'
+          })
+        })
+      );
     });
   });
 });

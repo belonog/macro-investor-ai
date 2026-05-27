@@ -118,6 +118,42 @@ describe('fredFetcher', () => {
       );
       expect(result.series['CPIAUCSL']).toEqual([{ date: '2023-01-01', value: 100.0 }]);
     });
+
+    it('should calculate startDate using revision_lookback_periods', async () => {
+      const mockedAxios = vi.mocked(axios);
+      mockedAxios.get.mockResolvedValue({
+        data: { observations: [] }
+      });
+      
+      const mockCache = {
+        fetched_at: new Date().toISOString(),
+        data: {
+          series: {
+            'CPIAUCSL': [
+              { date: '2023-01-01', value: 100.0 },
+              { date: '2023-02-01', value: 101.0 },
+              { date: '2023-03-01', value: 102.0 }
+            ]
+          },
+          fetched_at: {}
+        }
+      };
+      mockGetCache.mockReturnValue(mockCache);
+
+      // CPIAUCSL has a lookback of 1. Length is 3. index = Math.max(0, 3 - 1 - 1) = 1.
+      // startDate should be '2023-02-01'.
+      await updateMacroCache();
+      
+      expect(mockedAxios.get).toHaveBeenCalledWith(
+        expect.stringContaining('/series/observations'),
+        expect.objectContaining({
+          params: expect.objectContaining({
+            series_id: 'CPIAUCSL',
+            observation_start: '2023-02-01'
+          })
+        })
+      );
+    });
   });
 
   describe('getLatestValues', () => {

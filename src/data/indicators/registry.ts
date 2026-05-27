@@ -7,6 +7,7 @@ export interface IndicatorDefinition {
   description: string;
   unit: string;
   frequency: IndicatorFrequency;
+  revision_lookback_periods: number; // Number of past periods to look back for revisions (e.g., 1 for monthly data means we also check the previous month for updates)
   source: IndicatorSource;
   rawSeriesId?: string; // FRED ID or Polygon ticker for fetched series
   dependsOn?: string[]; // raw series IDs this indicator depends on
@@ -20,8 +21,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Consumer Price Index (CPI) Year-over-Year % Change',
     unit: '% YoY',
     frequency: 'monthly',
+    revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
-    dependsOn: ['CPIAUCSL']
+    dependsOn: ['CPIAUCSL'],
   },
   pce_yoy_pct: {
     key: 'pce_yoy_pct',
@@ -29,8 +31,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Personal Consumption Expenditures (PCE) Year-over-Year % Change',
     unit: '% YoY',
     frequency: 'monthly',
+    revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
-    dependsOn: ['PCEPI']
+    dependsOn: ['PCEPI'],
   },
   breakeven_5y_pct: {
     key: 'breakeven_5y_pct',
@@ -38,8 +41,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: '5-Year Breakeven Inflation Rate (%)',
     unit: '%',
     frequency: 'daily',
+    revision_lookback_periods: 0, // Daily market data is final upon daily close.
     source: 'fred',
-    rawSeriesId: 'T5YIE'
+    rawSeriesId: 'T5YIE',
   },
   ppi_yoy_pct: {
     key: 'ppi_yoy_pct',
@@ -47,8 +51,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Producer Price Index (PPI) Year-over-Year % Change',
     unit: '% YoY',
     frequency: 'monthly',
+    revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
-    dependsOn: ['PPIACO']
+    dependsOn: ['PPIACO'],
   },
   oil_price_3m_change_pct: {
     key: 'oil_price_3m_change_pct',
@@ -56,16 +61,18 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'WTI Crude Oil Price 3-Month % Change',
     unit: '% change over prior 90 days',
     frequency: 'daily',
+    revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
-    dependsOn: ['DCOILWTICO']
+    dependsOn: ['DCOILWTICO'],
   },
   fertilizer_index_3m_change_pct: {
     key: 'fertilizer_index_3m_change_pct',
     name: 'Fertilizer Index 3-Month % Change',
     description: 'Fertilizer Index 3-Month % Change',
     unit: '% YoY',
+    revision_lookback_periods: 1, // Manual/Index data; 1 period overlap ensures latest updates are captured.
     frequency: 'monthly',
-    source: 'manual'
+    source: 'manual',
   },
 
   // ── Weighted Growth Indicators ─────────────────────────────────────────────
@@ -74,16 +81,18 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     name: 'ISM Manufacturing PMI',
     description: 'ISM Manufacturing PMI',
     unit: 'index',
+    revision_lookback_periods: 1, // ISM is rarely revised month-to-month, but 1 period overlap is safe.
     frequency: 'monthly',
-    source: 'manual'
+    source: 'manual',
   },
   ism_services: {
     key: 'ism_services',
     name: 'ISM Services PMI',
     description: 'ISM Services PMI',
     unit: 'index',
+    revision_lookback_periods: 1, // ISM is rarely revised month-to-month, but 1 period overlap is safe.
     frequency: 'monthly',
-    source: 'manual'
+    source: 'manual',
   },
   real_gdp_qoq_ann_pct: {
     key: 'real_gdp_qoq_ann_pct',
@@ -91,8 +100,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Real GDP Quarter-over-Quarter Annualized % Change',
     unit: '% annualized QoQ',
     frequency: 'quarterly',
+    revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
-    dependsOn: ['GDPC1']
+    dependsOn: ['GDPC1'],
   },
   nfp_3m_avg_k: {
     key: 'nfp_3m_avg_k',
@@ -100,8 +110,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Nonfarm Payrolls 3-Month Rolling Average Change (Thousands)',
     unit: 'thousands (3-month rolling average)',
     frequency: 'monthly',
+    revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
-    dependsOn: ['PAYEMS']
+    dependsOn: ['PAYEMS'],
   },
   retail_sales_yoy_real_pct: {
     key: 'retail_sales_yoy_real_pct',
@@ -109,8 +120,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Real Retail Sales Year-over-Year % Change (CPI-Adjusted)',
     unit: '% YoY real',
     frequency: 'monthly',
+    revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
-    dependsOn: ['RSAFS', 'CPIAUCSL']
+    dependsOn: ['RSAFS', 'CPIAUCSL'],
   },
 
   // ── Supplementary Indicators ────────────────────────────────────────────────
@@ -120,8 +132,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Effective Federal Funds Rate',
     unit: '% effective rate',
     frequency: 'daily',
+    revision_lookback_periods: 0, // Daily rate data is final upon release.
     source: 'fred',
-    rawSeriesId: 'FEDFUNDS'
+    rawSeriesId: 'FEDFUNDS',
   },
   yield_2y_pct: {
     key: 'yield_2y_pct',
@@ -129,8 +142,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: '2-Year Treasury Yield',
     unit: '% nominal',
     frequency: 'daily',
+    revision_lookback_periods: 0, // Daily market data is final.
     source: 'fred',
-    rawSeriesId: 'DGS2'
+    rawSeriesId: 'DGS2',
   },
   yield_10y_pct: {
     key: 'yield_10y_pct',
@@ -138,8 +152,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: '10-Year Treasury Yield',
     unit: '% nominal',
     frequency: 'daily',
+    revision_lookback_periods: 0, // Daily market data is final.
     source: 'fred',
-    rawSeriesId: 'DGS10'
+    rawSeriesId: 'DGS10',
   },
   yield_30y_pct: {
     key: 'yield_30y_pct',
@@ -147,8 +162,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: '30-Year Treasury Yield',
     unit: '% nominal',
     frequency: 'daily',
+    revision_lookback_periods: 0, // Daily market data is final.
     source: 'fred',
-    rawSeriesId: 'DGS30'
+    rawSeriesId: 'DGS30',
   },
   tips_real_yield_5y_pct: {
     key: 'tips_real_yield_5y_pct',
@@ -156,8 +172,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: '5-Year Treasury Inflation-Indexed Security, Constant Maturity (TIPS Real Yield)',
     unit: '% real yield',
     frequency: 'daily',
+    revision_lookback_periods: 0, // Daily market data is final.
     source: 'fred',
-    rawSeriesId: 'DFII5'
+    rawSeriesId: 'DFII5',
   },
   yield_curve_10y_2y_bps: {
     key: 'yield_curve_10y_2y_bps',
@@ -165,8 +182,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: '10-Year to 2-Year Treasury Spread (Yield Curve)',
     unit: 'basis points (10Y minus 2Y)',
     frequency: 'daily',
+    revision_lookback_periods: 0, // Daily market data is final.
     source: 'fred',
-    rawSeriesId: 'T10Y2Y'
+    rawSeriesId: 'T10Y2Y',
   },
   hy_spread_bps: {
     key: 'hy_spread_bps',
@@ -174,8 +192,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'ICE BofA US High Yield Index Option-Adjusted Spread',
     unit: 'basis points OAS',
     frequency: 'daily',
+    revision_lookback_periods: 0, // Daily market data is final.
     source: 'fred',
-    rawSeriesId: 'BAMLH0A0HYM2'
+    rawSeriesId: 'BAMLH0A0HYM2',
   },
   ig_spread_bps: {
     key: 'ig_spread_bps',
@@ -183,8 +202,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'ICE BofA US Corporate Index Option-Adjusted Spread',
     unit: 'basis points OAS',
     frequency: 'daily',
+    revision_lookback_periods: 0, // Daily market data is final.
     source: 'fred',
-    rawSeriesId: 'BAMLC0A0CM'
+    rawSeriesId: 'BAMLC0A0CM',
   },
   usd_index: {
     key: 'usd_index',
@@ -192,8 +212,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Trade Weighted U.S. Dollar Index (DXY Proxy)',
     unit: 'index (trade-weighted)',
     frequency: 'daily',
+    revision_lookback_periods: 0, // Daily market data is final.
     source: 'fred',
-    rawSeriesId: 'DTWEXBGS'
+    rawSeriesId: 'DTWEXBGS',
   },
   gold_price_usd: {
     key: 'gold_price_usd',
@@ -201,8 +222,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Gold Spot Price (XAU/USD)',
     unit: 'USD per troy oz',
     frequency: 'daily',
+    revision_lookback_periods: 0, // Daily market data is final.
     source: 'polygon',
-    rawSeriesId: 'C:XAUUSD'
+    rawSeriesId: 'C:XAUUSD',
   },
   wti_price_usd: {
     key: 'wti_price_usd',
@@ -210,8 +232,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Crude Oil Prices: West Texas Intermediate (WTI)',
     unit: 'USD per barrel',
     frequency: 'daily',
+    revision_lookback_periods: 0, // Daily market data is final.
     source: 'fred',
-    rawSeriesId: 'DCOILWTICO'
+    rawSeriesId: 'DCOILWTICO',
   },
   consumer_sentiment: {
     key: 'consumer_sentiment',
@@ -219,8 +242,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'University of Michigan: Consumer Sentiment',
     unit: 'index',
     frequency: 'monthly',
+    revision_lookback_periods: 1, // UMich releases Prelim and Final in the same month; 1 period overlap ensures Final is captured.
     source: 'fred',
-    rawSeriesId: 'UMCSENT'
+    rawSeriesId: 'UMCSENT',
   },
   personal_saving_rate_pct: {
     key: 'personal_saving_rate_pct',
@@ -228,8 +252,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Personal Saving Rate',
     unit: '% of disposable income',
     frequency: 'monthly',
+    revision_lookback_periods: 3, // Revised alongside PCE and income data over subsequent months.
     source: 'fred',
-    rawSeriesId: 'PSAVERT'
+    rawSeriesId: 'PSAVERT',
   },
   capacity_utilization_pct: {
     key: 'capacity_utilization_pct',
@@ -237,8 +262,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Capacity Utilization: Total Industry',
     unit: '% of capacity',
     frequency: 'monthly',
+    revision_lookback_periods: 3, // Industrial production and capacity are typically revised for 3 months post-release.
     source: 'fred',
-    rawSeriesId: 'CAPUTLG211S'
+    rawSeriesId: 'CAPUTLG211S',
   },
   real_wages_yoy_pct: {
     key: 'real_wages_yoy_pct',
@@ -246,16 +272,18 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Real Wages Year-over-Year % Change (ECI Wages minus CPI)',
     unit: '% YoY (ECI wages YoY minus CPI YoY)',
     frequency: 'monthly',
+    revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
-    dependsOn: ['ECIWAG', 'CPIAUCSL']
+    dependsOn: ['ECIWAG', 'CPIAUCSL'],
   },
   fao_food_price_index: {
     key: 'fao_food_price_index',
     name: 'FAO Food Price Index',
     description: 'FAO Food Price Index',
     unit: 'manual',
+    revision_lookback_periods: 1, // 1 period overlap for manual index updates.
     frequency: 'monthly',
-    source: 'manual'
+    source: 'manual',
   },
 
   // ── Other Indicators / Dependencies ────────────────────────────────────────
@@ -265,8 +293,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: '5-Year, 5-Year Forward Inflation Expectation Rate',
     unit: '% implied annual inflation (5yr fwd, 5yr tenor)',
     frequency: 'daily',
+    revision_lookback_periods: 0, // Daily market data is final.
     source: 'fred',
-    rawSeriesId: 'T5YIFR'
+    rawSeriesId: 'T5YIFR',
   },
   yield_curve_30_2: {
     key: 'yield_curve_30_2',
@@ -274,8 +303,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Yield Curve Spread: 30Y minus 2Y (Percentage Points)',
     unit: 'percentage points (30Y minus 2Y)',
     frequency: 'daily',
+    revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
-    dependsOn: ['DGS30', 'DGS2']
+    dependsOn: ['DGS30', 'DGS2'],
   },
   credit_spread_delta: {
     key: 'credit_spread_delta',
@@ -283,8 +313,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'High Yield Credit Spread Delta (OAS minus 6-Month Moving Average)',
     unit: 'basis points (OAS minus 6-month moving average)',
     frequency: 'daily',
+    revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
-    dependsOn: ['BAMLH0A0HYM2']
+    dependsOn: ['BAMLH0A0HYM2'],
   },
   henry_hub_price_usd: {
     key: 'henry_hub_price_usd',
@@ -292,8 +323,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Henry Hub Natural Gas Spot Price',
     unit: 'USD per MMBtu',
     frequency: 'daily',
+    revision_lookback_periods: 0, // Daily market data is final.
     source: 'fred',
-    rawSeriesId: 'DHHNGSP'
+    rawSeriesId: 'DHHNGSP',
   },
   m2_money_supply: {
     key: 'm2_money_supply',
@@ -301,8 +333,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'M2 Money Supply',
     unit: 'billions of dollars',
     frequency: 'monthly',
+    revision_lookback_periods: 3, // Subject to short-term revisions up to 3 months as bank data finalizes.
     source: 'fred',
-    rawSeriesId: 'M2SL'
+    rawSeriesId: 'M2SL',
   },
   retail_sales_ex_auto_pct: {
     key: 'retail_sales_ex_auto_pct',
@@ -310,8 +343,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Advance Retail Sales: Retail Trade and Food Services (Excl Motor Vehicle & Parts)',
     unit: '% YoY',
     frequency: 'monthly',
+    revision_lookback_periods: 3, // Advance report + 2 subsequent monthly revisions.
     source: 'fred',
-    rawSeriesId: 'RSXFS'
+    rawSeriesId: 'RSXFS',
   },
   industrial_production_index: {
     key: 'industrial_production_index',
@@ -319,8 +353,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Industrial Production Index',
     unit: 'index',
     frequency: 'monthly',
+    revision_lookback_periods: 3, // Revised in the subsequent 3 months.
     source: 'fred',
-    rawSeriesId: 'INDPRO'
+    rawSeriesId: 'INDPRO',
   },
   eia_crude_inventory_change: {
     key: 'eia_crude_inventory_change',
@@ -328,8 +363,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Weekly change in U.S. commercial crude oil inventories',
     unit: 'thousands of barrels',
     frequency: 'weekly',
+    revision_lookback_periods: 1, // Physical weekly data is rarely revised retrospectively, but 1 period catches delayed corrections.
     source: 'eia',
-    rawSeriesId: 'petroleum/sum/sndw/data/'
+    rawSeriesId: 'petroleum/sum/sndw/data/',
   },
   eia_crude_production: {
     key: 'eia_crude_production',
@@ -337,8 +373,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Weekly U.S. field production of crude oil',
     unit: 'thousands of barrels per day',
     frequency: 'weekly',
+    revision_lookback_periods: 1, // Same as inventory change.
     source: 'eia',
-    rawSeriesId: 'petroleum/crd/crpdn/data/'
+    rawSeriesId: 'petroleum/crd/crpdn/data/',
   },
 
   // ── Base Raw Indicators (Source Data) ────────────────────────────────────
@@ -348,8 +385,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Consumer Price Index for All Urban Consumers: All Items',
     unit: 'Index',
     frequency: 'monthly',
+    revision_lookback_periods: 1, // Unadjusted CPI isn't revised month-to-month, but overlapping 1 period prevents timezone/release-time fetch errors.
     source: 'fred',
-    rawSeriesId: 'CPIAUCSL'
+    rawSeriesId: 'CPIAUCSL',
   },
   pce_index: {
     key: 'pce_index',
@@ -357,8 +395,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Personal Consumption Expenditures: Chain-type Price Index',
     unit: 'Index',
     frequency: 'monthly',
+    revision_lookback_periods: 3, // Accounts for chained revisions from Retail Sales and GDP updates.
     source: 'fred',
-    rawSeriesId: 'PCEPI'
+    rawSeriesId: 'PCEPI',
   },
   ppi_index: {
     key: 'ppi_index',
@@ -366,8 +405,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Producer Price Index by Commodity: All Commodities',
     unit: 'Index',
     frequency: 'monthly',
+    revision_lookback_periods: 4, // BLS routinely revises PPI up to 4 months post-release.
     source: 'fred',
-    rawSeriesId: 'PPIACO'
+    rawSeriesId: 'PPIACO',
   },
   real_gdp: {
     key: 'real_gdp',
@@ -375,8 +415,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Real Gross Domestic Product',
     unit: 'Billions of Chained 2017 Dollars',
     frequency: 'quarterly',
+    revision_lookback_periods: 2, // Covers Advance -> Preliminary -> Final releases.
     source: 'fred',
-    rawSeriesId: 'GDPC1'
+    rawSeriesId: 'GDPC1',
   },
   nonfarm_payrolls: {
     key: 'nonfarm_payrolls',
@@ -384,8 +425,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'All Employees, Total Nonfarm',
     unit: 'Thousands of Persons',
     frequency: 'monthly',
+    revision_lookback_periods: 3, // Initial release + 2 months of establishment survey revisions.
     source: 'fred',
-    rawSeriesId: 'PAYEMS'
+    rawSeriesId: 'PAYEMS',
   },
   retail_sales: {
     key: 'retail_sales',
@@ -393,8 +435,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Advance Retail Sales: Retail Trade and Food Services',
     unit: 'Millions of Dollars',
     frequency: 'monthly',
+    revision_lookback_periods: 3, // Advance report + 2 subsequent monthly revisions.
     source: 'fred',
-    rawSeriesId: 'RSAFS'
+    rawSeriesId: 'RSAFS',
   },
   eci_wages: {
     key: 'eci_wages',
@@ -402,8 +445,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Employment Cost Index: Wages and Salaries: Private Industry Workers',
     unit: 'Index',
     frequency: 'quarterly',
+    revision_lookback_periods: 1, // ECI is rarely revised retrospectively on a short-term basis, 1 period overlap is safe.
     source: 'fred',
-    rawSeriesId: 'ECIWAG'
+    rawSeriesId: 'ECIWAG',
   },
   core_cpi_index: {
     key: 'core_cpi_index',
@@ -411,8 +455,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Consumer Price Index for All Urban Consumers: All Items Less Food and Energy',
     unit: 'Index',
     frequency: 'monthly',
+    revision_lookback_periods: 1, // Same as Headline CPI.
     source: 'fred',
-    rawSeriesId: 'CPILFESL'
+    rawSeriesId: 'CPILFESL',
   },
   core_pce_index: {
     key: 'core_pce_index',
@@ -420,8 +465,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Personal Consumption Expenditures Excluding Food and Energy',
     unit: 'Index',
     frequency: 'monthly',
+    revision_lookback_periods: 3, // Same as Headline PCE.
     source: 'fred',
-    rawSeriesId: 'PCEPILFE'
+    rawSeriesId: 'PCEPILFE',
   },
   import_price_index: {
     key: 'import_price_index',
@@ -429,8 +475,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Import Price Index (All Imports)',
     unit: 'Index',
     frequency: 'monthly',
+    revision_lookback_periods: 4, // BLS revises import/export prices up to 4 months post-release.
     source: 'fred',
-    rawSeriesId: 'IR'
+    rawSeriesId: 'IR',
   },
   average_hourly_earnings: {
     key: 'average_hourly_earnings',
@@ -438,8 +485,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Average Hourly Earnings of All Employees, Total Private',
     unit: 'Dollars per Hour',
     frequency: 'monthly',
+    revision_lookback_periods: 3, // Tied directly to NFP establishment survey revisions.
     source: 'fred',
-    rawSeriesId: 'CES0500000003'
+    rawSeriesId: 'CES0500000003',
   },
 
   // ── Newly Added Indicators ────────────────────────────────────────────────
@@ -449,8 +497,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Core Consumer Price Index (Ex Food and Energy) Year-over-Year % Change',
     unit: '% YoY',
     frequency: 'monthly',
+    revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
-    dependsOn: ['CPILFESL']
+    dependsOn: ['CPILFESL'],
   },
   core_pce_yoy_pct: {
     key: 'core_pce_yoy_pct',
@@ -458,8 +507,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Core Personal Consumption Expenditures (Ex Food and Energy) Year-over-Year % Change',
     unit: '% YoY',
     frequency: 'monthly',
+    revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
-    dependsOn: ['PCEPILFE']
+    dependsOn: ['PCEPILFE'],
   },
   import_price_yoy_pct: {
     key: 'import_price_yoy_pct',
@@ -467,8 +517,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Import Price Index (All Imports) Year-over-Year % Change',
     unit: '% YoY',
     frequency: 'monthly',
+    revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
-    dependsOn: ['IR']
+    dependsOn: ['IR'],
   },
   ahe_yoy_pct: {
     key: 'ahe_yoy_pct',
@@ -476,8 +527,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Average Hourly Earnings Year-over-Year % Change',
     unit: '% YoY',
     frequency: 'monthly',
+    revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
-    dependsOn: ['CES0500000003']
+    dependsOn: ['CES0500000003'],
   },
   initial_claims_4w_avg_k: {
     key: 'initial_claims_4w_avg_k',
@@ -485,8 +537,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: '4-Week Moving Average of Initial Claims (Thousands)',
     unit: 'thousands',
     frequency: 'weekly',
+    revision_lookback_periods: 4, // 4 weeks covers late state-level filings and seasonal adjustment tweaks.
     source: 'fred',
-    rawSeriesId: 'IC4WSA'
+    rawSeriesId: 'IC4WSA',
   },
   sloos_net_tightening: {
     key: 'sloos_net_tightening',
@@ -494,8 +547,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Net Percentage of Domestic Banks Tightening Standards for C&I Loans',
     unit: '% net tightening',
     frequency: 'quarterly',
+    revision_lookback_periods: 1, // SLOOS is usually final upon release, but 1 period overlap ensures capture.
     source: 'fred',
-    rawSeriesId: 'DRTSCILM'
+    rawSeriesId: 'DRTSCILM',
   },
   tips_10y_real_yield: {
     key: 'tips_10y_real_yield',
@@ -503,8 +557,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: '10-Year Treasury Inflation-Indexed Security (Real Yield)',
     unit: '% real yield',
     frequency: 'daily',
+    revision_lookback_periods: 0, // Daily market data is final.
     source: 'fred',
-    rawSeriesId: 'DFII10'
+    rawSeriesId: 'DFII10',
   },
   yield_30y_3m_change_pct: {
     key: 'yield_30y_3m_change_pct',
@@ -512,8 +567,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: '30-Year Treasury Yield 3-Month Change in Percentage Points',
     unit: 'percentage points (3-month change)',
     frequency: 'daily',
+    revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
-    dependsOn: ['DGS30']
+    dependsOn: ['DGS30'],
   },
   usd_index_3m_change_pct: {
     key: 'usd_index_3m_change_pct',
@@ -521,8 +577,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Trade Weighted U.S. Dollar Index 3-Month % Change',
     unit: '% change over prior 3 months',
     frequency: 'daily',
+    revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
-    dependsOn: ['DTWEXBGS']
+    dependsOn: ['DTWEXBGS'],
   },
   gold_3m_change_pct: {
     key: 'gold_3m_change_pct',
@@ -530,8 +587,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Gold Spot Price 3-Month % Change',
     unit: '% change over prior 3 months',
     frequency: 'daily',
+    revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
-    dependsOn: ['C:XAUUSD']
+    dependsOn: ['C:XAUUSD'],
   },
   nonfarm_labor_productivity_qoq_pct: {
     key: 'nonfarm_labor_productivity_qoq_pct',
@@ -539,8 +597,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Nonfarm Labor Productivity Quarter-over-Quarter % Change',
     unit: '% QoQ',
     frequency: 'quarterly',
+    revision_lookback_periods: 2, // Matches GDP cycles (Advance -> Preliminary -> Final releases).
     source: 'fred',
-    rawSeriesId: 'PRS85006091'
+    rawSeriesId: 'PRS85006091',
   },
   nonfarm_unit_labor_costs_qoq_pct: {
     key: 'nonfarm_unit_labor_costs_qoq_pct',
@@ -548,8 +607,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Nonfarm Unit Labor Costs Quarter-over-Quarter % Change',
     unit: '% QoQ',
     frequency: 'quarterly',
+    revision_lookback_periods: 2, // Matches GDP and productivity cycles.
     source: 'fred',
-    rawSeriesId: 'PRS85006111'
+    rawSeriesId: 'PRS85006111',
   },
   nonfarm_hours_worked_qoq_pct: {
     key: 'nonfarm_hours_worked_qoq_pct',
@@ -557,8 +617,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     description: 'Nonfarm Hours Worked Quarter-over-Quarter % Change',
     unit: '% QoQ',
     frequency: 'quarterly',
+    revision_lookback_periods: 2, // Matches revisions that flow through with productivity/payroll updates.
     source: 'fred',
-    rawSeriesId: 'PRS85006031'
+    rawSeriesId: 'PRS85006031',
   }
 };
 
@@ -592,6 +653,21 @@ export function getRawSeriesDescription(seriesId: string): string {
     if (ind.dependsOn?.includes(seriesId)) return ind.description;
   }
   return seriesId;
+}
+
+/**
+ * Helper to get the maximum revision lookback periods for a raw series ID.
+ */
+export function getRevisionLookbackPeriods(seriesId: string): number {
+  let maxLookback = 0;
+  for (const ind of Object.values(INDICATORS)) {
+    if (ind.rawSeriesId === seriesId) {
+      if (ind.revision_lookback_periods > maxLookback) {
+        maxLookback = ind.revision_lookback_periods;
+      }
+    }
+  }
+  return maxLookback;
 }
 
 // Raw BLS Series IDs

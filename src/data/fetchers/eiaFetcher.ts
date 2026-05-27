@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { DataPoint, DataPointSchema, MacroSnapshot, MacroCacheSchema } from '../../types/index.js';
-import { RAW_EIA_SERIES_IDS, getRawSeriesDescription } from '../indicators/registry.js';
+import { RAW_EIA_SERIES_IDS, getRawSeriesDescription, getRevisionLookbackPeriods } from '../indicators/registry.js';
 import { logger } from '../../utils/logger.js';
 import { db } from '../../db/database.js';
 import { env } from '../../config/env.js';
@@ -13,7 +13,7 @@ const EIA_BASE = 'https://api.eia.gov/v2';
  * @param seriesIds The EIA series IDs (api paths)
  * @returns Promise<Record<string, DataPoint[]>>
  */
-export async function fetchSeries(seriesIds: string[]): Promise<Record<string, DataPoint[]>> {
+export async function fetchSeries(seriesIds: string[], startDates?: Record<string, string>): Promise<Record<string, DataPoint[]>> {
   if (seriesIds.length === 0) return {};
 
   const result: Record<string, DataPoint[]> = {};
@@ -21,8 +21,12 @@ export async function fetchSeries(seriesIds: string[]): Promise<Record<string, D
   const promises = seriesIds.map(async (apiPath) => {
     try {
       const url = `${EIA_BASE}${apiPath.startsWith('/') ? apiPath : '/' + apiPath}`;
+      const params: Record<string, string> = { api_key: env.EIA_API_KEY || '' };
+      if (startDates && startDates[apiPath]) {
+        params.start = startDates[apiPath];
+      }
       const response = await withRetry(() => axios.get(url, {
-        params: { api_key: env.EIA_API_KEY }
+        params
       }));
 
       const points: DataPoint[] = [];
@@ -104,7 +108,17 @@ export async function updateMacroCache(): Promise<MacroSnapshot> {
     fetched_at: { ...existingSnapshot.fetched_at }
   };
   
-  const newSeriesMap = await fetchSeries(RAW_EIA_SERIES_IDS);
+  const startDates: Record<string, string> = {};
+  for (const seriesId of RAW_EIA_SERIES_IDS) {
+    const cachedSeries = snapshot.series[seriesId] || [];
+    const lookback = getRevisionLookbackPeriods(seriesId);
+    if (cachedSeries.length > 0) {
+      const index = Math.max(0, cachedSeries.length - 1 - lookback);
+      startDates[seriesId] = cachedSeries[index].date;
+    }
+  }
+
+  const newSeriesMap = await fetchSeries(RAW_EIA_SERIES_IDS, startDates);
 
   for (const seriesId of RAW_EIA_SERIES_IDS) {
     const cachedSeries = snapshot.series[seriesId] || [];

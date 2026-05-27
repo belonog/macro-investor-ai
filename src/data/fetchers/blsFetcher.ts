@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { z } from 'zod';
 import { DataPoint, DataPointSchema, MacroSnapshot, MacroCacheSchema } from '../../types/index.js';
-import { RAW_BLS_SERIES_IDS } from '../indicators/registry.js';
+import { RAW_BLS_SERIES_IDS, getRevisionLookbackPeriods } from '../indicators/registry.js';
 import { logger } from '../../utils/logger.js';
 import { db } from '../../db/database.js';
 import { env } from '../../config/env.js';
@@ -154,7 +154,28 @@ export async function updateMacroCache(): Promise<MacroSnapshot> {
   };
   
   const currentYear = new Date().getFullYear();
-  const startYear = String(currentYear - 2); 
+  
+  const minStartYear = currentYear - 2;
+  let needsFullFetch = false;
+  let calculatedStartYear = currentYear;
+
+  for (const seriesId of RAW_BLS_SERIES_IDS) {
+    const cachedSeries = snapshot.series[seriesId] || [];
+    const lookback = getRevisionLookbackPeriods(seriesId);
+
+    if (cachedSeries.length === 0) {
+      needsFullFetch = true;
+      break;
+    } else {
+      const index = Math.max(0, cachedSeries.length - 1 - lookback);
+      const seriesStartYear = parseInt(cachedSeries[index].date.substring(0, 4), 10);
+      if (seriesStartYear < calculatedStartYear) {
+        calculatedStartYear = seriesStartYear;
+      }
+    }
+  }
+
+  const startYear = needsFullFetch ? String(minStartYear) : String(calculatedStartYear);
   const endYear = String(currentYear);
 
   try {

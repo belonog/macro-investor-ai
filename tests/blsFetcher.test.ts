@@ -11,6 +11,11 @@ vi.mock('../src/db/database.js', () => ({
   }
 }));
 
+vi.mock('../src/data/indicators/registry.js', () => ({
+  RAW_BLS_SERIES_IDS: ['TEST_BLS_1'],
+  getRevisionLookbackPeriods: vi.fn().mockReturnValue(2) // Lookback of 2
+}));
+
 describe('blsFetcher', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -80,8 +85,44 @@ describe('blsFetcher', () => {
   describe('updateMacroCache', () => {
     it('returns snapshot without setting cache if no series to fetch', async () => {
       vi.mocked(db.getCache).mockReturnValueOnce(null);
+      // Even if cache is null, RAW_BLS_SERIES_IDS has ['TEST_BLS_1'] now, so it will try to fetch.
+      // We should mock fetchSeries returning empty.
+      vi.mocked(axios.post).mockResolvedValueOnce({
+        data: { status: 'REQUEST_SUCCEEDED', Results: { series: [] } }
+      });
       const snapshot = await updateMacroCache();
       expect(snapshot.series).toBeDefined();
+    });
+
+    it('calculates startYear based on cache and lookback', async () => {
+      const mockCache = {
+        fetched_at: new Date().toISOString(),
+        data: {
+          series: {
+            'TEST_BLS_1': [
+              { date: '2024-01-01', value: 100 },
+              { date: '2025-01-01', value: 110 },
+              { date: '2026-01-01', value: 120 }
+            ]
+          },
+          fetched_at: {}
+        }
+      };
+      vi.mocked(db.getCache).mockReturnValueOnce(mockCache);
+      vi.mocked(axios.post).mockResolvedValueOnce({
+        data: { status: 'REQUEST_SUCCEEDED', Results: { series: [] } }
+      });
+
+      await updateMacroCache();
+
+      // Lookback is 2. Length is 3. index = Math.max(0, 3 - 1 - 2) = 0.
+      // Date at index 0 is '2024-01-01'. Start year should be '2024'.
+      expect(axios.post).toHaveBeenCalledWith(
+        'https://api.bls.gov/publicAPI/v2/timeseries/data/',
+        expect.objectContaining({
+          startyear: '2024'
+        })
+      );
     });
   });
 });
