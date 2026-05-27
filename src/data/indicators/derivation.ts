@@ -183,11 +183,11 @@ export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Da
     if (w) indicators['yield_30y_3m_change_pct'] = w;
   }
 
-  const dxyCurr = getSeriesValue('DTWEXBGS', 0);
-  const dxy_3mAgo = getSeriesValueMonthsAgo('DTWEXBGS', 3);
-  if (dxyCurr !== null && dxy_3mAgo !== null && dxy_3mAgo !== 0) {
-    const w = wrap('dxy_3m_change_pct', ((dxyCurr - dxy_3mAgo) / dxy_3mAgo) * 100);
-    if (w) indicators['dxy_3m_change_pct'] = w;
+  const usdIndexCurr = getSeriesValue('DTWEXBGS', 0);
+  const usd_index_3mAgo = getSeriesValueMonthsAgo('DTWEXBGS', 3);
+  if (usdIndexCurr !== null && usd_index_3mAgo !== null && usd_index_3mAgo !== 0) {
+    const w = wrap('usd_index_3m_change_pct', ((usdIndexCurr - usd_index_3mAgo) / usd_index_3mAgo) * 100);
+    if (w) indicators['usd_index_3m_change_pct'] = w;
   }
 
   const goldCurr = getSeriesValue('C:XAUUSD', 0);

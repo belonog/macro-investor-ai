@@ -186,8 +186,8 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     source: 'fred',
     rawSeriesId: 'BAMLC0A0CM'
   },
-  dxy: {
-    key: 'dxy',
+  usd_index: {
+    key: 'usd_index',
     name: 'Trade Weighted U.S. Dollar Index',
     description: 'Trade Weighted U.S. Dollar Index (DXY Proxy)',
     unit: 'index (trade-weighted)',
@@ -515,9 +515,9 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     source: 'calculated',
     dependsOn: ['DGS30']
   },
-  dxy_3m_change_pct: {
-    key: 'dxy_3m_change_pct',
-    name: 'DXY 3-Month % Change',
+  usd_index_3m_change_pct: {
+    key: 'usd_index_3m_change_pct',
+    name: 'USD Index 3-Month % Change',
     description: 'Trade Weighted U.S. Dollar Index 3-Month % Change',
     unit: '% change over prior 3 months',
     frequency: 'daily',
@@ -532,6 +532,33 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     frequency: 'daily',
     source: 'calculated',
     dependsOn: ['C:XAUUSD']
+  },
+  nonfarm_labor_productivity_qoq_pct: {
+    key: 'nonfarm_labor_productivity_qoq_pct',
+    name: 'Nonfarm Labor Productivity QoQ % Change',
+    description: 'Nonfarm Labor Productivity Quarter-over-Quarter % Change',
+    unit: '% QoQ',
+    frequency: 'quarterly',
+    source: 'fred',
+    rawSeriesId: 'PRS85006091'
+  },
+  nonfarm_unit_labor_costs_qoq_pct: {
+    key: 'nonfarm_unit_labor_costs_qoq_pct',
+    name: 'Nonfarm Unit Labor Costs QoQ % Change',
+    description: 'Nonfarm Unit Labor Costs Quarter-over-Quarter % Change',
+    unit: '% QoQ',
+    frequency: 'quarterly',
+    source: 'fred',
+    rawSeriesId: 'PRS85006111'
+  },
+  nonfarm_hours_worked_qoq_pct: {
+    key: 'nonfarm_hours_worked_qoq_pct',
+    name: 'Nonfarm Hours Worked QoQ % Change',
+    description: 'Nonfarm Hours Worked Quarter-over-Quarter % Change',
+    unit: '% QoQ',
+    frequency: 'quarterly',
+    source: 'fred',
+    rawSeriesId: 'PRS85006031'
   }
 };
 
