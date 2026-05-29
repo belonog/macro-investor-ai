@@ -226,13 +226,13 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
   },
   usd_index: {
     key: 'usd_index',
-    name: 'Trade Weighted U.S. Dollar Index',
-    description: 'Trade Weighted U.S. Dollar Index (DXY Proxy)',
-    unit: 'index (trade-weighted)',
+    name: 'Nominal Advanced Foreign Economies U.S. Dollar Index',
+    description: 'Nominal Advanced Foreign Economies U.S. Dollar Index (DXY Proxy)',
+    unit: 'index Jan 2006=100',
     frequency: 'daily',
     revision_lookback_periods: 0, // Daily market data is final.
     source: 'fred',
-    rawSeriesId: 'DTWEXBGS',
+    rawSeriesId: 'DTWEXAFEGS',
   },
   gold_price_usd: {
     key: 'gold_price_usd',
@@ -600,13 +600,13 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
   usd_index_3m_change_pct: {
     key: 'usd_index_3m_change_pct',
     name: 'USD Index 3-Month % Change',
-    description: 'Trade Weighted U.S. Dollar Index 3-Month % Change',
+    description: 'Nominal Advanced Foreign Economies U.S. Dollar Index 3-Month % Change',
     unit: '% change over prior 3 months',
     frequency: 'daily',
     revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',
-    dependsOn: ['DTWEXBGS'],
-    calculation: { type: 'change_pct', seriesId: 'DTWEXBGS', months: 3 },
+    dependsOn: ['DTWEXAFEGS'],
+    calculation: { type: 'change_pct', seriesId: 'DTWEXAFEGS', months: 3 },
   },
   gold_3m_change_pct: {
     key: 'gold_3m_change_pct',
