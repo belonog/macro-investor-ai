@@ -9,7 +9,6 @@ import {
 } from '../types/index.js';
 import { logRebalancingDecision, db } from '../db/database.js';
 import { generateAgentResponse } from './baseAgent.js';
-import { buildPortfolioContext } from '../utils/portfolioContext.js';
 import { StaleRegimeError } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
 import { POSITIONS_CONFIG_PATH, REBALANCING_PROMPT_PATH } from '../config/paths.js';
@@ -26,7 +25,7 @@ export async function generateRebalancingReport(): Promise<RebalancingOutput> {
       throw new Error(`System prompt file not found at ${REBALANCING_PROMPT_PATH}`);
     }
 
-    let systemPrompt = fs.readFileSync(REBALANCING_PROMPT_PATH, 'utf8');
+    const systemPrompt = fs.readFileSync(REBALANCING_PROMPT_PATH, 'utf8');
 
     // 1. Load Regime Snapshot
     const rawRegime = db.getCache<RegimeAssessment>('regime_latest');
@@ -54,10 +53,6 @@ export async function generateRebalancingReport(): Promise<RebalancingOutput> {
     const positionsConfig: PortfolioConfig = PortfolioConfigSchema.parse(
       JSON.parse(fs.readFileSync(POSITIONS_CONFIG_PATH, 'utf8'))
     );
-
-    // Inject Portfolio Context
-    const portfolioContext = buildPortfolioContext(positionsConfig);
-    systemPrompt = systemPrompt.replace('{{PORTFOLIO_CONTEXT}}', portfolioContext);
 
     const promptContext = {
       regime_assessment: regimeSnapshot,
@@ -95,12 +90,12 @@ if (import.meta.url.endsWith(process.argv[1])) {
   generateRebalancingReport()
     .then(report => {
       logger.info('Rebalancing Report Generated Successfully');
-      logger.info({ 
-        grade: report.alignment_grade, 
-        score: report.alignment_score 
+      logger.info({
+        grade: report.alignment_grade,
+        score: report.alignment_score
       }, 'Portfolio Alignment');
-      logger.info({ 
-        priority_actions: report.priority_actions 
+      logger.info({
+        priority_actions: report.priority_actions
       }, 'Priority Actions');
     })
     .catch(err => {
