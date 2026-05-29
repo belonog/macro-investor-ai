@@ -2,7 +2,7 @@ import { z } from 'zod';
 import dotenv from 'dotenv';
 
 // Load environment variables from .env file
-dotenv.config();
+dotenv.config({quiet: true});
 
 // Supply dummy values for required env variables in test mode to ensure tests run smoothly
 if (process.env.NODE_ENV === 'test') {

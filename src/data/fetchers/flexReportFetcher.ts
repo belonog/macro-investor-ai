@@ -7,13 +7,13 @@ export function parseFlexXml(xml: string): PositionSnapshot[] {
   const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '' });
   const jsonObj = parser.parse(xml);
   const statements = jsonObj.FlexQueryResponse.FlexStatements.FlexStatement;
-  
+
   if (!statements || !statements.OpenPositions) {
     return [];
   }
 
-  const positions = Array.isArray(statements.OpenPositions.OpenPosition) 
-    ? statements.OpenPositions.OpenPosition 
+  const positions = Array.isArray(statements.OpenPositions.OpenPosition)
+    ? statements.OpenPositions.OpenPosition
     : [statements.OpenPositions.OpenPosition];
 
   const fetchedAt = new Date().toISOString();
@@ -48,22 +48,22 @@ interface OpenPosition {
 }
 
 export async function fetchPortfolioSnapshot(token: string, queryId: string): Promise<PositionSnapshot[]> {
-  const baseUrl = 'https://www.interactivebrokers.com/Universal/servlet/FlexStatementService.SendRequest';
+  const baseUrl = 'https://ndcdyn.interactivebrokers.com/AccountManagement/FlexWebService/SendRequest';
   const response = await withRetry(() => axios.get(`${baseUrl}?t=${token}&q=${queryId}&v=3`));
-  
+
   const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '' });
   const statusObj = parser.parse(response.data);
-  
-  if (!statusObj.FlexStatus || statusObj.FlexStatus.Status !== 'Success') {
-    throw new Error(`Flex report request failed: ${statusObj.FlexStatus?.Status || 'Unknown error'}`);
+
+  if (!statusObj.FlexStatementResponse || statusObj.FlexStatementResponse.Status !== 'Success') {
+    throw new Error(`Flex report request failed: ${statusObj.FlexStatementResponse?.Status || 'Unknown error'}`);
   }
 
-  const referenceCode = statusObj.FlexStatus.ReferenceCode;
-  const getStatementUrl = 'https://www.interactivebrokers.com/Universal/servlet/FlexStatementService.GetStatement';
-  
+  const referenceCode = statusObj.FlexStatementResponse.ReferenceCode;
+  const getStatementUrl = 'https://ndcdyn.interactivebrokers.com/AccountManagement/FlexWebService/GetStatement';
+
   let dataReady = false;
   let reportData = '';
-  
+
   while (!dataReady) {
     const statementResponse = await withRetry(() => axios.get(`${getStatementUrl}?t=${token}&q=${referenceCode}&v=3`));
     if (typeof statementResponse.data === 'string' && statementResponse.data.includes('FlexQueryResponse')) {
