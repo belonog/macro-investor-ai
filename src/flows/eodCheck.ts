@@ -41,9 +41,19 @@ export async function runEodCheck() {
     const indicators = await getLatestValues();
     const typedConfig = PortfolioConfigSchema.parse(updatedConfig);
     
-    // 4. Get EOD Prices from Polygon for stop checks (Spec v3)
-    const symbols = Object.keys(typedConfig);
-    const prices = await getEodPrices(symbols);
+    // 4. Get prices from IBKR snapshot, fallback to Polygon for missing symbols (Spec v3)
+    const prices: Record<string, number> = {};
+    for (const pos of snapshot) {
+      prices[pos.symbol] = pos.market_price;
+    }
+    
+    const allSymbols = Object.keys(typedConfig);
+    const missingSymbols = allSymbols.filter(sym => prices[sym] === undefined);
+    
+    if (missingSymbols.length > 0) {
+      const polygonPrices = await getEodPrices(missingSymbols);
+      Object.assign(prices, polygonPrices);
+    }
     
     const stopAlerts = checkStopProximity(prices, typedConfig);
     const thesisAlerts = checkThesisThresholds(indicators, typedConfig);

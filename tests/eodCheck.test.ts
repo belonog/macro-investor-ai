@@ -63,6 +63,15 @@ describe('eodCheck flow', () => {
         regime_match: ['Goldilocks'],
         stop: 145,
         thesis_invalidation: 'Slowdown'
+      },
+      MSFT: {
+        description: 'Watchlisted stock',
+        shares: 0,
+        avg_cost: 0,
+        position_type: 'macro_core',
+        thesis: 'Growth',
+        regime_match: ['Goldilocks'],
+        thesis_invalidation: 'Tech slowdown'
       }
     };
 
@@ -71,7 +80,7 @@ describe('eodCheck flow', () => {
       'DGS30': { value: 4.5, unit: '%', description: '30Y Yield', as_of: '2026-05-15', source: 'fred' }
     });
     vi.mocked(polygonFetcher.getEodPrices).mockResolvedValue({
-      'AAPL': 140
+      'MSFT': 300
     });
     
     vi.mocked(fs.existsSync).mockReturnValue(true);
@@ -92,6 +101,10 @@ describe('eodCheck flow', () => {
 
     // Verify alerts were sent (at least for the stop proximity)
     expect(telegramBot.sendTelegramAlert).toHaveBeenCalled();
+
+    // Verify Polygon was ONLY called for the missing symbol (MSFT)
+    expect(polygonFetcher.getEodPrices).toHaveBeenCalledWith(['MSFT']);
+    expect(polygonFetcher.getEodPrices).toHaveBeenCalledTimes(1);
   });
 
   it('should send a CRITICAL alert if the flow fails', async () => {
