@@ -1,6 +1,6 @@
 import { fetchPortfolioSnapshot } from '../data/fetchers/flexReportFetcher.js';
 import { syncPositions } from '../utils/positionsSync.js';
-import { getLatestValues } from '../data/fetchers/fredFetcher.js';
+import { getLatestValues } from '../data/macroSnapshot.js';
 import { getEodPrices } from '../data/fetchers/polygonFetcher.js';
 import { checkStopProximity, checkThesisThresholds, checkDeadlines } from '../monitor/eodMonitor.js';
 import { sendTelegramAlert } from '../alerts/telegramBot.js';

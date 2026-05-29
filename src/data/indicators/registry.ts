@@ -715,3 +715,12 @@ export const RAW_EIA_SERIES_IDS: string[] = Array.from(
       .map((ind) => ind.rawSeriesId!)
   )
 );
+
+// Raw Polygon Series IDs (e.g. C:XAUUSD for gold spot price)
+export const RAW_POLYGON_SERIES_IDS: string[] = Array.from(
+  new Set(
+    Object.values(INDICATORS)
+      .filter((ind) => ind.source === 'polygon' && ind.rawSeriesId)
+      .map((ind) => ind.rawSeriesId!)
+  )
+);

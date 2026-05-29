@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import fs from 'fs';
 import { runEodCheck } from '../src/flows/eodCheck.js';
 import * as flexReportFetcher from '../src/data/fetchers/flexReportFetcher.js';
-import * as fredFetcher from '../src/data/fetchers/fredFetcher.js';
+import * as macroSnapshot from '../src/data/macroSnapshot.js';
 import * as polygonFetcher from '../src/data/fetchers/polygonFetcher.js';
 import * as telegramBot from '../src/alerts/telegramBot.js';
 import { env } from '../src/config/env.js';
@@ -18,7 +18,7 @@ vi.mock('../src/config/env.js', () => ({
 
 vi.mock('fs');
 vi.mock('../src/data/fetchers/flexReportFetcher.js');
-vi.mock('../src/data/fetchers/fredFetcher.js');
+vi.mock('../src/data/macroSnapshot.js');
 vi.mock('../src/data/fetchers/polygonFetcher.js');
 vi.mock('../src/alerts/telegramBot.js');
 
@@ -67,7 +67,7 @@ describe('eodCheck flow', () => {
     };
 
     vi.mocked(flexReportFetcher.fetchPortfolioSnapshot).mockResolvedValue(mockSnapshot);
-    vi.mocked(fredFetcher.getLatestValues).mockResolvedValue({
+    vi.mocked(macroSnapshot.getLatestValues).mockResolvedValue({
       'DGS30': { value: 4.5, unit: '%', description: '30Y Yield', as_of: '2026-05-15', source: 'fred' }
     });
     vi.mocked(polygonFetcher.getEodPrices).mockResolvedValue({

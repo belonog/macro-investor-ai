@@ -1,7 +1,6 @@
 import axios from 'axios';
-import { DataPoint, DataPointSchema, MacroSnapshot, MacroCacheSchema, MacroIndicators } from '../../types/index.js';
+import { DataPoint, DataPointSchema, MacroSnapshot, MacroCacheSchema } from '../../types/index.js';
 import { RAW_FRED_SERIES_IDS, getRawSeriesDescription, getRevisionLookbackPeriods } from '../indicators/registry.js';
-import { deriveMetrics } from '../indicators/derivation.js';
 import { logger } from '../../utils/logger.js';
 import { db } from '../../db/database.js';
 import { env } from '../../config/env.js';
@@ -147,32 +146,4 @@ export async function updateMacroCache(): Promise<MacroSnapshot> {
   
   db.setCache('macro_snapshot', cacheData);
   return snapshot;
-}
-
-/**
- * Returns the latest single value for each series in the target basket,
- * along with derived trend and spread metrics.
- * Attempts to read from SQLite cache first, falls back to fetching.
- * @returns Promise<MacroIndicators>
- */
-export async function getLatestValues(): Promise<MacroIndicators> {
-  let snapshot: MacroSnapshot;
-  try {
-    const rawCache = db.getCache<unknown>('macro_snapshot');
-    if (!rawCache) {
-      snapshot = await updateMacroCache();
-    } else {
-      const parsed = MacroCacheSchema.safeParse(rawCache);
-      if (!parsed.success) {
-        logger.warn('Invalid macro cache. Re-fetching...');
-        snapshot = await updateMacroCache();
-      } else {
-        snapshot = parsed.data.data;
-      }
-    }
-  } catch {
-    snapshot = await updateMacroCache();
-  }
-
-  return deriveMetrics(snapshot, new Date().toISOString());
 }

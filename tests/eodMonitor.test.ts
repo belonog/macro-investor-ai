@@ -3,7 +3,7 @@ import fs from 'fs';
 import { runEodMonitor } from '../src/monitor/eodMonitor.js';
 
 vi.mock('fs');
-vi.mock('../src/data/fetchers/fredFetcher', () => ({
+vi.mock('../src/data/macroSnapshot', () => ({
   getLatestValues: vi.fn().mockResolvedValue({
     'yield_30y_pct': { value: 5.2, unit: '%', as_of: '2026-05-15', source: 'fred', description: '30Y Yield' }, // Above hard exit 5.1
     'yield_10y_pct': { value: 4.0, unit: '%', as_of: '2026-05-15', source: 'fred', description: '10Y Yield' }

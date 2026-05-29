@@ -3,7 +3,7 @@ import fs from 'fs';
 import { runDailyDigest } from '../src/flows/dailyDigest.js';
 import { runRegimeCycle } from '../src/flows/regimeCycle.js';
 import { getEarningsCalendar } from '../src/data/fetchers/polygonFetcher.js';
-import { getLatestValues } from '../src/data/fetchers/fredFetcher.js';
+import { getLatestValues } from '../src/data/macroSnapshot.js';
 import { sendTelegramAlert } from '../src/alerts/telegramBot.js';
 
 vi.mock('fs', () => ({
@@ -56,7 +56,7 @@ vi.mock('fs', () => ({
 }));
 vi.mock('../src/flows/regimeCycle.js');
 vi.mock('../src/data/fetchers/polygonFetcher.js');
-vi.mock('../src/data/fetchers/fredFetcher.js');
+vi.mock('../src/data/macroSnapshot.js');
 vi.mock('../src/alerts/telegramBot.js');
 
 const { mockGetCache } = vi.hoisted(() => ({

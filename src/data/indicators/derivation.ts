@@ -148,7 +148,7 @@ export function deriveMetrics(snapshot: MacroSnapshot, baseDate: string = new Da
         const w = wrap(key, val);
         if (w) indicators[key] = w;
       }
-    } else if ((def.source === 'fred' || def.source === 'bls' || def.source === 'eia') && def.rawSeriesId) {
+    } else if ((def.source === 'fred' || def.source === 'bls' || def.source === 'eia' || def.source === 'polygon') && def.rawSeriesId) {
       const val = getSeriesValue(def.rawSeriesId, 0);
       if (val !== null) {
         const w = wrap(key, val);

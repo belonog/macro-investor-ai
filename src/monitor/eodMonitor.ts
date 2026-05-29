@@ -5,7 +5,7 @@ import {
   Alert, 
   MacroIndicators,
 } from '../types/index.js';
-import { getLatestValues } from '../data/fetchers/fredFetcher.js';
+import { getLatestValues } from '../data/macroSnapshot.js';
 import { POSITIONS_CACHE_PATH, POSITIONS_CONFIG_PATH } from '../config/paths.js';
 
 // Map descriptive names to semantic keys for threshold monitoring

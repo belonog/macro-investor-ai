@@ -1,7 +1,7 @@
 import fs from 'fs';
 import { runRegimeCycle } from './regimeCycle.js';
 import { getEarningsCalendar } from '../data/fetchers/polygonFetcher.js';
-import { getLatestValues } from '../data/fetchers/fredFetcher.js';
+import { getLatestValues } from '../data/macroSnapshot.js';
 import { sendTelegramAlert } from '../alerts/telegramBot.js';
 import { RegimeAssessment, PortfolioConfigSchema } from '../types/index.js';
 import { logger } from '../utils/logger.js';

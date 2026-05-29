@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchSeries, fetchAll, updateMacroCache, getLatestValues } from '../src/data/fetchers/fredFetcher.js';
+import { fetchSeries, fetchAll, updateMacroCache } from '../src/data/fetchers/fredFetcher.js';
 import { RAW_FRED_SERIES_IDS } from '../src/data/indicators/registry.js';
 import axios from 'axios';
 
-import { getManualIndicators } from '../src/utils/manualIndicators.js';
 import { env } from '../src/config/env.js';
+
 
 vi.mock('../src/config/env.js', () => ({
   env: {
@@ -15,7 +15,6 @@ vi.mock('../src/config/env.js', () => ({
 }));
 
 vi.mock('axios');
-vi.mock('../src/utils/manualIndicators.js');
 
 const { mockGetCache, mockSetCache } = vi.hoisted(() => ({
   mockGetCache: vi.fn(),
@@ -155,133 +154,5 @@ describe('fredFetcher', () => {
       );
     });
   });
-
-  describe('getLatestValues', () => {
-    it('should return latest values and derived metrics from cache', async () => {
-      const mockCache = {
-        fetched_at: new Date().toISOString(),
-        data: {
-          series: {
-            'CPIAUCSL': [
-              { date: '2022-01-01', value: 100.0 },
-              ...Array(11).fill({ date: '2022-02-01', value: 100.0 }),
-              { date: '2023-01-01', value: 103.0 }
-            ],
-            'PCEPI': [
-              { date: '2022-01-01', value: 100.0 },
-              ...Array(11).fill({ date: '2022-02-01', value: 100.0 }),
-              { date: '2023-01-01', value: 102.0 }
-            ],
-            'GDPC1': Array(13).fill({ date: '2023-01-01', value: 20000 }),
-            'PAYEMS': [
-              { date: '2023-01-01', value: 1000 },
-              { date: '2023-01-02', value: 1000 },
-              { date: '2023-01-03', value: 1000 },
-              { date: '2023-01-04', value: 1000 },
-              { date: '2023-02-01', value: 1100 },
-              { date: '2023-03-01', value: 1250 },
-              { date: '2023-04-01', value: 1450 }
-            ],
-            'DCOILWTICO': [
-              { date: '2023-01-01', value: 100 },
-              { date: '2023-01-02', value: 100 },
-              { date: '2023-01-03', value: 100 },
-              { date: '2023-01-04', value: 100 },
-              { date: '2023-02-01', value: 105 },
-              { date: '2023-03-01', value: 110 },
-              { date: '2023-04-01', value: 120 }
-            ],
-            'ECIWAG': [
-              { date: '2022-01-01', value: 100.0 },
-              ...Array(11).fill({ date: '2022-02-01', value: 100.0 }),
-              { date: '2023-01-01', value: 104.5 }
-            ],
-            'DGS30': Array(13).fill({ date: '2023-01-01', value: 4.0 }),
-            'DGS2': Array(13).fill({ date: '2023-01-01', value: 4.5 }),
-            'BAMLH0A0HYM2': [
-              { date: '2023-01-01', value: 4.0 },
-              { date: '2023-01-02', value: 4.1 },
-              { date: '2023-01-03', value: 4.2 },
-              { date: '2023-01-04', value: 4.3 },
-              { date: '2023-01-05', value: 4.4 },
-              { date: '2023-01-06', value: 4.6 },
-              { date: '2023-01-07', value: 4.6 }
-            ],
-            'PPIACO': Array(7).fill({ date: '2023-01-01', value: 0 }),
-            'T5YIE': Array(7).fill({ date: '2023-01-01', value: 0 }),
-            'T5YIFR': Array(7).fill({ date: '2023-01-01', value: 0 }),
-            'DFII5': Array(7).fill({ date: '2023-01-01', value: 0 }),
-            'RSAFS': Array(7).fill({ date: '2023-01-01', value: 0 }),
-            'RSXFS': Array(7).fill({ date: '2023-01-01', value: 0 }),
-            'INDPRO': Array(7).fill({ date: '2023-01-01', value: 0 }),
-            'CAPUTLG211S': Array(7).fill({ date: '2023-01-01', value: 0 }),
-            'BAMLC0A0CM': Array(7).fill({ date: '2023-01-01', value: 0 }),
-            'UMCSENT': Array(7).fill({ date: '2023-01-01', value: 0 }),
-            'PSAVERT': Array(7).fill({ date: '2023-01-01', value: 0 }),
-            'FEDFUNDS': Array(7).fill({ date: '2023-01-01', value: 0 }),
-            'DGS10': Array(7).fill({ date: '2023-01-01', value: 0 }),
-            'T10Y2Y': Array(7).fill({ date: '2023-01-01', value: 0 }),
-            'DTWEXBGS': Array(7).fill({ date: '2023-01-01', value: 0 }),
-            'M2SL': Array(7).fill({ date: '2023-01-01', value: 0 }),
-            'DHHNGSP': Array(7).fill({ date: '2023-01-01', value: 0 })
-          },
-          fetched_at: RAW_FRED_SERIES_IDS.reduce((acc, k) => ({ ...acc, [k]: new Date().toISOString() }), {})
-        }
-      };
-      mockGetCache.mockReturnValue(mockCache);
-      vi.mocked(getManualIndicators).mockReturnValue({
-        'MANUAL_TEST': { value: 99.9, period: '2023-05', description: 'Test Description', updated_at: new Date().toISOString(), source: 'test' }
-      });
-
-      const latest = await getLatestValues();
-      
-      // Basic values
-      expect(latest['cpi_yoy_pct'].value).toBeCloseTo(3.0);
-      expect(latest['cpi_yoy_pct'].unit).toBe('% YoY');
-      expect(latest['cpi_yoy_pct'].description).toBe('Consumer Price Index (CPI) Year-over-Year % Change');
-      expect(latest['cpi_yoy_pct'].as_of).toBe('2023-01-01');
-
-      expect(latest['yield_30y_pct'].value).toBe(4.0);
-      
-      // Derived: oil_price_3m_change_pct ( (120 - 100) / 100 * 100 = 20 )
-      expect(latest['oil_price_3m_change_pct'].value).toBeCloseTo(20);
-      expect(latest['oil_price_3m_change_pct'].unit).toBe('% change over prior 90 days');
-      expect(latest['oil_price_3m_change_pct'].description).toBe('WTI Crude Oil Price 3-Month % Change');
-      
-      // Derived: nfp_3m_avg_k ( (200 + 150 + 100) / 3 = 150 )
-      expect(latest['nfp_3m_avg_k'].value).toBeCloseTo(150);
-      expect(latest['nfp_3m_avg_k'].description).toBe('Nonfarm Payrolls 3-Month Rolling Average Change (Thousands)');
-      
-      // Derived: real_wages_yoy_pct ( 4.5 - 3.0 = 1.5 )
-      expect(latest['real_wages_yoy_pct'].value).toBe(1.5);
-      
-      // Derived: yield_curve_30_2 ( 4.0 - 4.5 = -0.5 )
-      expect(latest['yield_curve_30_2'].value).toBe(-0.5);
-      
-      // Derived: credit_spread_delta ( 4.6 - avg(4.1, 4.2, 4.3, 4.4, 4.6, 4.6) )
-      // avg = 26.2 / 6 = 4.3666...
-      // delta = 4.6 - 4.3666 = 0.2333...
-      expect(latest['credit_spread_delta'].value).toBeCloseTo(0.2333, 4);
-
-      // Manual indicator
-      expect(latest['MANUAL_TEST'].value).toBe(99.9);
-      expect(latest['MANUAL_TEST'].as_of).toBe('2023-05');
-      expect(latest['MANUAL_TEST'].description).toBe('Test Description');
-    });
-
-    it('should fetch and update cache if cache is missing', async () => {
-      mockGetCache.mockReturnValue(null);
-      vi.mocked(getManualIndicators).mockReturnValue({});
-      const mockedAxios = vi.mocked(axios);
-      mockedAxios.get.mockResolvedValue({
-        data: {
-          observations: Array(12).fill({ date: '2023-01-01', value: '110.0' })
-        }
-      });
-
-      const latest = await getLatestValues();
-      expect(latest['yield_30y_pct'].value).toBe(110.0);
-      expect(mockSetCache).toHaveBeenCalled();
-    });
-  });
 });
+

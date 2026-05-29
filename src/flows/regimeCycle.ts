@@ -1,8 +1,9 @@
 
-import { updateMacroCache as updateFredCache, getLatestValues } from '../data/fetchers/fredFetcher.js';
+import { updateMacroCache as updateFredCache } from '../data/fetchers/fredFetcher.js';
+import { deriveMetrics } from '../data/indicators/derivation.js';
 import { updateMacroCache as updateBlsCache } from '../data/fetchers/blsFetcher.js';
 import { updateMacroCache as updateEiaCache } from '../data/fetchers/eiaFetcher.js';
-import { getGoldSpotPrice } from '../data/fetchers/polygonFetcher.js';
+import { updateMacroCache as updatePolygonCache } from '../data/fetchers/polygonFetcher.js';
 import { runRegimeAgent } from '../agents/regimeAgent.js';
 import { generateRebalancingReport } from '../agents/rebalancingAgent.js';
 import { sendTelegramAlert } from '../alerts/telegramBot.js';
@@ -21,12 +22,14 @@ export async function runRegimeCycle(trigger: 'manual' | 'post_release' | 'sched
     await updateFredCache();
     await updateBlsCache();
     await updateEiaCache();
+    // Polygon must be last — all four fetchers share the same 'macro_snapshot' DB key.
+    // Sequential calls prevent the last writer from overwriting the others' data.
+    // updatePolygonCache() returns the complete, merged MacroSnapshot (all sources).
+    const snapshot = await updatePolygonCache();
 
-    // 2. Fetch Latest Derived Values
-    const flatSnapshot = await getLatestValues();
-
-    // Add gold price from Polygon
-    flatSnapshot.gold_price_usd = await getGoldSpotPrice();
+    // 2. Derive indicators directly from the just-populated snapshot.
+    //    No extra DB round-trip; no FRED-only fallback risk from getLatestValues().
+    const flatSnapshot = deriveMetrics(snapshot, new Date().toISOString());
     
     // 3. Run Regime Agent
     const assessment = await runRegimeAgent(flatSnapshot, {}, trigger);
