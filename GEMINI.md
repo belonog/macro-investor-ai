@@ -1,6 +1,8 @@
 # Macro Investor AI — Project Instructions
 
-Do not make any changes until you have 95% confidence in what you need to build. Ask me follow-up questions until you reach that confidence.
+## Critical Agent Behavioral Rules
+1. **Wait for Explicit Approval**: Do not make any changes to the codebase for architectural, structural, or feature implementations until you have presented an Implementation Plan and received an explicit "go-ahead" or approval from me. Feedback on a plan (e.g., "I want more flexibility") is NOT an approval to start coding. Update the plan and ask again.
+2. **Confidence Threshold**: Do not make any changes until you have 95% confidence in what you need to build. Ask me follow-up questions until you reach that confidence.
 
 ## Current Architecture (Spec v3)
 
@@ -110,3 +112,9 @@ The 4-week moving average of initial claims is **`IC4WSA`** (not `ICSA4W`). Alwa
 ### Telegram Markdown Escaping (Legacy Markdown V1)
 
 Because the `telegraf` bot uses `parse_mode: 'Markdown'` (V1), characters like `_` are treated as italics entities. Since the system heavily relies on variables containing underscores (e.g., `growth_score`, `cpi_yoy_pct`), and the LLM output frequently includes these variable names in its rationale, **all dynamic LLM text must have underscores escaped as `\_`** before being injected into the Telegram message string. Failing to do so results in Telegram throwing a `400: Bad Request: can't parse entities` error and silently dropping the alert.
+
+### Polygon API Rate Limiting & Concurrency Queue
+
+Due to Polygon's free tier strict limit of 5 requests per minute, the `polygonFetcher` must enforce a minimum delay between outbound requests. Standard retry mechanisms (`withRetry`) are insufficient because the rate limit bucket resets too slowly (every 60s).
+
+**Rule**: All outbound Polygon API requests in `src/data/fetchers/polygonFetcher.ts` (e.g., `getEodPrices`, `fetchSeries`, `getEarningsCalendar`) must be wrapped in the `enqueuePolygonRequest` queue function. We use a sliding window (token bucket) rate limiter to optimize execution time. The queue delay is driven by the `POLYGON_API_LIMIT` (default 5) and `POLYGON_API_WINDOW_MS` (default 60000ms) environment variables to safely stay under the free tier limit, while providing flexibility for paid accounts.

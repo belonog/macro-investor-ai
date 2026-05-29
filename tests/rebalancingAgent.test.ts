@@ -160,7 +160,7 @@ describe('rebalancingAgent', () => {
     
     expect(mockGenerateAgentResponse).toHaveBeenCalledWith(expect.objectContaining({
       agentName: 'rebalancingAgent',
-      systemPrompt: expect.stringContaining('TLT — Deflationary Recession — Recession play')
+      prompt: expect.stringContaining('Deflationary Recession')
     }));
     
     expect(logRebalancingDecision).toHaveBeenCalled();

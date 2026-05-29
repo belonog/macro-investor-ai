@@ -17,7 +17,7 @@ export function formatRegimeSummary(assessment: RegimeAssessment): string {
   ].join('\n');
 }
 
-const escapeMd = (text: string | undefined | null) => {
+export const escapeMd = (text: string | undefined | null) => {
   if (!text) return '';
   // Escape underscores to prevent Telegram from treating them as italics and failing
   return text.replace(/_/g, '\\_');

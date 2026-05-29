@@ -37,7 +37,7 @@ describe('fetchPortfolioSnapshot', () => {
     
     // Mock SendRequest
     mockedAxios.get.mockResolvedValueOnce({
-      data: '<FlexStatus><Status>Success</Status><ReferenceCode>12345</ReferenceCode></FlexStatus>'
+      data: '<FlexStatementResponse><Status>Success</Status><ReferenceCode>12345</ReferenceCode></FlexStatementResponse>'
     });
 
     // Mock GetStatement

@@ -22,6 +22,8 @@ const envSchema = z.object({
   INTERPRETER_AGENT_MODEL: z.string().optional(),
   FRED_API_KEY: z.string().min(1, 'FRED_API_KEY is required'),
   POLYGON_API_KEY: z.string().min(1, 'POLYGON_API_KEY is required'),
+  POLYGON_API_LIMIT: z.coerce.number().min(1).default(5),
+  POLYGON_API_WINDOW_MS: z.coerce.number().min(1000).default(60000),
   EIA_API_KEY: z.string().min(1, 'EIA_API_KEY is required'),
   BLS_API_KEY: z.string().optional(),
   TELEGRAM_BOT_TOKEN: z.string().optional(),

@@ -25,6 +25,8 @@ vi.mock('../src/db/database.js', () => ({
 vi.mock('../src/config/env.js', () => ({
   env: {
     POLYGON_API_KEY: 'test_api_key',
+    POLYGON_API_LIMIT: 5,
+    POLYGON_API_WINDOW_MS: 1, // 1ms for tests to prevent hanging
     NODE_ENV: 'test',
     LOG_LEVEL: 'info',
   },
@@ -213,6 +215,42 @@ describe('polygonFetcher', () => {
       expect(snapshot.series['C:XAUUSD']).toEqual([]);
       // Cache is still written (with the empty array)
       expect(mockSetCache).toHaveBeenCalledWith('macro_snapshot', expect.anything());
+    });
+  });
+
+  // ── Rate Limiter (Token Bucket) ───────────────────────────────────────────
+
+  describe('Rate Limiter (Token Bucket)', () => {
+    it('allows bursts up to POLYGON_API_LIMIT and throttles subsequent requests', async () => {
+      // Use the actual env object mock
+      const originalLimit = (await import('../src/config/env.js')).env.POLYGON_API_LIMIT;
+      const originalWindow = (await import('../src/config/env.js')).env.POLYGON_API_WINDOW_MS;
+      
+      const mockedEnv = (await import('../src/config/env.js')).env;
+      mockedEnv.POLYGON_API_LIMIT = 2;
+      mockedEnv.POLYGON_API_WINDOW_MS = 50; // 50ms window
+
+      vi.mocked(axios.get).mockResolvedValue({
+        data: { results: [{ c: 100.0 }] },
+      });
+
+      const start = Date.now();
+      
+      // Fire 3 requests concurrently
+      // The first 2 should execute instantly, the 3rd should wait ~50ms
+      const p1 = getEodPrices(['A']);
+      const p2 = getEodPrices(['B']);
+      const p3 = getEodPrices(['C']);
+      
+      await Promise.all([p1, p2, p3]);
+      const end = Date.now();
+      
+      expect(end - start).toBeGreaterThanOrEqual(50);
+      expect(axios.get).toHaveBeenCalledTimes(3);
+
+      // Restore
+      mockedEnv.POLYGON_API_LIMIT = originalLimit;
+      mockedEnv.POLYGON_API_WINDOW_MS = originalWindow;
     });
   });
 });

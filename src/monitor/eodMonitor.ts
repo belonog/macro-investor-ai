@@ -1,12 +1,9 @@
-import fs from 'fs';
-import { 
-  PositionSnapshot, 
-  PortfolioConfig, 
-  Alert, 
+import {
+  PortfolioConfig,
+  Alert,
   MacroIndicators,
 } from '../types/index.js';
-import { getLatestValues } from '../data/macroSnapshot.js';
-import { POSITIONS_CACHE_PATH, POSITIONS_CONFIG_PATH } from '../config/paths.js';
+import { escapeMd } from '../utils/alertFormatter.js';
 
 // Map descriptive names to semantic keys for threshold monitoring
 const INDICATOR_MAP: Record<string, string> = {
@@ -59,8 +56,8 @@ export function checkThesisThresholds(indicators: MacroIndicators, config: Portf
   for (const [symbol, posConfig] of Object.entries(config)) {
     if (posConfig.threshold_monitor) {
       const { indicator, warn_at, hard_exit_at } = posConfig.threshold_monitor;
-      const fredId = INDICATOR_MAP[indicator];
-      const indicatorObj = indicators[fredId];
+      const indicatorId = INDICATOR_MAP[indicator];
+      const indicatorObj = indicators[indicatorId];
       const currentValue = indicatorObj?.value;
 
       if (currentValue !== undefined) {
@@ -68,7 +65,7 @@ export function checkThesisThresholds(indicators: MacroIndicators, config: Portf
           alerts.push({
             level: 'CRITICAL',
             symbol,
-            message: `Thesis invalidation threshold breached for ${indicator}! Value: ${currentValue}, Hard Exit: ${hard_exit_at}`,
+            message: `Thesis invalidation threshold breached for ${escapeMd(indicator)}! Value: ${currentValue}, Hard Exit: ${hard_exit_at}`,
             action: 'EXIT FULL',
             created_at: now,
           });
@@ -76,7 +73,7 @@ export function checkThesisThresholds(indicators: MacroIndicators, config: Portf
           alerts.push({
             level: 'WARNING',
             symbol,
-            message: `Thesis threshold warning for ${indicator}. Value: ${currentValue}, Warning: ${warn_at}`,
+            message: `Thesis threshold warning for ${escapeMd(indicator)}. Value: ${currentValue}, Warning: ${warn_at}`,
             action: 'REDUCE RISK',
             created_at: now,
           });
@@ -120,33 +117,4 @@ export function checkDeadlines(config: PortfolioConfig): Alert[] {
     }
   }
   return alerts;
-}
-
-/**
- * Scans positions for stop breaches, thesis threshold crossings, and deadlines.
- * Legacy function kept for backward compatibility if needed.
- */
-export async function runEodMonitor(): Promise<Alert[]> {
-  // 1. Load data
-  if (!fs.existsSync(POSITIONS_CONFIG_PATH)) {
-    throw new Error('Positions config not found');
-  }
-  const config: PortfolioConfig = JSON.parse(fs.readFileSync(POSITIONS_CONFIG_PATH, 'utf8'));
-
-  let snapshots: PositionSnapshot[] = [];
-  if (fs.existsSync(POSITIONS_CACHE_PATH)) {
-    snapshots = JSON.parse(fs.readFileSync(POSITIONS_CACHE_PATH, 'utf8'));
-  }
-
-  const latestMacro = await getLatestValues();
-  const prices: Record<string, number> = {};
-  for (const s of snapshots) {
-    prices[s.symbol] = s.market_price;
-  }
-
-  const stopAlerts = checkStopProximity(prices, config);
-  const thesisAlerts = checkThesisThresholds(latestMacro, config);
-  const deadlineAlerts = checkDeadlines(config);
-
-  return [...stopAlerts, ...thesisAlerts, ...deadlineAlerts];
 }

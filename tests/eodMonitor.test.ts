@@ -1,14 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import fs from 'fs';
-import { runEodMonitor } from '../src/monitor/eodMonitor.js';
-
-vi.mock('fs');
-vi.mock('../src/data/macroSnapshot', () => ({
-  getLatestValues: vi.fn().mockResolvedValue({
-    'yield_30y_pct': { value: 5.2, unit: '%', as_of: '2026-05-15', source: 'fred', description: '30Y Yield' }, // Above hard exit 5.1
-    'yield_10y_pct': { value: 4.0, unit: '%', as_of: '2026-05-15', source: 'fred', description: '10Y Yield' }
-  })
-}));
+import { checkStopProximity, checkThesisThresholds, checkDeadlines } from '../src/monitor/eodMonitor.js';
+import { PortfolioConfig, MacroIndicators, Alert } from '../src/types/index.js';
 
 describe('eodMonitor', () => {
   beforeEach(() => {
@@ -21,9 +13,10 @@ describe('eodMonitor', () => {
     vi.useRealTimers();
   });
 
-  it('should detect stop breaches and thesis crossings', async () => {
-    const mockConfig = {
+  it('should detect stop breaches and thesis crossings', () => {
+    const mockConfig: PortfolioConfig = {
       TLT: {
+        description: 'TLT',
         shares: 100,
         avg_cost: 90,
         position_type: 'macro_core',
@@ -39,6 +32,7 @@ describe('eodMonitor', () => {
         }
       },
       SPEC: {
+        description: 'SPEC',
         shares: 10,
         avg_cost: 100,
         position_type: 'speculative',
@@ -49,38 +43,26 @@ describe('eodMonitor', () => {
       }
     };
 
-    const mockSnapshots = [
-      {
-        symbol: 'TLT',
-        market_price: 84, // Below hard stop 85
-        market_value: 8400,
-        quantity: 100,
-        avg_cost: 90,
-        unrealized_pnl: -600,
-        unrealized_pnl_pct: -6.6,
-        fetched_at: new Date().toISOString()
-      }
-    ];
+    const mockPrices: Record<string, number> = {
+      'TLT': 84 // Below hard stop 85
+    };
 
-    vi.mocked(fs.existsSync).mockReturnValue(true);
-    vi.mocked(fs.readFileSync).mockImplementation((path) => {
-      if (typeof path === 'string') {
-        if (path.includes('positions.json')) return JSON.stringify(mockConfig);
-        if (path.includes('positions_snapshot.json')) return JSON.stringify(mockSnapshots);
-      }
-      return '';
-    });
+    const mockIndicators: MacroIndicators = {
+      'yield_30y_pct': { value: 5.2, unit: '%', as_of: '2026-05-15', source: 'fred', description: '30Y Yield' }, // Above hard exit 5.1
+      'yield_10y_pct': { value: 4.0, unit: '%', as_of: '2026-05-15', source: 'fred', description: '10Y Yield' }
+    };
 
-    const alerts = await runEodMonitor();
+    const stopAlerts = checkStopProximity(mockPrices, mockConfig);
+    const thesisAlerts = checkThesisThresholds(mockIndicators, mockConfig);
+    const deadlineAlerts = checkDeadlines(mockConfig);
 
-    // 1. TLT Hard Stop Breach (84 <= 85)
-    // 2. TLT Thesis Invalidation (5.2 >= 5.1)
-    // 3. SPEC Deadline approaching (diff <= 5 days)
+    const alerts: Alert[] = [...stopAlerts, ...thesisAlerts, ...deadlineAlerts];
 
-    expect(alerts.some(a => a.symbol === 'TLT' && a.message.includes('Hard stop breached'))).toBe(true);
-    expect(alerts.some(a => a.symbol === 'TLT' && a.message.includes('Thesis invalidation threshold breached'))).toBe(true);
-    expect(alerts.some(a => a.symbol === 'SPEC' && a.message.includes('Speculative deadline approaching'))).toBe(true);
+    expect(alerts.some((a: Alert) => a.symbol === 'TLT' && a.message.includes('Hard stop breached'))).toBe(true);
+    expect(alerts.some((a: Alert) => a.symbol === 'TLT' && a.message.includes('Thesis invalidation threshold breached'))).toBe(true);
+    expect(alerts.some((a: Alert) => a.symbol === 'SPEC' && a.message.includes('Speculative deadline approaching'))).toBe(true);
     
     expect(alerts.length).toBe(3);
   });
 });
+
