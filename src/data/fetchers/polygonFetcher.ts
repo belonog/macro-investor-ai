@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { DataPoint, DataPointSchema, EarningsEvent, MacroCacheSchema, MacroSnapshot, RawIndicator } from '../../types/index.js';
+import { DataPoint, DataPointSchema, EarningsEvent, MacroCacheSchema, MacroSnapshot } from '../../types/index.js';
 import { RAW_POLYGON_SERIES_IDS } from '../indicators/registry.js';
 import { env } from '../../config/env.js';
 import { db } from '../../db/database.js';
@@ -51,36 +51,6 @@ export async function getEarningsCalendar(symbols: string[], _daysAhead: number)
     }
   }
   return events;
-}
-
-/**
- * Gets the gold spot price (single latest bar).
- * Retained for callers that need only the current price without cache overhead.
- * @returns Promise<RawIndicator>
- */
-export async function getGoldSpotPrice(): Promise<RawIndicator> {
-  const response = await withRetry(() => axios.get(`${POLYGON_BASE}/v2/aggs/ticker/C:XAUUSD/prev`, {
-    params: { adjusted: true, apiKey: env.POLYGON_API_KEY }
-  }));
-  
-  let value = 0;
-  let asOf = new Date().toISOString().split('T')[0];
-  
-  if (response.data && response.data.results && response.data.results.length > 0) {
-    value = response.data.results[0].c;
-    // Polygon timestamp is in ms
-    if (response.data.results[0].t) {
-      asOf = new Date(response.data.results[0].t).toISOString().split('T')[0];
-    }
-  }
-  
-  return {
-    value,
-    unit: 'USD per troy oz',
-    description: 'Gold Spot Price (XAU/USD)',
-    source: 'COMEX spot',
-    as_of: asOf,
-  };
 }
 
 /**

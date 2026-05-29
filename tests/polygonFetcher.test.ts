@@ -3,7 +3,6 @@ import axios from 'axios';
 import {
   getEodPrices,
   getEarningsCalendar,
-  getGoldSpotPrice,
   fetchSeries,
   updateMacroCache,
 } from '../src/data/fetchers/polygonFetcher.js';
@@ -67,17 +66,6 @@ describe('polygonFetcher', () => {
     expect(calendar).toHaveLength(1);
     expect(calendar[0].symbol).toBe('AAPL');
     expect(calendar[0].eps_estimate).toBe(1.5);
-  });
-
-  it('fetches gold spot price', async () => {
-    vi.mocked(axios.get).mockResolvedValueOnce({
-      data: { results: [{ c: 2350.5, t: 1715644800000 }] },
-    });
-    const indicator = await getGoldSpotPrice();
-    expect(indicator.value).toBe(2350.5);
-    expect(indicator.unit).toBe('USD per troy oz');
-    expect(indicator.description).toBe('Gold Spot Price (XAU/USD)');
-    expect(indicator.as_of).toBe('2024-05-14');
   });
 
   // ── fetchSeries ───────────────────────────────────────────────────────────
