@@ -73,7 +73,7 @@ No task is considered complete until the following "Iron Law" of verification is
 ### Macro Data Pipeline Decoupling (Spec v3 Refinement)
 
 1. **Fetching Layer (`src/data/fetchers/`)**: Handles HTTP requests, cache synchronization, and Zod validation of raw data streams. Banned from doing indicator math, hardcoding metadata descriptions, or asserting semantic properties.
-   - **Unified Cache Architecture**: All API data sources (FRED, BLS, EIA) must utilize a standardized `fetchSeries` (array-based) and `updateMacroCache` (SQLite sync) architecture. No single-point getters (like `getLatestReleases`) should exist.
+   - **Unified Cache Architecture**: All API data sources (FRED, BLS, EIA, Polygon) must utilize a standardized `fetchSeries` (array-based) and `updateMacroCache` (SQLite sync) architecture. No single-point getters (like `getLatestReleases`) should exist.
 2. **Registry Layer (`src/data/indicators/registry.ts`)**: Single source of truth for indicator definitions, description texts, data sources, update frequencies, and mappings from raw FRED series/Polygon tickers to semantic keys.
    - **Single Source of Truth for Metadata**: Avoid creating redundant dictionaries mapping raw string IDs to metadata. The `INDICATORS` registry acts as the single source of truth. Features like error logging dynamically resolve human-readable descriptions by searching `INDICATORS` using `rawSeriesId` or `dependsOn` references.
 3. **Derivation Layer (`src/data/indicators/derivation.ts`)**: Consumes `MacroSnapshot` data and performs all mathematical derivations (YoY %, rolling averages, yield curve spreads, real wages formulas, credit spread deltas), returning a typed semantic-keyed `MacroIndicators` record.
@@ -87,9 +87,13 @@ No task is considered complete until the following "Iron Law" of verification is
 
 ### Shared Cache Key Race Condition (CRITICAL)
 
-All three fetchers — `fredFetcher`, `blsFetcher`, `eiaFetcher` — write to the **same `'macro_snapshot'` SQLite cache key** via `db.setCache('macro_snapshot', ...)`. Their `updateMacroCache()` flow is: read → merge → write. Running them in `Promise.all` is a **race condition**: all three read the DB before any writes land, so each only merges its own prior state. The last to finish (usually EIA, the smallest payload) overwrites and discards all other data.
+All four fetchers — `fredFetcher`, `blsFetcher`, `eiaFetcher`, `polygonFetcher` — write to the **same `'macro_snapshot'` SQLite cache key** via `db.setCache('macro_snapshot', ...)`. Their `updateMacroCache()` flow is: read → merge → write. Running them in `Promise.all` is a **race condition**: all four read the DB before any writes land, so each only merges its own prior state. The last to finish overwrites and discards all other data.
 
-**Rule**: Always call the three `updateMacroCache()` functions **sequentially** (`await fred(); await bls(); await eia();`) in `regimeCycle.ts`. Never wrap them in `Promise.all`.
+**Rule**: Always call the `updateMacroCache()` functions **sequentially** (`await fred(); await bls(); await eia(); await polygon();`) in `regimeCycle.ts`. Never wrap them in `Promise.all`.
+
+### `getLatestValues` Decoupling (Source-Agnostic Access)
+
+To prevent incomplete snapshots during cache misses, reading from the shared `'macro_snapshot'` must be entirely decoupled from the fetchers that populate it. The function `getLatestValues()` in `src/data/macroSnapshot.ts` handles all cache reads and calls to the derivation layer. It is explicitly banned from attempting to "warm" or "fix" the cache by triggering a fallback HTTP fetch (which would result in an incomplete, single-source snapshot). It expects a fully warmed cache and simply returns `{}` on failure, signaling the caller that `regimeCycle` needs to run.
 
 ### FRED Fetch History Window
 
