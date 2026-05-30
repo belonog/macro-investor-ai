@@ -27,12 +27,12 @@ describe('regimePipeline - normalization', () => {
   });
 
   it('normalizes inverted bounds correctly', () => {
-    const invertedBounds = { low: 400, neutral: 220, high: 180, inverted: true };
-    // 400k claims (low bound) -> 0.0
+    const invertedBounds = { low: 180, neutral: 220, high: 400, inverted: true };
+    // 400k claims (high bound) -> 0.0
     expect(normalize(400, invertedBounds)).toBe(0.0);
     // 220k claims (neutral bound) -> 0.5
     expect(normalize(220, invertedBounds)).toBe(0.5);
-    // 180k claims (high bound) -> 1.0
+    // 180k claims (low bound) -> 1.0
     expect(normalize(180, invertedBounds)).toBe(1.0);
     // 310k claims -> 0.25
     expect(normalize(310, invertedBounds)).toBe(0.25);
