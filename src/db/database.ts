@@ -148,8 +148,16 @@ export function logRegimeEvaluation(evaluation: RegimeEvaluationRecord) {
       contradicting_indicators: [],
       transition_signal: 'None',
       central_thesis_conflict: 'None',
-      petrodollar_risk: 'Not Evidenced',
-      petrodollar_rationale: 'None',
+      debasement_overlay: {
+        score: 0,
+        signal: 'None',
+        indicators: {
+          gold_real_rate_divergence: '',
+          dxy_trend_vs_yield: '',
+          treasury_auction_bid_cover: '',
+          foreign_reserve_usd_share: ''
+        }
+      },
       fastest_path_to_being_wrong: 'Nothing',
       watch_next: [],
       requires_human_review_override: false,

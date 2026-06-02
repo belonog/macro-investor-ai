@@ -85,7 +85,7 @@ Consult portfolio_context now.
 STEP 6 — Identify the single most critical thesis conflict:
 the pair of positions whose macro assumptions most directly contradict each other.
 
-STEP 7 — Petrodollar / Dollar Debasement Risk.
+STEP 7 — Dollar Debasement Risk as a 5th Dimension.
 Using: dxy trend, gold_price_usd trajectory, tips_real_yield_5y_pct,
 and yield_30y_pct behavior vs. growth_score.
 
@@ -94,10 +94,14 @@ this decoupling suggests term premium expansion driven by supply/debasement
 risk — not inflation expectations. This is a thesis-invalidating signal
 for nominal Treasury longs independent of the regime quadrant.
 
-Conclude one of:
-  "Active Risk"   → current data actively evidences debasement dynamics
-  "Latent Risk"   → structural conditions present, not yet confirmed by price
-  "Not Evidenced" → no current data supports this as a near-term risk
+Populate the `debasement_overlay` field:
+- `score`: 0.0 to 1.0 (0.0 = no debasement risk, 1.0 = acute debasement risk)
+- `signal`: "None | Emerging | Active | Acute"
+- `indicators`: Evaluate and briefly describe the status of:
+  - `gold_real_rate_divergence`: e.g., "Gold rising despite real yields rising"
+  - `dxy_trend_vs_yield`: e.g., "Yields rising without USD strengthening"
+  - `treasury_auction_bid_cover`: supply concern indicators
+  - `foreign_reserve_usd_share`: de-dollarization trend
 
 STEP 8 — Synthesize central_thesis_conflict combining Steps 6 and 7.
 
@@ -135,9 +139,17 @@ reasoning — do not add conclusions in JSON that aren't grounded in your
     }
   ],
   "transition_signal": "<2–3 sentences: what would trigger a regime shift and how soon>",
-  "petrodollar_risk": "Active Risk | Latent Risk | Not Evidenced",
-  "petrodollar_rationale": "<2–3 sentences citing DXY, gold, TIPS, and 30Y yield evidence>",
-  "central_thesis_conflict": "<narrative: critical position conflict + petrodollar risk conclusion>",
+  "central_thesis_conflict": "<narrative: critical position conflict + debasement risk conclusion>",
+  "debasement_overlay": {
+    "score": <0.0-1.0 float>,
+    "signal": "None | Emerging | Active | Acute",
+    "indicators": {
+      "gold_real_rate_divergence": "<brief description>",
+      "dxy_trend_vs_yield": "<brief description>",
+      "treasury_auction_bid_cover": "<brief description>",
+      "foreign_reserve_usd_share": "<brief description>"
+    }
+  },
   "fastest_path_to_being_wrong": "<single most plausible scenario invalidating the classification within 60 days>",
   "watch_next": [
     {

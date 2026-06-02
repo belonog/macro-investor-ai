@@ -122,6 +122,18 @@ export const PipelineOutputSchema = z.object({
 export const RegimeDriftSchema = z.enum(['Stable', 'Weakening', 'Transitioning', 'Shifted']);
 export type RegimeDrift = z.infer<typeof RegimeDriftSchema>;
 
+export const DebasementOverlaySchema = z.object({
+  score: z.number().min(0).max(1),
+  signal: z.enum(['None', 'Emerging', 'Active', 'Acute']),
+  indicators: z.object({
+    gold_real_rate_divergence: z.string(),
+    dxy_trend_vs_yield: z.string(),
+    treasury_auction_bid_cover: z.string(),
+    foreign_reserve_usd_share: z.string()
+  })
+});
+export type DebasementOverlay = z.infer<typeof DebasementOverlaySchema>;
+
 export const LLMResponseSchema = z.object({
   classification_verdict:       z.enum(['Confirmed-Strong', 'Confirmed-Weak', 'Nuanced', 'Challenged']),
   challenge_rationale:          z.string().nullable(),
@@ -131,8 +143,7 @@ export const LLMResponseSchema = z.object({
   contradicting_indicators:     z.array(z.any()),
   transition_signal:            z.string(),
   central_thesis_conflict:       z.string(),
-  petrodollar_risk:             z.enum(['Active Risk', 'Latent Risk', 'Not Evidenced']),
-  petrodollar_rationale:        z.string(),
+  debasement_overlay:           DebasementOverlaySchema,
   fastest_path_to_being_wrong:     z.string(),
   watch_next:                   z.array(z.any()),
   requires_human_review_override: z.boolean(),
