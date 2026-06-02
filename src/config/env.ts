@@ -21,6 +21,8 @@ const envSchema = z.object({
   COHERENCE_AGENT_MODEL: z.string().optional(),
   INTERPRETER_AGENT_MODEL: z.string().optional(),
   FRED_API_KEY: z.string().min(1, 'FRED_API_KEY is required'),
+  FRED_API_LIMIT: z.coerce.number().min(1).default(35),
+  FRED_API_WINDOW_MS: z.coerce.number().min(1000).default(60000),
   POLYGON_API_KEY: z.string().min(1, 'POLYGON_API_KEY is required'),
   POLYGON_API_LIMIT: z.coerce.number().min(1).default(5),
   POLYGON_API_WINDOW_MS: z.coerce.number().min(1000).default(60000),

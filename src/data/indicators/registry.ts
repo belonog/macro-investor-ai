@@ -194,31 +194,11 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     source: 'fred',
     rawSeriesId: 'DFII5',
   },
-  yield_curve_10y_2y_bps: {
-    key: 'yield_curve_10y_2y_bps',
-    name: '10-Year to 2-Year Treasury Spread',
-    description: '10-Year to 2-Year Treasury Spread (Yield Curve)',
-    unit: 'basis points (10Y minus 2Y)',
-    frequency: 'daily',
-    revision_lookback_periods: 0, // Daily market data is final.
-    source: 'fred',
-    rawSeriesId: 'T10Y2Y',
-  },
-  hy_spread_bps: {
-    key: 'hy_spread_bps',
-    name: 'High Yield Credit Spread',
-    description: 'ICE BofA US High Yield Index Option-Adjusted Spread',
-    unit: 'basis points OAS',
-    frequency: 'daily',
-    revision_lookback_periods: 0, // Daily market data is final.
-    source: 'fred',
-    rawSeriesId: 'BAMLH0A0HYM2',
-  },
-  ig_spread_bps: {
-    key: 'ig_spread_bps',
+  ig_spread_pct: {
+    key: 'ig_spread_pct',
     name: 'Investment Grade Credit Spread',
     description: 'ICE BofA US Corporate Index Option-Adjusted Spread',
-    unit: 'basis points OAS',
+    unit: 'percentage points',
     frequency: 'daily',
     revision_lookback_periods: 0, // Daily market data is final.
     source: 'fred',
@@ -305,6 +285,68 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     source: 'manual',
   },
 
+  // ── Leading indicators ─────────────
+  yield_curve_10y_2y_pct: {
+    key: 'yield_curve_10y_2y_pct',
+    name: '10-Year to 2-Year Treasury Spread',
+    description: '10-Year to 2-Year Treasury Spread (Yield Curve)',
+    unit: 'percent (10Y minus 2Y)',
+    frequency: 'daily',
+    revision_lookback_periods: 0, // Daily market data is final.
+    source: 'fred',
+    rawSeriesId: 'T10Y2Y',
+  },
+  yield_curve_10y_3m_pct: {
+    key: 'yield_curve_10y_3m_pct',
+    name: '10-Year to 3-Month Treasury Spread',
+    description: '10-Year to 3-Month Treasury Spread (Yield Curve)',
+    unit: 'percent (10Y minus 3M)',
+    frequency: 'daily',
+    revision_lookback_periods: 0, // Daily market data is final.
+    source: 'fred',
+    rawSeriesId: 'T10Y3M',
+  },
+  hy_spread_pct: {
+    key: 'hy_spread_pct',
+    name: 'High Yield Credit Spread',
+    description: 'ICE BofA US High Yield Index Option-Adjusted Spread',
+    unit: 'percentage points',
+    frequency: 'daily',
+    revision_lookback_periods: 0, // Daily market data is final.
+    source: 'fred',
+    rawSeriesId: 'BAMLH0A0HYM2',
+  },
+  mich_1y_inflation_expectation_pct: {
+    key: 'mich_1y_inflation_expectation_pct',
+    name: '1-Year Inflation Expectation',
+    description: 'University of Michigan 1Y Inflation Expectations',
+    unit: '% expected inflation over 1 year',
+    frequency: 'monthly',
+    revision_lookback_periods: 2,
+    source: 'fred',
+    rawSeriesId: 'MICH',
+  },
+  ism_new_orders: {
+    key: 'ism_new_orders',
+    name: 'ISM New Orders sub-index',
+    description: 'ISM New Orders sub-index',
+    unit: 'index',
+    revision_lookback_periods: 1, // ISM is rarely revised month-to-month, but 1 period overlap is safe.
+    frequency: 'monthly',
+    source: 'manual',
+  },
+  real_m2_growth_yoy_pct: {
+    key: 'real_m2_growth_yoy_pct',
+    name: 'Real M2 Money Supply Growth YoY',
+    description: 'Real M2 Money Supply Growth Year-over-Year % Change (M2 growth minus CPI inflation)',
+    unit: '% YoY (M2 growth YoY minus CPI YoY)',
+    frequency: 'monthly',
+    revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
+    source: 'calculated',
+    dependsOn: ['M2SL', 'CPIAUCSL'],
+    calculation: { type: 'real_yoy', nominalSeriesId: 'M2SL', cpiSeriesId: 'CPIAUCSL' },
+  },
+
   // ── Other Indicators / Dependencies ────────────────────────────────────────
   forward_5y5y_pct: {
     key: 'forward_5y5y_pct',
@@ -316,11 +358,11 @@ export const INDICATORS: Record<string, IndicatorDefinition> = {
     source: 'fred',
     rawSeriesId: 'T5YIFR',
   },
-  yield_curve_30_2: {
-    key: 'yield_curve_30_2',
+  yield_curve_30y_2y_pct: {
+    key: 'yield_curve_30y_2y_pct',
     name: 'Yield Curve Spread: 30Y minus 2Y',
     description: 'Yield Curve Spread: 30Y minus 2Y (Percentage Points)',
-    unit: 'percentage points (30Y minus 2Y)',
+    unit: 'percent (30Y minus 2Y)',
     frequency: 'daily',
     revision_lookback_periods: 0, // Calculated dynamically; lookback is applied to raw dependencies.
     source: 'calculated',

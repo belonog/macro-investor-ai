@@ -133,8 +133,8 @@ describe('getLatestValues (macroSnapshot)', () => {
     // Derived: real_wages_yoy_pct ( 4.5 - 3.0 = 1.5 )
     expect(latest['real_wages_yoy_pct'].value).toBe(1.5);
 
-    // Derived: yield_curve_30_2 ( 4.0 - 4.5 = -0.5 )
-    expect(latest['yield_curve_30_2'].value).toBe(-0.5);
+    // Derived: yield_curve_30y_2y_pct ( 4.0 - 4.5 = -0.5 )
+    expect(latest['yield_curve_30y_2y_pct'].value).toBe(-0.5);
 
     // Derived: credit_spread_delta ( 4.6 - avg(4.1, 4.2, 4.3, 4.4, 4.6, 4.6) )
     // avg = 26.2 / 6 = 4.3666...

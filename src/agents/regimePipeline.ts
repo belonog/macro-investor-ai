@@ -441,11 +441,11 @@ const WEIGHTED_KEYS: Set<string> = new Set([
 
 const SUPPLEMENTARY_KEYS: string[] = [
   'fed_funds_rate_pct', 'yield_2y_pct', 'yield_10y_pct', 'yield_30y_pct',
-  'tips_real_yield_5y_pct', 'yield_curve_10y_2y_bps', 'hy_spread_bps',
-  'ig_spread_bps', 'usd_index', 'gold_price_usd', 'wti_price_usd',
+  'tips_real_yield_5y_pct', 'yield_curve_10y_2y_pct', 'yield_curve_30y_2y_pct', 'hy_spread_pct',
+  'ig_spread_pct', 'usd_index', 'gold_price_usd', 'wti_price_usd',
   'consumer_sentiment', 'personal_saving_rate_pct', 'capacity_utilization_pct',
   'real_wages_yoy_pct', 'fao_food_price_index',
-  'forward_5y5y_pct', 'yield_curve_30_2', 'credit_spread_delta',
+  'forward_5y5y_pct', 'credit_spread_delta',
   'henry_hub_price_usd', 'm2_money_supply', 'retail_sales_ex_auto_pct',
   'industrial_production_index'
 ];

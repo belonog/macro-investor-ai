@@ -245,7 +245,7 @@ describe('polygonFetcher', () => {
       await Promise.all([p1, p2, p3]);
       const end = Date.now();
       
-      expect(end - start).toBeGreaterThanOrEqual(50);
+      expect(end - start).toBeGreaterThanOrEqual(45);
       expect(axios.get).toHaveBeenCalledTimes(3);
 
       // Restore

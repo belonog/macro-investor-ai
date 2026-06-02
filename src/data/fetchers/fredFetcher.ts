@@ -5,8 +5,10 @@ import { logger } from '../../utils/logger.js';
 import { db } from '../../db/database.js';
 import { env } from '../../config/env.js';
 import { withRetry } from '../../utils/retry.js';
+import { createRateLimitedQueue } from '../../utils/requestQueue.js';
 
 const FRED_BASE_URL = 'https://api.stlouisfed.org/fred';
+const enqueueFredRequest = createRateLimitedQueue(() => env.FRED_API_LIMIT, () => env.FRED_API_WINDOW_MS);
 
 /**
  * Fetches a series from FRED and returns it as an array of DataPoints.
@@ -24,7 +26,7 @@ export async function fetchSeries(seriesId: string, startDate?: string): Promise
   const defaultStartDate = new Date(Date.now() - 1095 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const obsStart = startDate || defaultStartDate;
 
-  const response = await withRetry(() => axios.get(`${FRED_BASE_URL}/series/observations`, {
+  const response = await withRetry(() => enqueueFredRequest(() => axios.get(`${FRED_BASE_URL}/series/observations`, {
     params: {
       series_id: seriesId,
       api_key: apiKey,
@@ -32,7 +34,7 @@ export async function fetchSeries(seriesId: string, startDate?: string): Promise
       sort_order: 'asc',
       observation_start: obsStart,
     }
-  }));
+  })));
 
   if (!response.data || !response.data.observations) {
     throw new Error(`Failed to fetch series ${seriesId}`);

@@ -5,54 +5,11 @@ import { env } from '../../config/env.js';
 import { db } from '../../db/database.js';
 import { logger } from '../../utils/logger.js';
 import { withRetry } from '../../utils/retry.js';
+import { createRateLimitedQueue } from '../../utils/requestQueue.js';
 
 const POLYGON_BASE = 'https://api.polygon.io';
 
-let polygonQueue: Promise<void> = Promise.resolve();
-let requestTimestamps: number[] = [];
-
-/**
- * Enqueues a Polygon request using a sliding window token bucket to optimize
- * execution time while strictly enforcing the rate limit.
- */
-function enqueuePolygonRequest<T>(requestFn: () => Promise<T>): Promise<T> {
-  const limit = env.POLYGON_API_LIMIT;
-  const windowMs = env.POLYGON_API_WINDOW_MS;
-  
-  const next = polygonQueue.then(async () => {
-    let now = Date.now();
-    
-    // Clean up timestamps older than the window
-    requestTimestamps = requestTimestamps.filter(t => now - t < windowMs);
-    
-    if (requestTimestamps.length >= limit) {
-      // The oldest relevant request is the first one in the array (length is exactly limit or more)
-      // Since we just filtered, it's definitely less than windowMs old.
-      // Wait for it to expire out of the window.
-      const oldest = requestTimestamps[0];
-      const waitTime = Math.max(0, windowMs - (now - oldest));
-      
-      if (waitTime > 0) {
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-      }
-      
-      // Update our notion of 'now' after waiting
-      now = Date.now();
-      requestTimestamps = requestTimestamps.filter(t => now - t < windowMs);
-    }
-    
-    try {
-      return await requestFn();
-    } finally {
-      requestTimestamps.push(Date.now());
-    }
-  });
-  
-  // Catch errors so the queue doesn't break for subsequent requests
-  polygonQueue = next.catch(() => {}) as Promise<void>;
-  
-  return next;
-}
+const enqueuePolygonRequest = createRateLimitedQueue(() => env.POLYGON_API_LIMIT, () => env.POLYGON_API_WINDOW_MS);
 
 /**
  * Gets EOD prices for a list of symbols.
