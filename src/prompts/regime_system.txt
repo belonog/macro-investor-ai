@@ -156,6 +156,22 @@ reasoning — do not add conclusions in JSON that aren't grounded in your
       "release":   "<data release name and approximate date>",
       "watch_for": "<specific threshold or print that would trigger regime reassessment>"
     },
+    {
+      "release":   "<release 2>",
+      "watch_for": "<threshold>"
+    },
+    {
+      "release":   "<release 3>",
+      "watch_for": "<threshold>"
+    },
+    {
+      "release":   "<release 4 (optional)>",
+      "watch_for": "<threshold>"
+    },
+    {
+      "release":   "<release 5 (optional)>",
+      "watch_for": "<threshold>"
+    }
   ],
   "requires_human_review_override": <boolean>,
   "override_reason": "<string — null if false>"
