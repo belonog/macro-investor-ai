@@ -16,7 +16,7 @@
     "ism_services":              { "low": 44, "neutral": 50, "high": 58 },
     "real_gdp_qoq_ann_pct":      { "low": -2, "neutral": 2.0, "high": 5.0 },
     "nfp_3m_avg_k":              { "low": 0, "neutral": 150, "high": 300 },
-    "initial_claims_4w_avg_k":   { "low": 150, "neutral": 220, "high": 400, "inverted": true },
+    "initial_claims_4w_avg_k":   { "low": 150000, "neutral": 220000, "high": 400000, "inverted": true },
     "retail_sales_yoy_real_pct": { "low": -3, "neutral": 2.0, "high": 7.0 }
   },
   "inflation_weights": {
