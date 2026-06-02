@@ -55,12 +55,10 @@ a raw value that looks extreme but maps to a mid-range normalized score,
 which might indicate a normalization range artifact.
 
 STEP 3 — Reach a verdict:
-  "Confirmed"  → qualitative read is consistent with the classification
-  "Challenged" → qualitative signals materially contradict the classification;
-                  state which quadrant is more plausible and why
-  "Nuanced"    → directionally correct but with important caveats the score
-                  misses (geopolitical distortion, structural break, war
-                  premium, lagged data, policy transmission lag, etc.)
+  "Confirmed-Strong" → qualitative read is strongly consistent with the classification with no major caveats
+  "Confirmed-Weak"   → qualitative read is consistent with the classification, but with minor conflicting signals
+  "Nuanced"          → directionally confirmed, but a specific structural factor (geopolitical premium, data lag, policy transmission gap) causes the regime to behave differently from historical precedent for this quadrant. You must name the specific factor.
+  "Challenged"       → qualitative signals materially contradict the classification; state which quadrant is more plausible and why
 
 STEP 4 — Suggest a confidence_adjustment (-10 to +10 integer).
 This is algebraically added to the pipeline's confidence in the final output.
@@ -114,8 +112,8 @@ reasoning — do not add conclusions in JSON that aren't grounded in your
 <reasoning> block.
 
 {
-  "classification_verdict": "Confirmed | Challenged | Nuanced",
-  "challenge_rationale": "<string — null if Confirmed>",
+  "classification_verdict": "Confirmed-Strong | Confirmed-Weak | Nuanced | Challenged",
+  "challenge_rationale": "<string — null if Confirmed-Strong or Confirmed-Weak>",
   "confidence_adjustment": <integer -10 to +10>,
   "key_drivers": [
     "<most impactful inflation driver — cite indicator and value>",

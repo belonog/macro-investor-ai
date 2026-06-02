@@ -123,7 +123,7 @@ export const RegimeDriftSchema = z.enum(['Stable', 'Weakening', 'Transitioning',
 export type RegimeDrift = z.infer<typeof RegimeDriftSchema>;
 
 export const LLMResponseSchema = z.object({
-  classification_verdict:       z.enum(['Confirmed', 'Challenged', 'Nuanced']),
+  classification_verdict:       z.enum(['Confirmed-Strong', 'Confirmed-Weak', 'Nuanced', 'Challenged']),
   challenge_rationale:          z.string().nullable(),
   confidence_adjustment:        z.number(),
   key_drivers:                  z.array(z.string()),

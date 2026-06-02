@@ -174,7 +174,7 @@ describe('RegimeAssessmentSchema', () => {
       assessed_at: new Date().toISOString(),
 
       // LLMResponse fields
-      classification_verdict: 'Confirmed',
+      classification_verdict: 'Confirmed-Strong',
       challenge_rationale: null,
       confidence_adjustment: 0,
       key_drivers: ['Low inflation', 'Moderate growth'],

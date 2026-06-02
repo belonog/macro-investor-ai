@@ -244,7 +244,7 @@ describe('regimePipeline - helpers', () => {
       assessed_at: '2026-05-15T12:00:00Z',
     } satisfies PipelineOutput;
     const llm = {
-      classification_verdict: 'Confirmed',
+      classification_verdict: 'Confirmed-Strong',
       challenge_rationale: null,
       confidence_adjustment: 5,
       requires_human_review_override: true,

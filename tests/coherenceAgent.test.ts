@@ -53,7 +53,7 @@ describe('coherenceAgent', () => {
         data_gaps: [],
         normalized_inflation_indicators: [],
         normalized_growth_indicators: [],
-        classification_verdict: 'Confirmed',
+        classification_verdict: 'Confirmed-Strong',
         challenge_rationale: null,
         confidence_adjustment: 0,
         transition_signal: 'None',
